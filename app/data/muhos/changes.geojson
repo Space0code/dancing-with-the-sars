@@ -3673,17 +3673,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (3.24 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.24 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0002_before.png",
      "after": "evidence/muhos-0002_after.png",
@@ -4037,17 +4037,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (3.06 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.06 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0003_before.png",
      "after": "evidence/muhos-0003_after.png",
@@ -4305,17 +4305,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (2.88 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.88 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0004_before.png",
      "after": "evidence/muhos-0004_after.png",
@@ -4533,17 +4533,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (2.7 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.7 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0005_before.png",
      "after": "evidence/muhos-0005_after.png",
@@ -4769,17 +4769,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (2.61 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.61 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0006_before.png",
      "after": "evidence/muhos-0006_after.png",
@@ -4931,17 +4931,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (2.43 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.43 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0007_before.png",
      "after": "evidence/muhos-0007_after.png",
@@ -5135,17 +5135,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (2.34 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.34 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0008_before.png",
      "after": "evidence/muhos-0008_after.png",
@@ -12709,17 +12709,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (2.07 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 31 May and 30 Jun 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 31 May and 30 Jun 2026. The change is small (2.07 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0011_before.png",
      "after": "evidence/muhos-0011_after.png",
@@ -17943,7 +17943,7 @@
      {
       "code": "size_only",
       "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "raises"
      }
@@ -18108,17 +18108,17 @@
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "expected",
     "reasons": [
      {
-      "code": "size_only",
-      "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "code": "small_no_records",
+      "text": "The change is small (3.06 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
-      "effect": "raises"
+      "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 30 Jun and 31 Jul 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
+    "explain": "An optical alert found vegetation loss here between 30 Jun and 31 Jul 2026. The change is small (3.06 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
     "evidence": {
      "before": "evidence/muhos-0014_before.png",
      "after": "evidence/muhos-0014_after.png",
@@ -20731,7 +20731,7 @@
      {
       "code": "size_only",
       "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "source": "Sentinel-1 C-band",
       "url": null,
       "effect": "raises"
      }
@@ -25136,7 +25136,7 @@
      {
       "code": "size_only",
       "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "Radar detection",
+      "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "raises"
      }
@@ -26000,7 +26000,7 @@
      "delta": -1.2
     },
     "confidence": "medium",
-    "verdict": "review",
+    "verdict": "high_concern",
     "reasons": [
      {
       "code": "assessment_missing",

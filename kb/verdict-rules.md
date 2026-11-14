@@ -22,12 +22,13 @@ The app flags places for a human to look at. It never says "illegal" and never n
 |---|---|---|---|
 | 1 | A wildfire is on record **and** the change is `fire`, `clearing` or `other` | **expected** | `fire_recorded` (lowers) |
 | 2 | Inside a protected area with an overlap of at least 10 % of the change (or an unknown overlap), not just a buffer zone | **high concern** | `protected_area` (raises) |
-| 3 | Required environmental assessment not completed (`official`), clearing or earthworks, `area_ha` ≥ 5 | **high concern** | `assessment_missing` (raises) |
+| 3 | Required environmental assessment not completed (`official`), clearing or earthworks, `area_ha` ≥ 5, **or at any size when the change lies inside the official record's own outline (`scope`)**: it is part of the same clearing | **high concern** | `assessment_missing` (raises) |
 | 4 | Zoning non-buildable (≥ 25 % of the polygon), clearing or earthworks, `area_ha` ≥ 5, no matching record. *Not for a change under 2 ha with low confidence (row 9).* | **high concern** | `zoning_non_buildable` (raises) |
 | 5 | Zoning non-buildable, anything else (same exception) | **needs review** | `zoning_non_buildable` (raises) |
-| 6 | Required assessment not completed, `area_ha` ≥ 2 | **needs review** | `assessment_missing` (raises) |
+| 6 | Required assessment not completed, `area_ha` ≥ 2 (any size inside the record's `scope`) | **needs review** | `assessment_missing` (raises) |
 | 7 | Any matching record | **expected** | `cadastre_building_found` / `planned_sector` / `solar_plant_listed` (lowers) |
-| 8 | `area_ha` ≥ 2, no matching record | **needs review** | `solar_application_pending` if a matching-size application is pending; else `no_record_found`, or `size_only` if the land registry could not be checked (outside Spain: "No public land records are connected for this country yet…") |
+| 7b | **No land records exist for the country** (`cadastre.not_applicable`, e.g. Finland), `clearing`, `area_ha` < 5, nothing above applies | **expected** | `small_no_records` (lowers): "too small to flag on its own", says no records are connected, not that it is fine |
+| 8 | `area_ha` ≥ 2, no matching record | **needs review** | `solar_application_pending` if a matching-size application is pending; else `no_record_found`, or `size_only` if the land registry could not be checked (outside Spain, for anything but a small clearing: "No public land records are connected for this country yet…") |
 | 9 | Otherwise (small, nothing flagged) | **expected** | `small_uncertain` if `confidence` is `low`: "too small and too uncertain to flag on its own" (not a finding that it is fine); else `small_area` (lowers) |
 | after | The result so far is "expected" (and no fire explains the change) and **one of**: only the buffer zone of a protected area is touched · a pending solar application of matching size and no other matching record · an official step is on record (any size, any confidence) | **needs review** | `protected_buffer` · `solar_application_pending` · the first official action (raises) |
 
@@ -77,7 +78,8 @@ python -m sarwatch.contract app/data                            # always check t
 - **Solar listing is weak evidence** (municipality-level, no location): only an authorised plant at least half as large as the change counts, and a plant that is still an application never makes a change "expected". Open question for the specialist (#7): is even an authorised listing enough to call a large change "expected"?
 - **Protected areas:** a buffer-zone-only overlap raises to "needs review"; an overlap below 10 % of the change only borders the area (neutral). `overlap_share` is computed from the service's outlines (simplified to 5 m) in metres.
 - **Official steps** (a stop notice, an investigation) lift an "expected" to at least "needs review", because a regulator has already acted on the site; they are reasons, not a judgement.
-- **Mixed zoning:** a quarter or more non-buildable counts as non-buildable (conservative: it brings a human look, not an accusation).
+- **Mixed zoning:** a quarter or more non-buildable counts as non-buildable (conservative: it brings a human look, not an accusation). A planned development area is judged on its own share (at least half developable) *before* that override, so a place that is 51 % developable and 49 % non-buildable has both reasons, and the texts give the share ("About 49 % of the place is zoned as non-buildable"); the label stays "needs review" (row 5).
+- **`no_record_found` says what it can know:** "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change." Older buildings may stand on the site: the registry only dates buildings by year.
 - Caveat: cadastre dates are year-only and can lag the real construction by months, so a recent change can show "no record" for a while. That is why this is "needs review", not an accusation.
 
 <sub>Written by Claude</sub>
