@@ -1,6 +1,6 @@
 # One change, several sensors: design
 
-How detections from optical alerts, Sentinel-1 and NISAR become **one change per place** with an honest date and confidence. Last updated 2026-11-14 (#60). **Status: proposal**, not implemented; `data-contract.md` and `contract.py` are unchanged. Thresholds are first guesses `(unverified)`, to be tuned on Muhos.
+How detections from optical alerts, Sentinel-1 and NISAR become **one change per place** with an honest date and confidence. Last updated 2026-11-14 (#60, #95). **Status: implemented** (`merge.py`, `export.py`, `contract.py`, `pipeline.py`), with one exception inside a known clearing outline (section 2). Thresholds are first guesses `(unverified)`, to be tuned on Muhos.
 
 ## Terms
 - **Source:** one sensor's record over a site (`OPERA DIST-ALERT`, `Sentinel-1 C-band`, `NISAR L-band`). **Kind:** `optical` or `radar`. The two kinds fail for unrelated reasons (clouds vs. snow, frost, wet soil); the two radars share theirs.
@@ -27,6 +27,8 @@ Changes = connected groups under this relation. The same place changing twice (c
 | `not_before` (new) | the `not_before` of that same source. Not tightened with another sensor's "still unchanged" pass: sensors differ in sensitivity, so one sensor's silence is not proof of no change |
 | `last_date` | latest `last_date` of any detecting source |
 | only late-start sources | `first_date` = earliest `not_after`, `not_before` = null |
+
+**Exception, `Site.primary_scope` (Muhos, #95):** inside a known clearing outline the optical alerts set the outlines (one part per month of first detection) and the `first_date`; the radar sources are attached with their share of the part and their own date (`pipeline._primary_parts`). The window opens earlier when a radar source shows the **whole** part (at least 75 % flagged and the part-wide echo down) already changed before the optical window opens: `not_before` is then that radar's last unchanged pass, `first_date` stays the optical date, and the sentence says the radar saw it earlier ("between 22 May and 31 Jul 2026"). Radar after the optical date reads "also saw its vegetation echo drop, by <date>", never "through clouds on <day>". A source that flagged at least 30 % of a part is `detected` (dates null if the part-wide echo cannot date it), a smaller share stays `not_seen` ("flagged only N %"); NISAR, if it began after the change, is `not_watching`: "began watching on 25 Jun 2026, after this had happened".
 
 Wording of "When": `not_before` set → **"between 2 and 20 May 2026"**. Null → **"on or before 20 May 2026"**. Only late starts → **"already under way on 25 Jun 2026, when NISAR began watching; the start date is not known"**. Never a single day unless `not_before` is the day before. A late start is never written as "happened on".
 

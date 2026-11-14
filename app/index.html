@@ -24,24 +24,27 @@
       <button id="tour-btn" type="button" class="primary"><span class="wide-only">Start tour</span><span class="narrow-only">Tour</span></button>
       <button id="explain-btn" type="button">How to read<span class="wide-only"> this</span></button>
     </div>
-    <div class="basemap" role="radiogroup" aria-label="Background map">
-      <label><input type="radio" name="basemap" value="satellite" checked> Photo</label>
-      <label><input type="radio" name="basemap" value="light"> Map</label>
-    </div>
   </header>
 
   <main>
     <div class="map-wrap">
       <div id="map" aria-label="Map of detected land changes"></div>
-      <div class="map-left">
-        <div class="legend" aria-label="Legend">
-          <ul id="legend"></ul>
+      <section id="viewbox" class="viewbox" aria-label="Picture on the map" hidden>
+        <div class="view-row">
+          <div class="switch" role="radiogroup" aria-label="Picture">
+            <button id="view-radar" type="button" role="radio" aria-checked="true">Radar</button>
+            <button id="view-photo" type="button" role="radio" aria-checked="false">Satellite</button>
+          </div>
+          <button id="compare-btn" type="button" class="compare" aria-pressed="false"><span class="wide-only">Compare before and after</span><span class="narrow-only">Compare</span></button>
+          <button id="caption-btn" type="button" class="help narrow-only" aria-expanded="false" aria-controls="view-caption" aria-label="What am I looking at?">?</button>
         </div>
-        <details id="layers" class="layer-box">
-          <summary>Radar pictures</summary>
-          <div id="layer-list"></div>
-        </details>
-        <p id="photo-label" class="photo-label" aria-live="polite"></p>
+        <p id="view-caption" class="view-caption"></p>
+        <p id="frame-label" class="frame-label" aria-live="polite"></p>
+      </section>
+      <div class="legend" id="legend-box" aria-label="Legend">
+        <button id="legend-btn" type="button" class="legend-btn narrow-only" aria-expanded="false">Legend</button>
+        <p class="legend-title">Marked changes</p>
+        <ul id="legend"></ul>
       </div>
       <section id="tour" class="tour" aria-label="Guided tour" aria-live="polite" hidden></section>
       <p id="map-error" class="map-error" hidden></p>
@@ -63,12 +66,14 @@
   <footer class="timeline" aria-label="Timeline">
     <div class="timeline-top">
       <output id="date-label" class="date-label"></output>
+      <span id="gap-note" class="gap-note" aria-live="polite"></span>
       <span id="total" class="total"></span>
     </div>
     <div class="timeline-row">
       <button id="play" class="play" type="button" aria-label="Play timeline">▶</button>
       <div class="track">
         <input id="slider" type="range" min="0" max="0" step="1" value="0" aria-label="Date">
+        <div id="ticks" class="ticks"></div>
         <div id="events" class="events"></div>
         <div class="range-ends"><span id="range-start"></span><span id="event-note" class="event-note"></span><span id="range-end"></span></div>
       </div>
@@ -82,9 +87,11 @@
     </div>
 
     <h3>What you're looking at</h3>
-    <p>Each coloured shape is a place where the ground changed between satellite passes. Drag the timeline to watch the
-      changes appear in the order they happened. In photo view the background is a photo from the slider's year, so you
-      can see the land itself.</p>
+    <p>Each coloured shape is a place where the ground changed between satellite passes. The big picture under the shapes
+      follows the timeline: <b>Radar</b> shows the radar picture of that date, <b>Satellite</b> the latest cloud-free
+      colour photo up to that date. Press play to watch the land change and the shapes appear in the order they were
+      seen. <b>Compare before and after</b> puts the first picture and the picture of the slider date side by side:
+      drag the line.</p>
 
     <h3>How radar sees</h3>
     <p>Radar sends its own signal and measures the echo, so it works at night and through clouds. Trees, bare soil and
@@ -103,8 +110,8 @@
     </ul>
 
     <h3>What a card shows</h3>
-    <p>What changed, when and how big; the label and the reasons behind it, with their sources; radar pictures from
-      before and after; and the signal over time.</p>
+    <p>What changed, when and how big; the label and the reasons behind it, with their sources; and the radar signal
+      over time.</p>
 
     <h3>Limits</h3>
     <ul class="limits">
@@ -116,8 +123,8 @@
 
     <h3>Data</h3>
     <p>NISAR radar (NASA and ISRO) and Sentinel-1 radar (through NASA's OPERA products); public records from the Catalan
-      and Spanish governments. Background photos: ICGC aerial photos (Catalonia) and Sentinel-2 cloudless by EOX
-      (elsewhere).</p>
+      and Spanish governments. Colour photos: Landsat and Sentinel-2 (NASA HLS). Background outside the picture: Esri World
+      Imagery.</p>
   </dialog>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>

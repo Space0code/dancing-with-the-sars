@@ -10,11 +10,15 @@ for vegetation volume (tree canopies). Differences are taken in dB: 3 dB = a fac
    to dB. dB values are never averaged: that would bias the mean.
 2. Per pixel, the median of the first passes is the baseline and the median of the last passes is
    the end state; their difference in dB is the change. A median ignores one odd pass (rain).
-3. A pixel has changed if any channel moved by at least `threshold_db`.
+3. A pixel has changed if any channel moved by at least `threshold_db`. For farmland, two opt-in guards against rain
+   and drought (ChangeParams.normalize, .hold): remove each pass's scene-wide shift, and require the change in
+   every late pass.
 4. Date it: the first pass from which the pixel stays at least DATING_FRACTION of the threshold
    away from its baseline, in the direction of the final change, for `persist` passes.
 5. Group changed pixels into regions (8-connected, after a 3x3 opening that removes specks) and
-   drop regions smaller than `min_area_ha`.
+   drop regions smaller than `min_area_ha`. Optionally (ChangeParams.split) cut each region into parts by when its
+   pixels first changed (one part per pass or per month), parts below `split_min_ha` joined to a neighbouring part,
+   so a clearing that grew over months becomes one dated part per step.
 6. Name each region by rule (constants below) and attach the evidence: area, dates, before and
    after dB, a confidence grade and the region-mean time series.
 
@@ -22,6 +26,8 @@ Only numpy and scipy, no file or map handling: the caller supplies co-registered
 """
 from __future__ import annotations
 
+import heapq
+import math
 from dataclasses import dataclass
 from datetime import date
 
@@ -48,7 +54,8 @@ EARTHWORKS_JITTER_DB = 2.0  # or the median pass-to-pass step of the region mean
                             # >= 2 dB: the surface keeps changing. A one-off step change settles to ~0 dB steps
 JITTER_MIN_STEPS = 3        # the jitter rule needs at least this many passes after the change, else it is off
 # 2. clearing: cross-pol region mean falls by >= threshold_db: the canopy that rotated the echo is gone
-# 3. structure: co-pol rises by >= threshold_db (and no clearing): new walls or metal act as corner reflectors
+# 3. structure: co-pol rises by >= threshold_db (or ChangeParams.structure_db if set) and no clearing: new walls or
+#    metal act as corner reflectors. Below structure_db a co-pol rise is "other" (tilled or harvested fields, slash)
 # 4. other: anything else that still passed the pixel threshold
 # Rules 2-3 use threshold_db itself, so a lower threshold for C-band (Sentinel-1) still names clearings.
 
@@ -67,6 +74,16 @@ class ChangeParams:
     threshold_db: float = 3.0  # minimum |late - early| to call a change
     persist: int = 2           # passes the deviation must hold to date the change
     min_area_ha: float = 0.5   # drop smaller regions
+    # Seasonal guards for farmland, both off by default. Rain and dry spells move a whole scene by 1-3 dB at once.
+    normalize: bool = False    # subtract each pass's window-wide median dB (per polarization, relative to the
+                               # baseline passes) before comparing: removes a scene-wide wet / dry or calibration shift
+    hold: bool = False         # a pixel counts only if every one of the last n_late passes is beyond threshold_db
+                               # in the same direction, not just their median: a wet spell over 2 of 3 passes is out
+    # Growth steps, off by default: cut each region into parts by when its pixels first changed.
+    split: str | None = None   # None | "pass" | "month": one part per first-change pass, or per calendar month
+    split_min_ha: float = 2.0  # a smaller part joins the neighbouring part it shares the longest edge with
+    structure_db: float | None = None  # co-pol rise needed to call a region "structure" (None = threshold_db);
+                                       # a weaker rise is "other". Raise it where no building is expected
 
 
 @dataclass
@@ -119,6 +136,13 @@ def _smooth_db(arr, valid: np.ndarray, size: int) -> np.ndarray:
     return out
 
 
+def _pass_offsets(arr, valid: np.ndarray, n_early: int) -> np.ndarray:
+    """Per pass: median dB over the window's usable pixels, minus the median of that over the baseline passes."""
+    med = np.array([np.median(10 * np.log10(img[_usable(img) & valid])) if (_usable(img) & valid).any() else 0.0
+                    for img in (np.asarray(a, dtype=np.float64) for a in arr)])
+    return med - np.median(med[:n_early])
+
+
 def _date_pixels(db: np.ndarray, early: np.ndarray, sign: np.ndarray, level: float, persist: int,
                  fallback: int) -> np.ndarray:
     """First pass t >= 1 from which each changed pixel stays beyond `level` for `persist` passes.
@@ -145,7 +169,7 @@ def _region_series(arr, window: tuple, member: np.ndarray) -> np.ndarray:
         return np.where(count > 0, 10 * np.log10(mean), np.nan)
 
 
-def _classify(delta: dict, mixed: bool, jitter: float, thr: float) -> tuple:
+def _classify(delta: dict, mixed: bool, jitter: float, thr: float, structure_db: float | None = None) -> tuple:
     """Region type and the polarization that carries the evidence. delta: {pol: region-mean change in dB}."""
     strongest = max(delta, key=lambda p: abs(delta[p]))
     cross = min((p for p in delta if p.upper() in CROSSPOL), key=delta.get, default=None)
@@ -154,9 +178,87 @@ def _classify(delta: dict, mixed: bool, jitter: float, thr: float) -> tuple:
         return "earthworks", strongest
     if cross is not None and delta[cross] <= -thr:
         return "clearing", cross
-    if co is not None and delta[co] >= thr:
+    if co is not None and delta[co] >= (thr if structure_db is None else structure_db):
         return "structure", co
     return "other", strongest
+
+
+def _date_bins(dates: list, how: str) -> np.ndarray:
+    """Bin of each pass for ChangeParams.split: its index ("pass") or year * 12 + month ("month")."""
+    if how == "pass":
+        return np.arange(len(dates))
+    if how == "month":
+        return np.array([d.year * 12 + d.month - 1 for d in dates])
+    raise ValueError(f"split must be None, 'pass' or 'month', got {how!r}")
+
+
+def _merge_small_parts(parts: np.ndarray, n: int, min_px: int) -> np.ndarray:
+    """Join every part under min_px pixels to the neighbouring part it shares the longest edge with, smallest
+    first (8-neighbourhood), until no part is smaller or a part has no neighbour left. Returns old -> new id."""
+    sizes = np.bincount(parts.ravel(), minlength=n + 1).astype(np.int64)
+    sizes[0] = 0
+    adj = [dict() for _ in range(n + 1)]
+    for a, b in ((parts[:, :-1], parts[:, 1:]), (parts[:-1, :], parts[1:, :]),
+                 (parts[:-1, :-1], parts[1:, 1:]), (parts[:-1, 1:], parts[1:, :-1])):
+        edge = (a > 0) & (b > 0) & (a != b)
+        if not edge.any():
+            continue
+        pairs, counts = np.unique(np.stack([np.minimum(a[edge], b[edge]), np.maximum(a[edge], b[edge])]),
+                                  axis=1, return_counts=True)
+        for (u, v), c in zip(pairs.T.tolist(), counts.tolist()):
+            adj[u][v] = adj[u].get(v, 0) + c
+            adj[v][u] = adj[v].get(u, 0) + c
+    parent = np.arange(n + 1)
+    heap = [(int(sizes[i]), i) for i in range(1, n + 1) if sizes[i]]
+    heapq.heapify(heap)
+    while heap:
+        size, i = heapq.heappop(heap)
+        if parent[i] != i or size != sizes[i]:
+            continue  # merged away, or an outdated size
+        if size >= min_px:
+            break
+        if not adj[i]:
+            continue
+        j = max(adj[i], key=lambda k: (adj[i][k], sizes[k], -k))
+        parent[i], sizes[j], sizes[i] = j, sizes[j] + sizes[i], 0
+        for k, c in adj[i].items():
+            del adj[k][i]
+            if k != j:
+                adj[j][k] = adj[j].get(k, 0) + c
+                adj[k][j] = adj[k].get(j, 0) + c
+        adj[i] = {}
+        heapq.heappush(heap, (int(sizes[j]), j))
+    for i in range(n + 1):  # resolve chains i -> j -> ...
+        root = i
+        while parent[root] != root:
+            root = parent[root]
+        parent[i] = root
+    return parent
+
+
+def _split_by_date(labels: np.ndarray, first: np.ndarray, bins: np.ndarray, min_px: int) -> tuple:
+    """Cut each region into 8-connected parts of one date bin; small parts joined to a neighbour.
+    Returns (new labels, {new label: bin of the part}); labels are not yet sorted by area."""
+    out = np.zeros_like(labels)
+    part_bin, next_label = {}, 1
+    for label, window in enumerate(ndimage.find_objects(labels), start=1):
+        if window is None:
+            continue
+        member = labels[window] == label
+        pix_bin = np.where(member, bins[np.maximum(first[window], 0)], -1)
+        parts, n, own_bin = np.zeros(member.shape, dtype=np.int32), 0, {}
+        for value in np.unique(pix_bin[member]):
+            comp, k = ndimage.label(pix_bin == value, structure=SQUARE3)
+            parts[comp > 0] = comp[comp > 0] + n
+            own_bin.update({n + j: int(value) for j in range(1, k + 1)})
+            n += k
+        merged = _merge_small_parts(parts, n, min_px)[parts]
+        view = out[window]
+        for r in np.unique(merged[member]):
+            view[member & (merged == r)] = next_label
+            part_bin[next_label] = own_bin[int(r)]
+            next_label += 1
+    return out, part_bin
 
 
 def detect_changes(stack: dict, dates: list, pixel_size_m: tuple, params: ChangeParams = ChangeParams(),
@@ -175,15 +277,21 @@ def detect_changes(stack: dict, dates: list, pixel_size_m: tuple, params: Change
     n_late = max(1, min(params.n_late, n_t - n_early))  # the two windows never overlap
     thr = params.threshold_db
 
+    offsets = {p: _pass_offsets(a, valid, n_early) if params.normalize else np.zeros(n_t) for p, a in stack.items()}
     delta_db = {}
     first = np.full((ny, nx), -1, dtype=np.int16)
     for pol, arr in stack.items():
         db = _smooth_db(arr, valid, max(1, params.boxcar))
+        db -= offsets[pol].astype(np.float32)[:, None, None]
         early = _nanmedian(db[:n_early])
         delta = _nanmedian(db[n_t - n_late:]) - early
         delta_db[pol] = delta
         with np.errstate(invalid="ignore"):
-            hit = np.abs(delta) >= thr  # NaN compares False, so unusable pixels never count as changed
+            if params.hold:  # the late pass closest to the baseline must still be beyond the threshold
+                late = db[n_t - n_late:] - early
+                hit = (np.fmin.reduce(late, axis=0) >= thr) | (np.fmax.reduce(late, axis=0) <= -thr)
+            else:
+                hit = np.abs(delta) >= thr  # NaN compares False, so unusable pixels never count as changed
         idx = _date_pixels(db[:, hit], early[hit], np.sign(delta[hit]), thr * DATING_FRACTION,
                            max(1, params.persist), n_t - n_late)
         seen = first[hit]
@@ -199,15 +307,29 @@ def detect_changes(stack: dict, dates: list, pixel_size_m: tuple, params: Change
     remap[keep] = np.arange(1, len(keep) + 1)
     labels = remap[components]
     first[labels == 0] = -1
+    part_bin, bins = None, None
+    if params.split:
+        bins = _date_bins(dates, params.split)
+        split, by_part = _split_by_date(labels, first, bins, max(1, math.ceil(params.split_min_ha / px_ha - 1e-9)))
+        sizes = np.bincount(split.ravel(), minlength=len(by_part) + 1)
+        sizes[0] = 0
+        order = [int(i) for i in np.argsort(-sizes, kind="stable") if sizes[i] > 0]  # largest part first, as above
+        remap = np.zeros(len(by_part) + 1, dtype=np.int32)
+        remap[order] = np.arange(1, len(order) + 1)
+        labels = remap[split]
+        part_bin = {int(remap[i]): by_part[i] for i in order}
 
     regions = []
     for label, window in enumerate(ndimage.find_objects(labels), start=1):
         member = labels[window] == label
         n_px = int(member.sum())
-        lo, hi = (int(i) for i in np.percentile(first[window][member], DATE_PERCENTILES, method="nearest"))
+        idx = first[window][member]
+        if part_bin is not None:  # date a part by its own pixels, not by the slivers it took in
+            idx = idx[bins[idx] == part_bin[label]]
+        lo, hi = (int(i) for i in np.percentile(idx, DATE_PERCENTILES, method="nearest"))
         series, level, mixed, jitter = {"dates": list(dates)}, {}, False, 0.0
         for pol, arr in stack.items():
-            mean_db = _region_series(arr, window, member)
+            mean_db = _region_series(arr, window, member) - offsets[pol]
             series[f"{pol}_dB"] = mean_db.tolist()
             before, after = float(_nanmedian(mean_db[:n_early])), float(_nanmedian(mean_db[n_t - n_late:]))
             if np.isfinite(after - before):
@@ -219,7 +341,7 @@ def detect_changes(stack: dict, dates: list, pixel_size_m: tuple, params: Change
             d = delta_db[pol][window][member]
             up, down = np.count_nonzero(d >= thr), np.count_nonzero(d <= -thr)
             mixed |= min(up, down) >= MIXED_SIGN_FRACTION * n_px
-        kind, pol = _classify({p: a - b for p, (b, a) in level.items()}, mixed, jitter, thr)
+        kind, pol = _classify({p: a - b for p, (b, a) in level.items()}, mixed, jitter, thr, params.structure_db)
         before, after = level[pol]
         area_ha = n_px * px_ha
         points = int(abs(after - before) - thr >= CONF_MARGIN_DB) + int(area_ha >= CONF_AREA_FACTOR * params.min_area_ha)

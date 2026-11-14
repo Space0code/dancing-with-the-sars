@@ -7,14 +7,23 @@ cd app
 python -m http.server        # then open http://localhost:8000  (add #site=<id> to open a site directly)
 ```
 
-Data comes from `app/data/` (format: `kb/data-contract.md`). Sites with `ready: true` in `data/sites.json` show up in the switcher.
-Layout: `index.html` · `css/style.css` · `js/` (`main.js` wires `map.js`, `timeline.js`, `panel.js`, `overlays.js`, `inbox.js` (the "Changes" tab: sort, filters, list); the card uses
-`chart.js` (SVG signal chart) and `swipe.js` (before/after); wording and colors in `format.js`).
-Missing pictures, series files or radar-picture layers show a message instead of a broken box.
+Data comes from `app/data/` (format: `kb/data-contract.md`). Sites with `ready: true` and no `"hidden": true` in `data/sites.json` show up in the site menu.
+Layout: `index.html` · `css/style.css` · `js/` (`main.js` wires `map.js`, `picture.js` (the big picture), `timeline.js`, `panel.js`, `inbox.js` (the "Changes" tab: sort, filters, list); the card uses
+`chart.js` (SVG signal chart); wording and colors in `format.js`).
+Missing series files show a message instead of a broken box.
 
 - **Name and pitch:** `APP` in `js/format.js` (one place). Explainer text: the `<dialog>` in `index.html`.
-- **Year photos** (`js/photos.js`): in photo view the background follows the slider year. ICGC aerial photos inside
-  Catalonia (2016–2025, 2026 provisional), EOX Sentinel-2 cloudless elsewhere (2017–2025); other years fall back to Esri.
+- **Timeline** (`js/timeline.js`): the slider steps through the site's `snapshots` (one stop per image date; without them: the change dates plus both ends of `time_range`). A red bar crosses the track at every stop where changes first show (click = jump there); story events are grey flags. Dates from the tour or a link snap to the stop on or before them.
+- **The big picture** (`js/picture.js`, data `frames.json`): one switch, **Radar | Satellite**, with the set's `caption` under it.
+  The map shows the latest frame of that set at or before the slider date (and says its date); play always switches to Radar.
+  Frames are drawn on one canvas (a MapLibre `canvas` source over the four `coordinates`), neighbours preloaded.
+  **Compare before and after** (`js/swipe.js`): a full-height line on the map; left = the set's first frame, right = the
+  frame of the slider date. A site without `frames.json` keeps the Esri background and the Radar button is disabled.
+- **New changes**: when the slider moves forward, outlines whose `first_date` was just passed glow briefly and the running
+  total flashes.
+- **One growing outline** (optional `stages.geojson`, `map.js`): changes that are members of a stage group have no outline of
+  their own; the map draws the latest stage at or before the slider date as one light fill with one bold outline (verdict
+  colour, white casing). The member parts stay clickable; hover or select shows a thin outline of just that part.
 - **Guided tour** (`tour.json`, run by `js/tour.js`): edit the steps without touching code; the field list is in its
   `about`. Steps whose site isn't ready are skipped; steps on the fake site run only while no real site is ready.
 
