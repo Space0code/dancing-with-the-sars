@@ -273,7 +273,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "4 new building(s) are registered here since the change.",
+      "text": "4 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.466331&longitud=1.877561&zoom=18",
       "effect": "lowers"
@@ -286,7 +286,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 11 dB between 5 Aug and 4 Sep 2017, the pattern of new walls, roofs or metal structures. 4 new building(s) are registered here since the change. The land is inside a planned development area.",
+    "explain": "Radar saw the surface echo rise by 11 dB between 5 Aug and 4 Sep 2017, the pattern of new walls, roofs or metal structures. 4 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/agroparc-0002_before.png",
      "after": "evidence/agroparc-0002_after.png",
@@ -447,7 +447,7 @@
     "reasons": [
      {
       "code": "solar_application_pending",
-      "text": "An application for a solar plant here is being processed; it is not authorised yet.",
+      "text": "An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet.",
       "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
       "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
       "effect": "raises"
@@ -467,7 +467,7 @@
       "effect": "raises"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 8 dB between 4 Sep 2017 and 13 Jun 2018, the pattern of new walls, roofs or metal structures. An application for a solar plant here is being processed; it is not authorised yet. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
+    "explain": "Radar saw the surface echo rise by 8 dB between 4 Sep 2017 and 13 Jun 2018, the pattern of new walls, roofs or metal structures. An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
     "evidence": {
      "before": "evidence/agroparc-0004_before.png",
      "after": "evidence/agroparc-0004_after.png",
@@ -832,7 +832,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "1 new building(s) are registered here since the change.",
+      "text": "1 building(s) registered here date from 2018 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.469049&longitud=1.880897&zoom=18",
       "effect": "lowers"
@@ -845,7 +845,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 13 dB between 24 Aug and 29 Sep 2018, the pattern of new walls, roofs or metal structures. 1 new building(s) are registered here since the change. About 86 % of the place is inside a planned development area.",
+    "explain": "Radar saw the surface echo rise by 13 dB between 24 Aug and 29 Sep 2018, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2018 or later, the year the change was first seen (the registry gives construction years only). About 86 % of the place is inside a planned development area.",
     "evidence": {
      "before": "evidence/agroparc-0008_before.png",
      "after": "evidence/agroparc-0008_after.png",
@@ -1076,7 +1076,7 @@
      },
      {
       "code": "cadastre_building_found",
-      "text": "4 new building(s) are registered here since the change.",
+      "text": "4 building(s) registered here date from 2019 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.425141&longitud=1.803960&zoom=18",
       "effect": "lowers"
@@ -1314,7 +1314,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "5 new building(s) are registered here since the change.",
+      "text": "5 building(s) registered here date from 2021 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.480582&longitud=1.909611&zoom=18",
       "effect": "lowers"
@@ -1327,7 +1327,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 10 dB between 18 Sep 2020 and 15 Jun 2021, the pattern of new walls, roofs or metal structures. 5 new building(s) are registered here since the change. The land is inside a planned development area.",
+    "explain": "Radar saw the surface echo rise by 10 dB between 18 Sep 2020 and 15 Jun 2021, the pattern of new walls, roofs or metal structures. 5 building(s) registered here date from 2021 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/agroparc-0013_before.png",
      "after": "evidence/agroparc-0013_after.png",
@@ -1471,7 +1471,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "6 new building(s) are registered here since the change.",
+      "text": "6 building(s) registered here date from 2021 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.487193&longitud=1.855582&zoom=18",
       "effect": "lowers"
@@ -1491,7 +1491,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 6 dB between 14 Aug and 13 Sep 2021, the pattern of new walls, roofs or metal structures. 6 new building(s) are registered here since the change. The land is inside a planned development area.",
+    "explain": "Radar saw the surface echo rise by 6 dB between 14 Aug and 13 Sep 2021, the pattern of new walls, roofs or metal structures. 6 building(s) registered here date from 2021 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/agroparc-0015_before.png",
      "after": "evidence/agroparc-0015_after.png",
@@ -1683,7 +1683,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "1 new building(s) are registered here since the change.",
+      "text": "1 building(s) registered here date from 2022 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.480870&longitud=1.899986&zoom=18",
       "effect": "lowers"
@@ -1703,7 +1703,7 @@
       "effect": "neutral"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 13 dB between 16 Jul and 21 Aug 2022, the pattern of new walls, roofs or metal structures. 1 new building(s) are registered here since the change. The land is inside a planned development area.",
+    "explain": "Radar saw the surface echo rise by 13 dB between 16 Jul and 21 Aug 2022, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2022 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/agroparc-0017_before.png",
      "after": "evidence/agroparc-0017_after.png",
@@ -1817,7 +1817,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "1 new building(s) are registered here since the change.",
+      "text": "1 building(s) registered here date from 2022 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.478477&longitud=1.806923&zoom=18",
       "effect": "lowers"
@@ -1830,7 +1830,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 16 dB between 21 Aug and 26 Sep 2022, the pattern of new walls, roofs or metal structures. 1 new building(s) are registered here since the change. The land is inside a planned development area.",
+    "explain": "Radar saw the surface echo rise by 16 dB between 21 Aug and 26 Sep 2022, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2022 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/agroparc-0018_before.png",
      "after": "evidence/agroparc-0018_after.png",
@@ -1966,7 +1966,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "1 new building(s) are registered here since the change.",
+      "text": "1 building(s) registered here date from 2023 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.482031&longitud=1.903056&zoom=18",
       "effect": "lowers"
@@ -1986,7 +1986,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 6 dB between 16 Aug and 21 Sep 2023, the pattern of new walls, roofs or metal structures. 1 new building(s) are registered here since the change. The land is inside a planned development area.",
+    "explain": "Radar saw the surface echo rise by 6 dB between 16 Aug and 21 Sep 2023, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2023 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/agroparc-0020_before.png",
      "after": "evidence/agroparc-0020_after.png",
@@ -2122,7 +2122,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "1 new building(s) are registered here since the change.",
+      "text": "1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.478773&longitud=1.901494&zoom=18",
       "effect": "lowers"
@@ -2142,7 +2142,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 8 dB between 10 Aug and 15 Sep 2024, the pattern of new walls, roofs or metal structures. 1 new building(s) are registered here since the change. The land is inside a planned development area.",
+    "explain": "Radar saw the surface echo rise by 8 dB between 10 Aug and 15 Sep 2024, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/agroparc-0022_before.png",
      "after": "evidence/agroparc-0022_after.png",
@@ -3487,7 +3487,7 @@
      },
      {
       "code": "solar_application_pending",
-      "text": "An application for a solar plant here is being processed; it is not authorised yet.",
+      "text": "An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet.",
       "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
       "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
       "effect": "raises"
@@ -3500,7 +3500,7 @@
       "effect": "raises"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 5 dB between 17 Jul and 10 Aug 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. An application for a solar plant here is being processed; it is not authorised yet.",
+    "explain": "Radar saw the surface echo rise by 5 dB between 17 Jul and 10 Aug 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet.",
     "evidence": {
      "before": "evidence/agroparc-0035_before.png",
      "after": "evidence/agroparc-0035_after.png",
@@ -3581,7 +3581,7 @@
      },
      {
       "code": "solar_application_pending",
-      "text": "An application for a solar plant here is being processed; it is not authorised yet.",
+      "text": "An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet.",
       "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
       "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
       "effect": "raises"
@@ -3601,7 +3601,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 6 dB between 17 Jul and 10 Aug 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. An application for a solar plant here is being processed; it is not authorised yet.",
+    "explain": "Radar saw the surface echo rise by 6 dB between 17 Jul and 10 Aug 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet.",
     "evidence": {
      "before": "evidence/agroparc-0036_before.png",
      "after": "evidence/agroparc-0036_after.png",

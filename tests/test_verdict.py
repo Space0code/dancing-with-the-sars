@@ -526,6 +526,20 @@ def test_a_half_developable_half_non_buildable_place_is_both_and_says_so():
     assert judge(change(area=1.2), plain)[1][0]["text"] == "The land is zoned as non-buildable."  # nearly all: plain
 
 
+def test_building_and_solar_reasons_do_not_overclaim():
+    """Reviewer: the registry dates buildings by year (so "since the change" can include older ones), and the solar
+    list is by municipality only (so "here" is too exact)."""
+    reasons = judge(change(area=9, ctype="structure"), records(zone="urban", built=4))[1]
+    text = next(r["text"] for r in reasons if r["code"] == "cadastre_building_found")
+    assert text.startswith("4 building(s) registered here date from 2026 or later") and "construction years only" in text
+    pending = judge(change(area=12), records(zone="urban", plants=[plant(status="En tramitació")]))[1]
+    solar = next(r["text"] for r in pending if r["code"] == "solar_application_pending")
+    assert "in this municipality" in solar and "no exact location" in solar and "here" not in solar.split("in this")[0][-6:]
+    no_date = {k: v for k, v in change(area=9, ctype="structure").items() if k != "first_date"}
+    assert "since the change" in next(
+        r["text"] for r in judge(no_date, records(zone="urban", built=1))[1] if r["code"] == "cadastre_building_found")
+
+
 def test_no_record_reason_does_not_overclaim_about_the_registry():
     reasons = judge(change(area=9), records(zone="urban"))[1]
     text = next(r["text"] for r in reasons if r["code"] == "no_record_found")

@@ -189,6 +189,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     actions = [a for a in (off.get("actions") or []) if isinstance(a, dict)] if _ok(off) else []
     action_keys = [f"{_action_code(a.get('kind'))}:{i}" for i, a in enumerate(actions)]
     small_uncertain = area < MID_HA and change.get("confidence") == "low"
+    change_year = str(change.get("first_date") or "")[:4]
+    change_year = change_year if change_year.isdigit() else ""
 
     # ---- the verdict, and the code of the reason that decides it
     if fire_explains:
@@ -260,7 +262,10 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
                          "is inside a planned development area."), "lowers", zon)
     if built > 0:
         facts["cadastre_building_found"] = _reason(
-            "cadastre_building_found", f"{built} new building(s) are registered here since the change.", "lowers", cad)
+            "cadastre_building_found",
+            f"{built} building(s) registered here date from {change_year} or later, the year the change was first seen "
+            "(the registry gives construction years only)." if change_year
+            else f"{built} building(s) are registered here since the change.", "lowers", cad)
     if solar_good:
         ha = _plant_ha(solar_good[0])
         facts["solar_plant_listed"] = _reason(
@@ -270,7 +275,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if solar_pending and not matching:
         facts["solar_application_pending"] = _reason(
             "solar_application_pending",
-            "An application for a solar plant here is being processed; it is not authorised yet.", "raises", sol)
+            "An application for a solar plant in this municipality (the list gives no exact location) is being "
+            "processed; it is not authorised yet.", "raises", sol)
     if solar_other and not solar_good:
         facts["solar_plant_other"] = _reason(
             "solar_plant_other",
