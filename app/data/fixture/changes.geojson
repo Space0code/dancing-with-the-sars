@@ -259,8 +259,8 @@
     "id": "fixture-0004",
     "site": "fixture",
     "type": "clearing",
-    "first_date": "2026-06-23",
-    "last_date": "2026-06-23",
+    "first_date": "2026-06-25",
+    "last_date": "2026-06-25",
     "area_ha": 1.2,
     "sensor": "NISAR L-band",
     "signal": {
@@ -294,7 +294,46 @@
      "series": "series/fixture-0004.json",
      "before_date": "2024-01-15",
      "after_date": "2026-11-02"
-    }
+    },
+    "not_before": null,
+    "sources": [
+     {
+      "sensor": "OPERA DIST-ALERT",
+      "kind": "optical",
+      "role": "not_seen",
+      "first_date": null,
+      "last_date": null,
+      "not_before": null,
+      "confidence": null,
+      "area_ha": null,
+      "share": null,
+      "note": "The optical alerts did not flag it."
+     },
+     {
+      "sensor": "Sentinel-1 C-band",
+      "kind": "radar",
+      "role": "not_seen",
+      "first_date": null,
+      "last_date": null,
+      "not_before": null,
+      "confidence": null,
+      "area_ha": null,
+      "share": null,
+      "note": "Sentinel-1 radar did not flag it."
+     },
+     {
+      "sensor": "NISAR L-band",
+      "kind": "radar",
+      "role": "late_start",
+      "first_date": "2026-06-25",
+      "last_date": "2026-06-25",
+      "not_before": null,
+      "confidence": "low",
+      "area_ha": 1.2,
+      "share": 1.0,
+      "note": "NISAR began watching on 25 Jun 2026 and shows the change already under way."
+     }
+    ]
    }
   },
   {
@@ -341,9 +380,9 @@
     "first_date": "2025-07-15",
     "last_date": "2025-07-15",
     "area_ha": 61.7,
-    "sensor": "Sentinel-1 C-band",
+    "sensor": "OPERA DIST-ALERT",
     "signal": {
-     "metric": "VH_dB",
+     "metric": "HV_dB",
      "before": -14.0,
      "after": -18.0,
      "delta": -4.0
@@ -366,7 +405,46 @@
      "series": "series/fixture-0005.json",
      "before_date": "2024-01-15",
      "after_date": "2026-11-02"
-    }
+    },
+    "not_before": "2025-07-05",
+    "sources": [
+     {
+      "sensor": "OPERA DIST-ALERT",
+      "kind": "optical",
+      "role": "detected",
+      "first_date": "2025-07-15",
+      "last_date": "2025-07-15",
+      "not_before": "2025-07-05",
+      "confidence": "medium",
+      "area_ha": 61.7,
+      "share": 1.0,
+      "note": "An optical alert found vegetation loss here between 5 and 15 July 2025."
+     },
+     {
+      "sensor": "Sentinel-1 C-band",
+      "kind": "radar",
+      "role": "detected",
+      "first_date": "2025-07-21",
+      "last_date": "2025-07-21",
+      "not_before": null,
+      "confidence": "medium",
+      "area_ha": 55.5,
+      "share": 0.9,
+      "note": "Sentinel-1 radar saw the same change, through clouds, on 21 July."
+     },
+     {
+      "sensor": "NISAR L-band",
+      "kind": "radar",
+      "role": "late_start",
+      "first_date": "2026-06-25",
+      "last_date": "2026-06-25",
+      "not_before": null,
+      "confidence": "medium",
+      "area_ha": 58.6,
+      "share": 0.95,
+      "note": "NISAR began watching on 25 Jun 2026 and shows the change already under way."
+     }
+    ]
    }
   },
   {
@@ -512,7 +590,46 @@
      "series": "series/fixture-0007.json",
      "before_date": "2024-01-15",
      "after_date": "2026-11-02"
-    }
+    },
+    "not_before": "2024-04-15",
+    "sources": [
+     {
+      "sensor": "OPERA DIST-ALERT",
+      "kind": "optical",
+      "role": "not_seen",
+      "first_date": null,
+      "last_date": null,
+      "not_before": null,
+      "confidence": null,
+      "area_ha": null,
+      "share": null,
+      "note": "The optical alerts did not flag it. They only see vegetation loss."
+     },
+     {
+      "sensor": "Sentinel-1 C-band",
+      "kind": "radar",
+      "role": "detected",
+      "first_date": "2024-05-15",
+      "last_date": "2024-08-15",
+      "not_before": "2024-04-15",
+      "confidence": "medium",
+      "area_ha": 2.1,
+      "share": 1.0,
+      "note": "Sentinel-1 radar saw a new structure here between 15 Apr and 15 May 2024."
+     },
+     {
+      "sensor": "NISAR L-band",
+      "kind": "radar",
+      "role": "not_watching",
+      "first_date": null,
+      "last_date": null,
+      "not_before": null,
+      "confidence": null,
+      "area_ha": null,
+      "share": null,
+      "note": "NISAR was not flying yet."
+     }
+    ]
    }
   }
  ]

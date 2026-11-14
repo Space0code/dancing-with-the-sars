@@ -1,0 +1,104 @@
+{
+ "layers": [
+  {
+   "id": "nisar_l_band_before",
+   "title": "NISAR radar, before",
+   "date": "2026-07-07",
+   "url": "layers/nisar_l_band_before.png",
+   "coordinates": [
+    [
+     26.12817,
+     64.917538
+    ],
+    [
+     26.214953,
+     64.809297
+    ],
+    [
+     25.962108,
+     64.772357
+    ],
+    [
+     25.874335,
+     64.880418
+    ]
+   ],
+   "caption": "3 passes, 25 Jun to 19 Jul 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "nisar_l_band_after",
+   "title": "NISAR radar, after",
+   "date": "2026-10-11",
+   "url": "layers/nisar_l_band_after.png",
+   "coordinates": [
+    [
+     26.12817,
+     64.917538
+    ],
+    [
+     26.214953,
+     64.809297
+    ],
+    [
+     25.962108,
+     64.772357
+    ],
+    [
+     25.874335,
+     64.880418
+    ]
+   ],
+   "caption": "3 passes, 29 Sep to 23 Oct 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "sentinel_1_c_band_before",
+   "title": "Sentinel-1 radar, before",
+   "date": "2025-06-09",
+   "url": "layers/sentinel_1_c_band_before.png",
+   "coordinates": [
+    [
+     25.936395,
+     64.890191
+    ],
+    [
+     26.15052,
+     64.891567
+    ],
+    [
+     26.15341,
+     64.799783
+    ],
+    [
+     25.940013,
+     64.798414
+    ]
+   ],
+   "caption": "3 passes, 3 to 15 Jun 2025. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "sentinel_1_c_band_after",
+   "title": "Sentinel-1 radar, after",
+   "date": "2026-10-15",
+   "url": "layers/sentinel_1_c_band_after.png",
+   "coordinates": [
+    [
+     25.936395,
+     64.890191
+    ],
+    [
+     26.15052,
+     64.891567
+    ],
+    [
+     26.15341,
+     64.799783
+    ],
+    [
+     25.940013,
+     64.798414
+    ]
+   ],
+   "caption": "3 passes, 9 to 21 Oct 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  }
+ ]
+}

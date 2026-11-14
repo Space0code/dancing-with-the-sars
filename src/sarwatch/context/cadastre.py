@@ -82,6 +82,14 @@ def _tile(x0: float, y0: float, x1: float, y1: float) -> list[dict]:
     return feats
 
 
+def grid_tiles(minx: float, miny: float, maxx: float, maxy: float) -> list[tuple[float, float, float, float]]:
+    """Tiles of a fixed TILE_M grid (multiples of TILE_M in EPSG:25831) covering the box. Unlike tiles started at the
+    box's corner, these stay the same when a site box grows or moves a little, so the cache keeps working."""
+    i0, i1 = math.floor(minx / TILE_M), math.ceil(maxx / TILE_M)
+    j0, j1 = math.floor(miny / TILE_M), math.ceil(maxy / TILE_M)
+    return [(i * TILE_M, j * TILE_M, (i + 1) * TILE_M, (j + 1) * TILE_M) for i in range(i0, i1) for j in range(j0, j1)]
+
+
 @safe(SOURCE, VIEWER)
 def lookup(geometry: dict, since: str | None = None, **options) -> dict:
     """``buildings`` (count touching the polygon), ``newest_date`` (YYYY-MM-DD, year precision) and, with

@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import math
 import sys
 from pathlib import Path
 
@@ -157,15 +156,11 @@ def zoning_layer(site_box, tol: float):
 
 
 def buildings_layer(site_box, tol: float):
-    minx, miny, maxx, maxy = site_box.bounds
-    step = cadastre.TILE_M
     found = {}
-    for i in range(math.ceil((maxx - minx) / step)):
-        for j in range(math.ceil((maxy - miny) / step)):
-            t = box(minx + i * step, miny + j * step, min(maxx, minx + (i + 1) * step), min(maxy, miny + (j + 1) * step))
-            if t.intersects(site_box):
-                for b in cadastre._tile(*t.bounds):
-                    found.setdefault(b["id"], b)
+    for t in cadastre.grid_tiles(*site_box.bounds):
+        if box(*t).intersects(site_box):
+            for b in cadastre._tile(*t):
+                found.setdefault(b["id"], b)
     groups, years = {}, []  # one feature per (year, use): thousands of footprints stay under 1 MB
     for b in found.values():
         g = _polys(unary_union(b["parts"]).buffer(0).intersection(site_box)) if b["parts"] else None

@@ -238,3 +238,34 @@ def test_erratic_change_after_a_long_quiet_baseline_is_earthworks():
     region = result.regions[0]
     assert region.type == "earthworks"
     assert 18 <= dates.index(region.first_date) <= 20
+
+
+def test_normalize_and_hold_drop_a_wet_spell_but_keep_a_lasting_change():
+    """Rain over 2 of the 3 late passes: the whole scene +2 dB, a bare field +5 dB. A real change: +6 dB co-pol from
+    CHANGE_PASS on. Only the lasting change may survive the seasonal guards."""
+    stack = scene()
+    field = (slice(80, 110), slice(20, 70))  # 30 x 50 px = 15 ha
+    for pol in stack:
+        stack[pol][-3:-1] *= gain(2)
+    stack["HH"][-3:-1][(slice(None), *field)] *= gain(3)
+    stack["HH"][CHANGE_PASS:][(slice(None), *RECT)] *= gain(6)
+    rect, wet = truth_mask(RECT), truth_mask(field)
+
+    plain = detect_changes(stack, DATES, PIXEL_M)
+    assert any((plain.labels == r.label)[wet].any() for r in plain.regions)  # the wet field is a false alarm
+
+    guarded = detect_changes(stack, DATES, PIXEL_M, ChangeParams(normalize=True, hold=True))
+    assert len(guarded.regions) == 1
+    region = guarded.regions[0]
+    assert region.type == "structure"
+    assert iou(guarded.labels == region.label, rect) >= 0.7
+    assert abs(region.signal["delta"] - 6) < 0.7  # the series are normalized too, the step keeps its true size
+    assert abs(DATES.index(region.first_date) - CHANGE_PASS) <= 1
+
+
+def test_normalize_is_off_by_default_and_removes_a_scene_wide_shift():
+    stack = scene()
+    for pol in stack:
+        stack[pol][-3:] *= gain(4)  # a calibration step or a soaking rain over the whole window
+    assert len(detect_changes(stack, DATES, PIXEL_M).regions) >= 1
+    assert detect_changes(stack, DATES, PIXEL_M, ChangeParams(normalize=True)).regions == []

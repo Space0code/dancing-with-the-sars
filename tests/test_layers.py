@@ -76,3 +76,11 @@ def test_a_failing_service_is_left_out(monkeypatch, tmp_path):
     index = layers.build("agroparc", out_dir=tmp_path / "out", today="2026-11-14", bbox=BOX)
     assert index == {"layers": []}
     assert not list((tmp_path / "out").glob("*.geojson"))
+
+
+def test_cadastre_grid_is_fixed():
+    from sarwatch.context import cadastre
+    a = cadastre.grid_tiles(400100, 4588100, 402000, 4589000)
+    b = cadastre.grid_tiles(400050, 4588050, 402100, 4589050)  # the box grew a little
+    assert set(a) <= set(b) and all(t[0] % cadastre.TILE_M == 0 and t[1] % cadastre.TILE_M == 0 for t in b)
+    assert all((t[2] - t[0]) * (t[3] - t[1]) <= 1e6 for t in b)

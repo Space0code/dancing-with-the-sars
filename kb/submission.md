@@ -108,24 +108,13 @@ interferograms); connect permit registers as they go online; let inspectors mark
 *Tools.* Python (h5py, rasterio, numpy, asf-search, earthaccess), NASA Earthdata Login, GitHub, MapLibre GL JS,
 plain HTML / CSS / JavaScript, Claude Code (see §5).
 
-## 3. Demo storyboard (video, ≤30 s)
-The tour in `app/tour.json` is the spine. Record the screen while the tour plays; add narration and English captions.
-Eight beats, about 4 s each:
+## 3. Demo (video, ≤30 s)
+The strategy, the 30-second storyboard and the 3-minute live pitch are in [`demo-strategy.md`](demo-strategy.md): one
+story (Muhos), one card, one wide shot of Catalonia; the tour in `app/tour.json` drives both the video and the pitch.
 
-| # | Time | On screen | Narration |
-|---|---|---|---|
-| 1 | 0–3 s | Title card: project name, team name, "NASA Space Apps 2026 · Dancing with the SARs" | "We're [team name], for the Dancing with the SARs challenge." |
-| 2 | 3–7 s | Muhos year photo, forest intact, March 2026 on the timeline | "In 2026, about 330 hectares of Finnish forest were cleared before the required environmental assessment was done." |
-| 3 | 7–11 s | Timeline plays May → August; clearing shapes appear | "Radar saw every stage, through clouds and snow." |
-| 4 | 11–15 s | Project name + tagline over the map | "[Name]: radar finds where the land changed." |
-| 5 | 15–19 s | Agroparc: earthworks shapes, a card opens with label and reason | "It checks public records and labels each change: expected, needs review or high concern." |
-| 6 | 19–23 s | Card zoom: before/after swipe and the signal chart | "Every label comes with its reason and the evidence." |
-| 7 | 23–27 s | Catalonia overview, changes coloured by label | "NASA's NISAR and OPERA data make it work across all of Catalonia." |
-| 8 | 27–30 s | Closing card: link to the app | "So regulators know where to look first." |
-
-If the team prefers slides: same order on 7 slides (title + team and challenge · the Muhos problem · the app ·
-how it works · Agroparc card · Catalonia overview · what's next), one screenshot each.
-Caution: the narration must not say the company did something unlawful; it states what was reported (§7 sources).
+If the team prefers slides: 7 slides (title + team and challenge · the Muhos problem · the app · how it works · a
+Catalan card · Catalonia overview · what's next), one screenshot each.
+Caution: the narration must not say anyone did something unlawful; it states what was reported (§6 sources).
 
 ## 4. Data used
 **NASA** (all free and open under NASA's Earth science data policy; access via [Earthdata Login](https://urs.earthdata.nasa.gov)):

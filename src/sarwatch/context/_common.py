@@ -88,7 +88,11 @@ def to_utm(geometry: dict):
     g = shapely.transform(shape(geometry), lambda xy: np.column_stack(_to_utm(xy[:, 0], xy[:, 1])))  # shapely ≥ 2.0
     if g.is_empty:
         raise ValueError("empty geometry")
-    return g if g.is_valid else g.buffer(0)
+    if g.is_valid:
+        return g
+    fixed = shapely.make_valid(g)  # not buffer(0): that drops a lobe of a self-crossing (bowtie) polygon
+    parts = [p for p in getattr(fixed, "geoms", [fixed]) if p.geom_type in ("Polygon", "MultiPolygon")]
+    return shapely.union_all(parts) if parts else g.buffer(0)
 
 
 def safe(source: str, default_url: str):
