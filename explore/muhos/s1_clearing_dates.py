@@ -31,7 +31,7 @@ from sarwatch.pipeline import REPO_ROOT, SITES, _skip_spans, load_stack
 DROP_DB = 1.5    # C-band VH: felling removes the canopy volume, but slash and stumps keep part of the echo
 PERSIST = 3      # passes (18-36 days) the drop must hold to date it
 BOXCAR = 5
-SEARCH = (26.065, 64.815, 26.150, 64.860)  # same box as clearing_scope.py
+SEARCH = (26.065, 64.815, 26.150, 64.860)  # same box as clearing_radar_outline.py
 SCOPE = REPO_ROOT / "explore" / "muhos" / "clearing_radar_outline.geojson"
 
 

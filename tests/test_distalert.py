@@ -391,3 +391,63 @@ def test_live_muhos_latest_alert_state():
     assert np.isin(alerts.status, da.CONFIRMED).sum() * alerts.pixel_ha > 100  # the clearing is in the window
     assert dated.max() <= np.datetime64(alerts.acquired) and dated.min() > np.datetime64(alerts.acquired) - np.timedelta64(400, "D")
     print(f"\nlive read: {g.name}, shape {alerts.status.shape}, cost {alerts.cost}")
+
+
+# ---------------------------------------------------------------- regions by month
+
+def _grid(blocks, size=40):
+    """Status / day grids with confirmed (status 3) rectangles: blocks = [(row, col, rows, cols, day)]."""
+    status = np.zeros((size, size), np.uint8)
+    days = np.zeros((size, size), np.int16)
+    for r, c, h, w, d in blocks:
+        status[r:r + h, c:c + w] = 3
+        days[r:r + h, c:c + w] = d
+    return status, days
+
+
+def test_regions_by_month_groups_and_drops_small_ones():
+    from sarwatch import distregions as dr
+
+    status, days = _grid([(2, 2, 6, 6, APR),      # 36 px
+                          (2, 8, 4, 4, APR),      # next to it: the same region, 52 px = 4.7 ha
+                          (20, 20, 3, 3, APR),    # 9 px = 0.81 ha: too small
+                          (20, 2, 5, 5, JUN)])    # 25 px = 2.25 ha, June
+    alerts = _alerts(status, days, date(2026, 10, 23))
+    states = [date(2026, 3, 31), date(2026, 4, 30), date(2026, 5, 31), date(2026, 6, 30)]
+    regions = dr.regions_by_month(alerts, states)
+    assert [(r.month, r.pixels) for r in regions] == [("2026-04", 52), ("2026-06", 25)]
+    apr, jun = regions
+    assert apr.first_date == date(2026, 4, 30) and apr.not_before == date(2026, 3, 31)
+    assert jun.first_date == date(2026, 6, 30) and jun.not_before == date(2026, 5, 31)
+    assert apr.last_date == jun.last_date == date(2026, 6, 30)
+    assert (apr.type, apr.confidence) == ("clearing", "medium")
+    assert jun.area_ha == pytest.approx(25 * 0.09, rel=0.01)  # geodesic vs pixel area
+    ring = jun.polygon["coordinates"][0]
+    assert jun.polygon["type"] == "Polygon" and ring[0] == ring[-1]
+    lon, lat = np.array(ring).T
+    assert 20 < lon.mean() < 30 and 64 < lat.mean() < 65
+
+
+def test_regions_first_state_has_no_not_before_mask_and_provisional():
+    from sarwatch import distregions as dr
+
+    status, days = _grid([(2, 2, 6, 6, APR), (20, 2, 6, 6, JUN)])
+    status[20:26, 2:8] = 2  # provisional: not a confirmed alert
+    alerts = _alerts(status, days, date(2026, 10, 23))
+    regions = dr.regions_by_month(alerts, [date(2026, 4, 30)])
+    assert len(regions) == 1 and regions[0].not_before is None and regions[0].first_date == date(2026, 4, 30)
+    assert dr.regions_by_month(alerts, [date(2026, 4, 30)], mask=np.zeros(status.shape, bool)) == []
+
+
+def test_regions_hole_stays_out_of_the_area_and_states_are_required():
+    from sarwatch import distregions as dr
+
+    status, days = _grid([(5, 5, 10, 10, APR)])
+    status[8:12, 8:12] = 0
+    days[8:12, 8:12] = 0
+    alerts = _alerts(status, days, date(2026, 10, 23))
+    (r,) = dr.regions_by_month(alerts, [date(2026, 4, 30)])
+    assert r.pixels == 84 and len(r.polygon["coordinates"]) == 2
+    assert r.area_ha == pytest.approx(84 * 0.09, rel=0.01)
+    with pytest.raises(ValueError):
+        dr.regions_by_month(alerts, [])

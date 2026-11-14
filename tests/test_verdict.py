@@ -34,8 +34,9 @@ def plant(ha=12.0, status="Autoritzat"):
     return {"name": "Solar X", "status": status, "ha": ha, "ha_in_municipality": ha}
 
 
-def change(area=10.0, ctype="clearing", explain="Radar saw the tree signal drop by -6 dB here."):
-    return {"id": "t-0001", "type": ctype, "area_ha": area, "first_date": "2026-03-01", "explain": explain}
+def change(area=10.0, ctype="clearing", explain="Radar saw the tree signal drop by -6 dB here.", confidence=None):
+    props = {"id": "t-0001", "type": ctype, "area_ha": area, "first_date": "2026-03-01", "explain": explain}
+    return {**props, "confidence": confidence} if confidence else props
 
 
 def codes(reasons):
@@ -222,7 +223,7 @@ def test_cli_labels_the_fixture_and_result_passes_the_contract(fixture_copy, cap
     verdicts = {f["properties"]["id"]: f["properties"]["verdict"] for f in features}
     assert verdicts == {
         "fixture-0001": "high_concern", "fixture-0002": "expected", "fixture-0003": "high_concern",
-        "fixture-0004": "review", "fixture-0005": "expected", "fixture-0006": "high_concern",
+        "fixture-0004": "expected", "fixture-0005": "expected", "fixture-0006": "high_concern",  # 0004: 1.2 ha, low conf.
         "fixture-0007": "expected",
     }
 
@@ -256,6 +257,20 @@ def test_site_outside_spain_uses_no_catalan_lookups(fixture_copy):
     assert validate(fixture_copy) == []
     reasons = [r for f in json.loads(path.read_text(encoding="utf-8"))["features"] for r in f["properties"]["reasons"]]
     assert reasons and "records_unavailable" not in codes(reasons)  # Catalan services are not applicable in Finland
+
+
+def test_offline_flag_serves_lookups_from_the_cache_only(fixture_copy, monkeypatch, capsys):
+    from sarwatch.context import _common
+    from sarwatch.verdict import main
+
+    monkeypatch.setattr(_common, "OFFLINE", False)
+    monkeypatch.setattr(_common, "CACHE_DIR", fixture_copy / "empty-cache")  # nothing cached: every lookup misses
+    path = fixture_copy / "fixture" / "changes.geojson"
+    original = path.read_text(encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:  # no network is used (it would hang or succeed): all lookups fail
+        main([str(path), "--offline"])
+    assert "Nothing written" in str(stop.value) and _common.OFFLINE is True
+    assert path.read_text(encoding="utf-8") == original
 
 
 # ---- review fixes on PR #31 ----
@@ -304,14 +319,22 @@ def test_deciding_reason_comes_first_and_explain_never_contradicts_the_label():
     assert verdict == "expected" and codes(reasons)[0] == "small_area" and "No registered building" not in explain
 
 
-def test_protected_buffer_zone_or_edge_touch_is_review_not_high_concern():
+def test_protected_buffer_zone_raises_but_a_thin_edge_overlap_is_neutral():
     buffer = records(inside=True, zone="urban", built=1)  # a building record would make this "expected"
     buffer["protected"]["areas"] = [{"name": "Parc X", "kind": "natural park buffer zone"}]
     verdict, reasons, _ = judge(change(area=3), buffer)
     assert verdict == "review" and codes(reasons)[0] == "protected_buffer"
     edge = records(inside=True, zone="urban", built=1)
-    edge["protected"]["overlap_share"] = 0.0004
-    assert judge(change(area=3), edge)[0] == "review"
+    edge["protected"]["overlap_share"] = 0.05  # below 10 %: it only borders the area
+    verdict, reasons, _ = judge(change(area=3), edge)
+    assert verdict == "expected" and "protected_edge" in codes(reasons)
+    assert next(r for r in reasons if r["code"] == "protected_edge")["effect"] == "neutral"
+    assert "borders a protected area" in next(r for r in reasons if r["code"] == "protected_edge")["text"]
+    edge["protected"]["overlap_share"] = 0.15  # a real overlap
+    verdict, reasons, _ = judge(change(area=3), edge)
+    assert verdict == "high_concern" and codes(reasons)[0] == "protected_area"
+    edge["protected"]["overlap_share"] = None  # the service sent no outline: treated as a real overlap (safe side)
+    assert judge(change(area=3), edge)[0] == "high_concern"
     big = records(inside=True, zone="non_buildable")
     big["protected"]["areas"] = [{"name": "Parc X", "kind": "natural park buffer zone"}]
     verdict, reasons, _ = judge(change(area=20), big)
@@ -357,7 +380,12 @@ def test_missing_required_assessment_on_a_big_clearing_is_high_concern():
 
 def test_missing_assessment_on_a_mid_size_change_is_review_and_a_small_one_is_not_flagged():
     assert judge(change(area=3), {**records(zone="urban"), **official()})[0] == "review"
-    assert judge(change(area=0.5), {**records(zone="urban"), **official()})[0] == "expected"
+    no_steps = official(actions=[])  # only the missing assessment: too small and too uncertain to flag on its own
+    uncertain = judge(change(area=0.5, confidence="low"), {**records(zone="urban"), **no_steps})
+    assert uncertain[0] == "expected" and codes(uncertain[1])[0] == "small_uncertain"
+    # an official step on record (a stop notice) is a different matter: it lifts even a small, uncertain change
+    lifted = judge(change(area=0.5, confidence="low"), {**records(zone="urban"), **official()})
+    assert lifted[0] == "review" and codes(lifted[1])[0] == "official_stop_order"
     assert judge(change(area=330, ctype="structure"), {**records(zone="urban"), **official()})[0] == "review"
     done = official(assessment_completed=True)
     assert judge(change(area=330), {**records(zone="urban"), **done})[0] == "review"  # no record explains it
@@ -402,3 +430,175 @@ def test_failed_lookups_are_counted_and_all_failed_writes_nothing(fixture_copy):
 
     _, _, failed = apply_file(path, lookup=partly)
     assert failed == {"cadastre": 7, "zoning": 7, "solar": 7}
+
+
+# ---- the seven `official` points and the two rule decisions (PR #31 re-review, #9) ----
+
+
+def test_assessment_reason_uses_the_agreed_wording_per_change_type():
+    texts = {
+        ctype: judge(change(area=330, ctype=ctype), {**records(), **official()})[1][0]["text"]
+        for ctype in ("clearing", "earthworks", "structure")
+    }
+    assert texts["clearing"] == "The required environmental assessment was not finished when this clearing happened."
+    assert texts["earthworks"].endswith("when these earthworks happened.")
+    assert texts["structure"].endswith("when this change happened.")
+
+
+def test_a_record_without_scope_says_it_covers_the_whole_site():
+    doc = {"version": 1, "default": {"official": {k: v for k, v in official()["official"].items()}}}
+    recs = records_for(doc, "a")
+    assert recs["official"]["site_wide"] is True
+    text = judge(change(area=330), {**records(), **recs})[1][0]["text"]
+    assert text.endswith("This record covers the whole site, not only this spot.")
+    assert "whole site" not in judge(change(area=330), {**records(), **official()})[1][0]["text"]  # not marked
+    doc_scoped = {"version": 1, "default": {"official": {**official()["official"], "scope": {
+        "type": "Polygon", "coordinates": [[[0, 0], [0, 50], [50, 50], [50, 0], [0, 0]]]}}}}
+    assert "site_wide" not in records_for(doc_scoped, "a", None)["official"]
+    per_change = {"version": 1, "changes": {"a": {"official": official()["official"]}}}
+    assert "site_wide" not in records_for(per_change, "a")["official"]
+
+
+def test_two_official_actions_of_the_same_kind_and_date_both_show():
+    twin = {"kind": "stop_order", "date": "2026-10-06", "text": "A second notice.", "source": "Agency"}
+    rec = official()
+    rec["official"]["actions"] = rec["official"]["actions"] + [twin]
+    reasons = judge(change(area=330), {**records(), **rec})[1]
+    assert codes(reasons).count("official_stop_order") == 2
+
+
+def test_an_official_step_lifts_expected_to_needs_review_but_not_a_fire():
+    acts = official(assessment_required=False)  # only the dated actions remain
+    verdict, reasons, _ = judge(change(area=6, ctype="structure"), {**records(zone="urban", built=2), **acts})
+    assert verdict == "review" and codes(reasons)[0] == "official_stop_order"
+    assert "cadastre_building_found" in codes(reasons)  # the building record is still listed
+    fire = judge(change(area=60, ctype="fire"), {**records(fire=True), **acts})
+    assert fire[0] == "expected"
+    assert judge(change(area=6, ctype="structure"), records(zone="urban", built=2))[0] == "expected"  # no record: no lift
+
+
+def test_outside_spain_the_size_only_reason_does_not_blame_the_land_registry():
+    na = {k: {"checked": False, "not_applicable": True} for k in ("protected", "cadastre", "zoning", "solar")}
+    verdict, reasons, _ = judge(change(area=9), na)
+    assert verdict == "review" and codes(reasons)[0] == "size_only"
+    assert reasons[0]["text"].startswith("No public land records are connected for this country yet")
+    assert "records_unavailable" not in codes(reasons)
+    broken = {k: {"checked": False, "source": k, "url": None} for k in ("protected", "cadastre", "zoning", "solar")}
+    assert "land registry could not be checked" in judge(change(area=9), broken)[1][0]["text"]
+
+
+def test_a_scope_that_is_only_touched_at_the_border_is_outside():
+    pytest.importorskip("shapely")
+    square = lambda x0, y0, x1, y1: {  # noqa: E731
+        "type": "Polygon", "coordinates": [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]]}
+    scope = square(26.0, 64.8, 26.1, 64.9)
+    doc = {"version": 1, "default": {"official": {**official()["official"], "scope": scope}}}
+    assert "official" not in records_for(doc, "a", square(26.1, 64.8, 26.2, 64.9))  # shares the eastern border only
+    assert "official" in records_for(doc, "b", square(26.09, 64.8, 26.2, 64.9))  # really overlaps
+
+
+def test_a_pending_solar_application_is_not_an_authorisation():
+    pending = plant(ha=12, status="En tramitació")
+    verdict, reasons, _ = judge(change(area=12), records(zone="urban", plants=[pending]))
+    assert verdict == "review" and codes(reasons)[0] == "solar_application_pending"
+    assert "being processed; it is not authorised yet" in reasons[0]["text"] and reasons[0]["effect"] == "raises"
+    small = judge(change(area=1.5), records(zone="urban", plants=[plant(ha=1.5, status="En tramitació")]))
+    assert small[0] == "review" and codes(small[1])[0] == "solar_application_pending"  # lifted although small
+    for status in ("Autoritzat", "En servei", "Aprovat"):  # these do count
+        assert judge(change(area=12), records(zone="urban", plants=[plant(status=status)]))[0] == "expected", status
+    # an authorised plant or a building record still wins over a pending one
+    both = judge(change(area=12), records(zone="urban", plants=[pending, plant(status="Autoritzat")]))
+    assert both[0] == "expected" and "solar_application_pending" not in codes(both[1])
+
+
+def test_a_buffer_zone_never_counts_toward_the_real_overlap_share():
+    """Reviewer case: the buffer zone covers the whole change, a real area only 2 % of it."""
+    recs = records(inside=True, zone="urban", built=1)
+    recs["protected"]["areas"] = [
+        {"name": "Parc buffer", "kind": "natural park buffer zone", "overlap_share": 1.0},
+        {"name": "Riu", "kind": "PEIN", "overlap_share": 0.02},
+    ]
+    recs["protected"].update(overlap_share=1.0, core_overlap_share=0.02)
+    verdict, reasons, _ = judge(change(area=3), recs)
+    assert verdict == "expected" and "protected_edge" in codes(reasons)  # the real part only borders
+    assert "Parc buffer" not in next(r for r in reasons if r["code"] == "protected_edge")["text"]
+    recs["protected"]["core_overlap_share"] = 0.5  # a real overlap: high concern, and the text names the real area
+    verdict, reasons, _ = judge(change(area=3), recs)
+    assert verdict == "high_concern" and "Riu" in reasons[0]["text"] and "Parc buffer" not in reasons[0]["text"]
+    # hand-entered records that only know ``overlap_share`` still work
+    old = records(inside=True, zone="urban", built=1)
+    old["protected"]["overlap_share"] = 0.05
+    assert judge(change(area=3), old)[0] == "expected"
+
+
+def test_rerunning_a_change_without_a_radar_sentence_is_identical():
+    first = judge(change(area=9, explain=None), records(zone="urban"))
+    judged = {**change(area=9, explain=first[2]), "reasons": first[1]}
+    again = judge(judged, records(zone="urban"))
+    assert again[2] == first[2] and first[2].count(first[1][0]["text"]) == 1
+
+
+def test_bad_input_gives_a_clear_error_or_is_skipped_not_a_crash():
+    for bad in (None, 0, -1, float("nan"), "x"):
+        with pytest.raises(ValueError, match="area_ha must be a positive number"):
+            judge({**change(), "area_ha": bad}, records())
+    with pytest.raises(ValueError, match="area_ha"):
+        judge({k: v for k, v in change().items() if k != "area_ha"}, records())
+    rec = official()
+    rec["official"]["actions"] = ["a stray string", None] + rec["official"]["actions"]
+    assert codes(judge(change(area=330), {**records(), **rec})[1]).count("official_stop_order") == 1
+    stringy = records(zone="urban", plants=[{"name": "X", "status": "Autoritzat", "ha": "12", "ha_in_municipality": "12.0"}])
+    assert judge(change(area=12), stringy)[0] == "expected"
+    zero = records(zone="urban", plants=[{"name": "X", "status": "Autoritzat", "ha": 5, "ha_in_municipality": 0}])
+    assert judge(change(area=12), zero)[0] == "review"  # 0 ha in this municipality is a value, not "missing"
+    junk = records(zone="urban", plants=[{"name": "X", "status": None, "ha": "n/a"}])
+    assert judge(change(area=12), junk)[0] == "review"
+
+
+def test_a_bad_scope_gives_a_clear_error():
+    pytest.importorskip("shapely")
+    doc = {"version": 1, "default": {"official": {**official()["official"], "scope": {"type": "Foo", "coordinates": []}}}}
+    with pytest.raises(ValueError, match="scope must be a GeoJSON Polygon or MultiPolygon"):
+        records_for(doc, "a", {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [0, 0]]]})
+
+
+def test_no_output_ever_accuses_anyone_whatever_the_combination():
+    import itertools
+
+    banned = ("illegal", "unlawful", "violat", "guilty", "crime", "offence")
+    base = {
+        "protected": [None, {"inside": True, "areas": [{"name": "Parc X", "kind": "PEIN"}]}],
+        "zoning": [None, "non_buildable", "urban"],
+        "built": [0, 2],
+        "plants": [(), (plant(status="En tramitació"),), (plant(),)],
+        "fire": [False, True],
+        "off": [None, official()],
+    }
+    seen = 0
+    for prot, zone, built, plants, fire, off in itertools.product(*base.values()):
+        recs = records(zone=zone, built=built, plants=plants, fire=fire, inside=bool(prot))
+        if prot:
+            recs["protected"]["areas"] = prot["areas"]
+        if off:
+            recs.update(off)
+        for ch in (change(area=0.8, confidence="low"), change(area=3, ctype="structure"), change(area=40, ctype="earthworks")):
+            verdict, reasons, explain = judge(ch, recs)
+            blob = json.dumps([reasons, explain]).lower()
+            assert not any(word in blob for word in banned), blob
+            assert reasons[0]["text"] in explain
+            seen += 1
+    assert seen == 2 * 3 * 2 * 3 * 2 * 2 * 3  # every combination ran
+
+
+def test_small_low_confidence_changes_are_not_flagged_on_their_own():
+    verdict, reasons, explain = judge(change(area=1.2, confidence="low"), records(zone="non_buildable"))
+    assert verdict == "expected" and codes(reasons)[0] == "small_uncertain"
+    assert "too small" in reasons[0]["text"] and "too uncertain to flag on its own" in reasons[0]["text"]
+    assert "is fine" not in explain and "illegal" not in explain.lower()
+    # the same change with medium confidence, or 2 ha and up, is still flagged
+    assert judge(change(area=1.2, confidence="medium"), records(zone="non_buildable"))[0] == "review"
+    assert judge(change(area=2.0, confidence="low"), records(zone="non_buildable"))[0] == "review"
+    # a protected area is not a "flag on its own by size": it stays high concern
+    assert judge(change(area=0.9, confidence="low"), records(inside=True))[0] == "high_concern"
+    # a building record or a fire still explains it: no change of label
+    assert judge(change(area=1.2, confidence="low"), records(zone="urban", built=1))[0] == "expected"

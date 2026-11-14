@@ -1,6 +1,6 @@
 """Outline of the Muhos data-centre clearing as NISAR sees it, for the verdict track (#27).
 
-    PYTHONPATH=src python explore/muhos/clearing_scope.py [--cache data/stacks]
+    PYTHONPATH=src python explore/muhos/clearing_radar_outline.py [--cache data/stacks]
 
 Bare ground (felled forest) has a low cross-pol (HV) echo: no canopy volume to rotate the radar wave. The outline is
 the connected area below BARE_DB in the median of the last three good passes (29 Sep, 11 Oct, 23 Oct; 4 Nov is

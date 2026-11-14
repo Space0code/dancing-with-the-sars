@@ -57,7 +57,8 @@ Open-data portal: `analisi.transparenciacatalunya.cat` (Socrata API).
 ### How we query them (verified live 14 Nov 2026; code: `src/sarwatch/context/`)
 All Catalan / Spanish services answer in **EPSG:25831** (ETRS89 / UTM 31N, metres, x = easting). No login anywhere.
 - **PEIN / Natura 2000** (`protected.py`): `…/PEIN_XN2000_ENPE/MapServer/{0,1,3}/query`, POST, polygon as esriJSON in
-  EPSG:25831, `returnGeometry=false`. Layers: 0 PEIN (`NOM_PEIN`, `CODI_PEIN`) · 1 Natura 2000 (`NOM_XN2`, `CODI_XN2`,
+  EPSG:25831, `returnGeometry=true&outSR=25831&maxAllowableOffset=5` (outlines simplified to 5 m by the service, used to
+  compute `overlap_share`; responses are 2-70 kB). Layers: 0 PEIN (`NOM_PEIN`, `CODI_PEIN`) · 1 Natura 2000 (`NOM_XN2`, `CODI_XN2`,
   `LIC_ZEC`/`ZEPA` = `S`/`No` for SAC/SPA, `FND_ZEC` = EEA site-sheet link) · 3 ENPE (`NOM_ESPAI`, `CODI_ESPAI`:
   pnac/pnat/pnin/rni/rnp/rnfs + buffer zones zpnac/zpnat/zrnp). Covers all Catalonia (Delta de l'Ebre answers).
   `outFields` naming a field the layer lacks → HTTP 200 with `{"error":…}`. Occasional random 400s → retry.
