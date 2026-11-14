@@ -66,6 +66,28 @@ protected: `natura2000` · `pein` · `other`), `year` (buildings: construction y
 A site without the folder has no record layers. Each file ≤ 1 MB. Made in #45, shown in #52; the validator does not
 check this folder yet.
 
+## Several sensors (optional fields)
+Added for changes seen by more than one satellite; design and wording in `multi-sensor-design.md`. All optional, the
+format stays version 1: data without them is valid, and the app shows it as before.
+- **Change** `not_before` (`YYYY-MM-DD` or null, not after `first_date`): the last date it was known unchanged.
+- **Change** `sources`: list of `{sensor, kind, role, first_date, last_date, not_before, confidence, area_ha, share, note}`.
+  `kind` = `optical` · `radar`; `role` = `detected` · `late_start` · `not_seen` · `not_watching`; dates are
+  `YYYY-MM-DD` or null; `confidence` is `low` · `medium` · `high` or null; `share` is 0..1 (fraction of the change's
+  area); `note` = the plain sentence. Dates, `not_before` and `confidence` must be null for `not_seen` and `not_watching`.
+- **Site** `sources` (in `sites.json`): list of `{sensor, kind, start, end, revisit_days, sees, risky_months}`;
+  `end` may be null (still running), `sees` = change types it can detect, `risky_months` = month numbers 1..12.
+
+```json
+"sources": [
+ {"sensor": "OPERA DIST-ALERT", "kind": "optical", "role": "detected", "first_date": "2025-07-15",
+  "last_date": "2025-07-15", "not_before": "2025-07-05", "confidence": "medium", "area_ha": 27.0, "share": 1.0,
+  "note": "An optical alert found vegetation loss here between 5 and 15 July 2025."},
+ {"sensor": "NISAR L-band", "kind": "radar", "role": "late_start", "first_date": "2026-06-25",
+  "last_date": "2026-06-25", "not_before": null, "confidence": "medium", "area_ha": 25.0, "share": 0.95,
+  "note": "NISAR began watching on 25 Jun 2026 and shows the change already under way."}]
+```
+Fixture: `fixture-0005` (three sources), `fixture-0007` (one source), `fixture-0004` (late start only).
+
 ## Size and hygiene
 Every file under 10 MB (the validator checks); pictures are PNG; nothing here needs credentials or the network.
 
