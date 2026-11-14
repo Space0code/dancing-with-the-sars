@@ -165,9 +165,13 @@ export function createTimeline({ onDate }) {
       if (!own) return;
       const iso = stops[index()]?.date;
       stops = list?.length ? list : own.stops;
+      slider.max = stops.length - 1; // before the value: a range input clamps to its old max
       slider.value = nearest(iso);
       build();
-      if (playing && index() >= stops.length - 1) stop();
+      if (playing) {
+        stopAt = stops.length - 1; // a running play carries on to the end of the new list
+        if (index() >= stopAt) stop();
+      }
       emit();
     },
     /** No site open: the timeline is inactive and says so. */
