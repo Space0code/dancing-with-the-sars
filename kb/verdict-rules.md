@@ -45,7 +45,7 @@ All other reasons that apply are listed after the deciding one: `zoning_urban`, 
 ## Running it
 `python -m sarwatch.verdict app/data/<site>/changes.geojson [--records file.json] [--dry-run] [--allow-unchecked]`, then check with `python -m sarwatch.contract app/data`. Needs the `verdict` extra (`pip install -e ".[verdict]"`). It prints the label counts before and after.
 - **Catalan sites:** it runs the four lookups from #14 for every change (`cadastre` with `since` = the change's `first_date`). It prints how many lookups failed per service; if **every** lookup failed (offline?) it refuses to write, because all labels would rest on size alone. `--allow-unchecked` overrides that.
-- **Hand-entered records:** `--records file.json`, or a `records.json` next to `changes.geojson` (used automatically, no network). **Sites outside Spain** (e.g. Muhos) never get Catalan lookups: they use their records file, or nothing (then every part is `records_unavailable` and size decides).
+- **Hand-entered records:** `--records file.json`, or a `records.json` next to `changes.geojson` (used automatically, no network). **Sites outside Spain** (e.g. Muhos) never get Catalan lookups: they use their records file, or nothing. The four Catalan services are then marked "not applicable": they add no `records_unavailable` reason, and size decides unless an `official` record says more.
   ```json
   {"version": 1,
    "default": {"official": {"source": "…", "url": "https://…", "assessment_required": true,

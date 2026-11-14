@@ -222,6 +222,8 @@ def test_site_outside_spain_uses_no_catalan_lookups(fixture_copy):
     _, after, _ = apply_file(path, lookup=boom)
     assert sum(after.values()) == 7
     assert validate(fixture_copy) == []
+    reasons = [r for f in json.loads(path.read_text(encoding="utf-8"))["features"] for r in f["properties"]["reasons"]]
+    assert reasons and "records_unavailable" not in codes(reasons)  # Catalan services are not applicable in Finland
 
 
 # ---- review fixes on PR #31 ----

@@ -222,7 +222,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
             source=LABELS[key].capitalize(),
         )
         for key in LABELS
-        if not _ok(records.get(key))
+        if not _ok(records.get(key)) and not (records.get(key) or {}).get("not_applicable")
     ]
     reasons = [facts[decisive]] + [r for k, r in facts.items() if k != decisive] + unavailable
     return verdict, reasons, _explain(change, verdict, reasons)
@@ -309,16 +309,19 @@ def apply_file(
     if records_path is None and (path.parent / "records.json").is_file():
         records_path = path.parent / "records.json"
     hand = load_records_file(records_path) if records_path else None
-    offline = hand is not None or _site_country(path) not in (None, "ES")
+    abroad = _site_country(path) not in (None, "ES")
+    offline = hand is not None or abroad
+    # the Catalan services do not apply outside Spain: say "not applicable" instead of "could not be checked"
+    not_applicable = {k: {"checked": False, "not_applicable": True} for k in LABELS} if abroad else {}
     before, after, failed = Counter(), Counter(), Counter()
     asked = 0
     for feature in doc["features"]:
         props = feature["properties"]
         before[props.get("verdict") or "unjudged"] += 1
         if hand is not None:
-            records = records_for(hand, props["id"], feature["geometry"])
+            records = {**not_applicable, **records_for(hand, props["id"], feature["geometry"])}
         elif offline:
-            records = {}
+            records = dict(not_applicable)
         else:
             records = lookup(feature["geometry"], props)
             for key, rec in records.items():
