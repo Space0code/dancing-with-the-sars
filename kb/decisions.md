@@ -38,5 +38,6 @@ One line each: `date · decision · why · issue`. Newest at the bottom.
 - 2026-11-14 · Verdict rules: inside a recorded wildfire perimeter → expected; a protected-area overlap below 10 % of the change is a neutral "borders" reason; a pending solar application → needs review; small low-confidence changes are not flagged on their own · rule decisions on #9 · #46 #47
 - 2026-11-14 · The Muhos `scope` polygon is the outline of the 358 ha optical-alert patch; the site centre moves 3.3 km east-southeast · the alerts match the reported ~330 ha · #44
 - 2026-11-14 · `story.json` may carry a chart (`chart` → a file in the `series/` format) · the Muhos cleared-area curve in the story panel · #73
+- 2026-11-14 · Muhos final data: inside the clearing outline the optical alerts carry the outlines and dates (one change per month, 7 parts, 358.8 ha), Sentinel-1 and NISAR are attached as `sources` with their share and own date; outside it `merge.merge_detections` runs as designed · a three-source merge of the small parts gave 58 overlapping changes, and the radars date the block's edges early · #27, #77
 
 <sub>Written by Claude</sub>
