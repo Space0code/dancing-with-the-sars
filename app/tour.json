@@ -1,55 +1,25 @@
 {
- "about": "Guided tour. Each step: site (id in data/sites.json), title, text, optional date (slider position, YYYY-MM-DD), play_to (play the slider from date to this date), note (shown on the timeline), and change (a change id to open) or change_verdict (opens the largest change with that label). Steps whose site is not ready are skipped. Steps on a fake site (fixture: true) are stand-ins: they run only while no real site in this list is ready. Real-site dates and change ids get filled in when the data lands.",
+ "about": "Guided tour, the same for every site (no site names here). Each step: title, text, optional date and play_to (a YYYY-MM-DD date, or \"start\" / \"end\" for the site's first and last day), note (shown on the timeline), and change_verdict (opens the largest change with that label; without one, the largest change).",
  "steps": [
   {
-   "site": "muhos",
-   "title": "Muhos, Finland",
-   "text": "Between March and August 2026, about 330 hectares of forest were cleared for a planned data centre, before the required environmental assessment was finished.",
-   "date": "2026-03-01"
+   "title": "Marked areas",
+   "text": "Each shape is a place where the land changed.",
+   "date": "end"
   },
   {
-   "site": "muhos",
-   "title": "The clearing continued",
-   "text": "In May the company was told an assessment was required. The clearing continued. Radar recorded each stage, in any weather.",
-   "date": "2026-05-01",
-   "play_to": "2026-08-31",
-   "note": "May to August 2026"
+   "title": "Watch it happen",
+   "text": "Changes appear in the order they were seen.",
+   "date": "start",
+   "play_to": "end"
   },
   {
-   "site": "agroparc",
-   "title": "Agroparc Penedès, Catalonia",
-   "text": "Earthworks for a 258-hectare project. A court partly halted the works in July 2025; they continue today.",
-   "date": "2025-07-01",
-   "note": "July 2025: court partly halts the works"
+   "title": "Radar and Satellite",
+   "text": "Switch the picture, or drag Compare to see before and after.",
+   "date": "end"
   },
   {
-   "site": "catalonia",
-   "title": "All of Catalonia",
-   "text": "The same method across Catalonia: every change, sorted by how much it deserves a second look."
-  },
-  {
-   "site": "catalonia",
-   "title": "The evidence behind a label",
-   "text": "Open any change to see the evidence and the records behind its label.",
-   "change_verdict": "high_concern"
-  },
-
-  {
-   "site": "fixture",
-   "title": "A practice site",
-   "text": "Until the real places are ready, this tour runs on a made-up site. Each coloured shape is a place where the ground changed between satellite passes."
-  },
-  {
-   "site": "fixture",
-   "title": "Changes in the order they happened",
-   "text": "Watch the changes appear as the timeline moves, over the radar picture of each date.",
-   "date": "2024-01-15",
-   "play_to": "2026-11-02"
-  },
-  {
-   "site": "fixture",
-   "title": "The evidence behind a label",
-   "text": "Open any change to see the evidence and the records behind its label.",
+   "title": "Why a label",
+   "text": "Open a change to see its label, reasons and sources.",
    "change_verdict": "high_concern"
   }
  ]

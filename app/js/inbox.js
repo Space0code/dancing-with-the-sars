@@ -7,7 +7,7 @@ import { changesCsv, downloadText } from "./csv.js";
 const CHUNK = 80; // rows per render step; more load as the list is scrolled
 const CONCERN_ORDER = ["high_concern", "review", "none", "expected"]; // what a regulator should look at first
 const SHORT_KIND = { // short names for chips and rows; the card has the full wording
-  clearing: "Forest clearing", structure: "New building", earthworks: "Earth moved",
+  clearing: "Land clearing", structure: "New building", earthworks: "Earth moved",
   ground_motion: "Ground movement", fire: "Burned area", other: "Other change",
 };
 const kindName = (type) => SHORT_KIND[type] ?? changeLabel(type);

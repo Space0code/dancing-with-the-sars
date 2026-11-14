@@ -1,14 +1,11 @@
-// Written by Claude. The big picture on the map: the Radar / Satellite switch with its one-line caption, the radar frame
+// Written by Claude. The big picture on the map: the Radar / Satellite switch, the radar frame
 // or colour photo of the slider date (frames.json, latest at or before the date), and the before/after swipe.
 // Frames are drawn on one canvas that the map shows over the site; neighbouring frames are preloaded so play doesn't flicker.
 import { formatDate } from "./format.js";
 import { createSwipe } from "./swipe.js";
 
 const PRELOAD_AHEAD = 5;
-const NO_FRAME = {
-  radar: { caption: "This site has no radar pictures yet.", label: "No radar picture yet" },
-  photo: { caption: "This site has no colour photos yet.", label: "Background: an older photo (date not known)" },
-};
+const NO_LABEL = { radar: "No radar picture", photo: "No photo" };
 
 /** `map`: from map.js. `mapWrap`: the element around the map (the swipe line goes there). */
 export function createPicture(map, mapWrap, { onView } = {}) {
@@ -86,13 +83,13 @@ export function createPicture(map, mapWrap, { onView } = {}) {
   }
 
   function labelFor(frame) {
-    if (!frame) return NO_FRAME[view].label;
-    return view === "radar" ? `${frame.sensor ?? "Radar"} radar picture of ${formatDate(frame.date)}` : `Photo from ${formatDate(frame.date)}`;
+    if (!frame) return NO_LABEL[view];
+    return `${frame.sensor ?? (view === "radar" ? "Radar" : "Photo")} · ${formatDate(frame.date)}`;
   }
 
-  /** "Before: Sentinel-1, 2 Jun 2025" on the radar view (the two sides can be different satellites), "Before: 2 Jun 2025" otherwise. */
+  /** "Before: Sentinel-1, 2 Jun 2025" (the two sides can be different satellites). */
   function sideLabel(prefix, frame) {
-    return `${prefix}: ${view === "radar" && frame.sensor ? `${frame.sensor}, ` : ""}${formatDate(frame.date)}`;
+    return `${prefix}: ${frame.sensor ? `${frame.sensor}, ` : ""}${formatDate(frame.date)}`;
   }
 
   /** Show the frame(s) for the current view, date and compare state, once their pictures have loaded. */
@@ -111,8 +108,7 @@ export function createPicture(map, mapWrap, { onView } = {}) {
     shown = { before: b, after: a };
     draw();
     $("frame-label").textContent = labelFor(after);
-    $("view-caption").textContent = after?.caption ?? sets[view]?.caption ?? NO_FRAME[view].caption; // a frame's own caption wins
-    swipe.setLabels(before ? sideLabel("Before", before) : "", after ? sideLabel("After", after) : "After: no picture yet");
+    swipe.setLabels(before ? sideLabel("Before", before) : "", after ? sideLabel("After", after) : "After: no picture");
   }
 
   function update() {
@@ -121,8 +117,6 @@ export function createPicture(map, mapWrap, { onView } = {}) {
     if (!sets[view]) comparing = false;
     compareBtn.disabled = !sets[view];
     compareBtn.setAttribute("aria-pressed", String(comparing));
-    compareBtn.querySelector(".wide-only").textContent = comparing ? "Close comparison" : "Compare before and after";
-    compareBtn.querySelector(".narrow-only").textContent = comparing ? "Close" : "Compare";
     swipe.show(comparing);
     render();
   }

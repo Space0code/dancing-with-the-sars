@@ -17,20 +17,14 @@ function showError(message, isNotice = false) {
   box.hidden = false;
 }
 
+// One compact legend, the same for every site: the four labels, the radar tint (Radar view only) and the timeline bar.
 function renderLegend() {
+  const row = (swatch, text, attrs = {}) => h("li", attrs, swatch, text);
   $("legend").replaceChildren(
-    ...Object.values(VERDICTS).map((v) =>
-      h("li", {}, h("span", { class: "swatch", style: `background:${v.color}` }), v.label)
-    )
+    ...Object.values(VERDICTS).map((v) => row(h("span", { class: "swatch", style: `background:${v.color}` }), v.label)),
+    row(h("span", { class: "swatch tint" }), "Changed since first picture", { id: "legend-tint" }),
+    row(h("span", { class: "swatch bar" }), "New changes on the timeline")
   );
-}
-
-// Phones: the legend and the picture's caption fold behind small buttons so most of the map stays visible.
-function wireFolds() {
-  const fold = (btn, box) =>
-    btn.addEventListener("click", () => btn.setAttribute("aria-expanded", String(box.classList.toggle("open"))));
-  fold($("legend-btn"), $("legend-box"));
-  fold($("caption-btn"), $("view-caption"));
 }
 
 function fillSiteSelect(sites) {
@@ -50,15 +44,8 @@ function allSitesBounds(sites) {
 function findStepChange(features, step) {
   if (step.change) return features.find((f) => f.properties.id === step.change) ?? null;
   if (!step.change_verdict) return null;
-  const matching = features.filter((f) => f.properties.verdict === step.change_verdict);
-  return matching.sort((a, b) => b.properties.area_ha - a.properties.area_ha)[0] ?? null;
-}
-
-function setupExplainer() {
-  const dialog = $("explainer");
-  $("explain-btn").addEventListener("click", () => dialog.showModal());
-  dialog.querySelector(".close").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", (e) => e.target === dialog && dialog.close()); // a click on the backdrop closes it
+  const largest = (list) => list.sort((a, b) => b.properties.area_ha - a.properties.area_ha)[0];
+  return largest(features.filter((f) => f.properties.verdict === step.change_verdict)) ?? largest(features.slice()) ?? null;
 }
 
 async function main() {
@@ -66,8 +53,6 @@ async function main() {
   $("app-pitch").textContent = APP.pitch;
   setVerdictColors();
   renderLegend();
-  wireFolds();
-  setupExplainer();
   if (!window.maplibregl) return showError("The map library could not be loaded. Check your internet connection and reload.");
 
   const [allSites, tourData] = await Promise.all([loadSites(), loadJson("tour.json").catch(() => ({ steps: [] }))]);
@@ -117,7 +102,10 @@ async function main() {
   await map.ready;
 
   // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
-  const syncStops = () => timeline.setStops(picture.view === "radar" ? null : picture.stops());
+  const syncStops = () => {
+    timeline.setStops(picture.view === "radar" ? null : picture.stops());
+    $("legend-tint").hidden = picture.view !== "radar"; // the tint only exists on the radar pictures
+  };
   const picture = createPicture(map, document.querySelector(".map-wrap"), { onView: syncStops });
 
   const refreshTotal = () => {
@@ -146,12 +134,14 @@ async function main() {
     },
   });
 
-  const tour = createTour(tourData.steps ?? [], sites, {
+  // Tour steps are the same for every site: they run on the open site, or on the first real one.
+  const tour = createTour(tourData.steps ?? [], {
     async runStep(step) {
-      if (current?.site.id !== step.site) await openSite(step.site);
+      if (!current) await openSite((sites.find((s) => !s.fixture) ?? sites[0]).id);
       const feature = findStepChange(current.changes.features, step);
-      const date = step.date ?? (feature ? feature.properties.last_date : current.site.time_range[1]);
-      if (step.play_to) timeline.playBetween(date, step.play_to, step.note ?? "");
+      const day = (d) => ({ start: current.site.time_range[0], end: current.site.time_range[1] })[d] ?? d;
+      const date = day(step.date) ?? (feature ? feature.properties.last_date : current.site.time_range[1]);
+      if (step.play_to) timeline.playBetween(date, day(step.play_to), step.note ?? "");
       else timeline.goTo(date, step.note ?? "");
       if (feature) {
         select(feature);

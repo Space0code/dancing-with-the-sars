@@ -63,16 +63,15 @@ export function renderIntro(sites, { onPick, onTour }) {
     );
   $("card").replaceChildren(
     h("section", { class: "intro" },
-      h("p", { class: "lead phone-only" }, APP.pitch), // on desktop the top bar already shows the pitch
-      h("p", {}, "Every few days, radar satellites pass overhead and record the ground, whatever the weather. We compare the passes, mark where the land changed (trees removed, buildings added, earth moved), and check each change against public records. Pick a place to start."),
+      h("p", {}, "Pick a site to see where the land changed."),
       h("ul", { class: "site-list" }, sites.map(siteButton)),
-      h("button", { type: "button", class: "primary big", onclick: onTour }, "Or take the two-minute tour")
+      h("button", { type: "button", class: "primary big", onclick: onTour }, "Take the tour")
     )
   );
 }
 
 export function showHint() {
-  $("card").replaceChildren(h("p", { class: "hint" }, "Click a colored shape on the map to see what changed and why it was flagged."));
+  $("card").replaceChildren(h("p", { class: "hint" }, "Click a shape on the map for details."));
 }
 
 let cardToken = 0; // guards against a slow chart arriving after another card was opened
@@ -88,11 +87,11 @@ export function showCard(feature, site, onClose) {
   const seen = seenBy(p); // null when the change has no `sources`
 
   const chartSlot = h("div", { class: "chart-slot", id: "signal-chart" },
-    h("p", { class: "note" }, evidence.series ? "Loading signal history…" : "No signal history for this change yet."));
+    h("p", { class: "note" }, evidence.series ? "Loading…" : "No signal history yet."));
   if (evidence.series) {
     loadJson(base + evidence.series)
       .then((data) => token === cardToken && chartSlot.replaceChildren(buildChart(data, p)))
-      .catch(() => token === cardToken && chartSlot.replaceChildren(h("p", { class: "note" }, "The signal history could not be loaded.")));
+      .catch(() => token === cardToken && chartSlot.replaceChildren(h("p", { class: "note" }, "The chart could not be loaded.")));
   }
 
   $("card").replaceChildren(
@@ -112,8 +111,8 @@ export function showCard(feature, site, onClose) {
       seen,
       p.explain ? h("p", { class: "explain" }, p.explain) : null,
       ...buildChecklist(p, site.site?.country),
-      p.verdict ? h("p", { class: "note" }, "A label says where a person should look first. It is not a finding about anyone.") : null,
-      h("h3", {}, "Radar signal over time"),
+      p.verdict ? h("p", { class: "note" }, "A label is a prompt to check, not a finding.") : null,
+      h("h3", {}, "Signal over time"),
       chartSlot
     )
   );

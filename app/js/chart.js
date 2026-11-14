@@ -13,14 +13,7 @@ const DOT_MAX = 15; // lines with at most this many points get a dot per measure
 const sensorKey = (sensor) =>
   /nisar/i.test(sensor) ? "nisar" : /sentinel[- ]?1|^s1\b/i.test(sensor) ? "sentinel" : /optic|dist|hls|landsat|sentinel-?2/i.test(sensor) ? "optical" : "other";
 
-// What a regulator should see in the chart, by kind of change.
-const HINTS = {
-  clearing: "How to read it: each line is a radar signal over time. When trees are removed, the vegetation line drops.",
-  structure: "How to read it: each line is a radar signal over time. When walls and roofs appear, the surface line jumps up.",
-  earthworks: "How to read it: each line is a radar signal over time. While the ground is being moved, the lines turn jumpy.",
-  fire: "How to read it: each line is a radar signal over time. After a fire, the vegetation line drops.",
-};
-const GENERIC_HINT = "How to read it: each line is a radar signal over time. A lasting step in a line means the ground changed.";
+const HINT = "Radar signal over time. A lasting step means the ground changed.";
 
 const el = (tag, attrs = {}, ...kids) => {
   const node = document.createElementNS(NS, tag);
@@ -138,7 +131,7 @@ export function buildChart(data, change) {
   if (!series.length) return h("p", { class: "note" }, "No signal history for this change yet.");
   const { svg, lines, events } = draw(series, data, { mark: change.first_date, axis: `Signal strength (${series[0].unit})` });
   return h("div", {}, svg, legendFor(lines, events, (s) => `${s.name} · ${sensorLabel(s.sensor)}`),
-    h("p", { class: "note" }, HINTS[change.type] ?? GENERIC_HINT));
+    h("p", { class: "note" }, HINT));
 }
 
 /** A site story's curve (story.chart): y from 0, series names as the legend, each series' `note` as a line under it, the chart's `note` as the caption, a slider line. */

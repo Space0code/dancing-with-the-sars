@@ -4,7 +4,7 @@
   {
    "id": "radar",
    "title": "Radar",
-   "caption": "Made-up radar picture. Olive = plants, purple = bare ground, pink = buildings.",
+   "caption": "Sentinel-1, NISAR",
    "frames": [
     {"date": "2024-01-15", "sensor": "Sentinel-1", "url": "layers/radar_before.png"},
     {"date": "2026-11-02", "sensor": "NISAR", "url": "layers/radar_after.png"}

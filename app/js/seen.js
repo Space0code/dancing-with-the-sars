@@ -65,8 +65,8 @@ export function confidenceNote(p, siteSources = []) {
   const risky = saw.some((s) => siteSources.find((d) => d.sensor === s.sensor)?.risky_months?.includes(month));
   if (risky) {
     return kind === "radar"
-      ? "seen only by radar while the ground was probably frozen or snow-covered, which can look like a change"
-      : "seen only by the optical alerts at a time of year when snow and low sun can fool them";
+      ? "seen only by radar, in a month when weather can fake a change"
+      : "seen only by the optical alerts, in a month when weather can fake a change";
   }
   if (kind === "radar" && saw.length > 1) return "both radar satellites saw it";
   return `only ${shortName(saw[0].sensor)} saw it`;

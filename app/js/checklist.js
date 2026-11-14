@@ -58,7 +58,7 @@ function row(question, reasons, mark, deciding, fallback) {
   );
 }
 
-/** The "Why this label?" block for one change. `country` is the site's country (the Catalan records only apply in "ES"). */
+/** The "Why this label?" block for one change. `country` is the site's country (the regional land records only exist for "ES"). */
 export function buildChecklist(p, country) {
   if (!p.verdict) return [h("h3", {}, "Why this label?"), h("p", { class: "note" }, "Not judged yet: this change has not been checked against public records.")];
   const reasons = p.reasons ?? [];
@@ -81,7 +81,7 @@ export function buildChecklist(p, country) {
     const fallback = q.none ?? `${formatArea(p.area_ha)}.`;
     rows.push({ deciding: rs.includes(deciding), el: row(q.q, rs, rowMark(rs, deciding), rs.includes(deciding), fallback) });
   }
-  if (abroad) rows.splice(0, 0, { deciding: false, el: row("Spanish and Catalan records?", [], "neutral", false, "They do not apply outside Spain.") });
+  if (abroad) rows.splice(0, 0, { deciding: false, el: row("Local land records?", [], "neutral", false, "Not available for this place.") });
   for (const r of others) rows.push({ deciding: r === deciding, el: row("Other", [r], markOf(r), r === deciding) });
   rows.sort((a, b) => b.deciding - a.deciding); // stable: the deciding row moves to the top, the rest keep their order
 
