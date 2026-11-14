@@ -82,6 +82,7 @@ async function main() {
       if (!current || loading) return;
       const params = new URLSearchParams({ site: current.site.id });
       if (lastDate) params.set("date", lastDate);
+      if (picture.view !== "radar" && picture.stops()) params.set("view", "satellite"); // a site without photos stays in Radar
       if (selectedId) params.set("change", selectedId);
       try {
         history.replaceState(null, "", `${location.pathname}${location.search}#${params}`);
@@ -130,6 +131,7 @@ async function main() {
   const syncStops = () => {
     timeline.setStops(picture.view === "radar" ? null : picture.stops());
     $("legend-tint").hidden = picture.view !== "radar"; // the tint only exists on the radar pictures
+    writeHash(); // the link carries the view
   };
   const picture = createPicture(map, document.querySelector(".map-wrap"), { onView: syncStops });
 
@@ -205,6 +207,7 @@ async function main() {
     const site = openable.find((s) => s.id === id);
     if (!site) return;
     $("map-error").hidden = true;
+    for (const o of $("site").querySelectorAll("option[value]")) if (o.value && !sites.some((s) => s.id === o.value)) o.remove(); // a hidden site opened earlier by link
     if (!$("site").querySelector(`option[value="${site.id}"]`)) $("site").append(h("option", { value: site.id }, site.name)); // a hidden site, opened by link
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
@@ -247,6 +250,8 @@ async function main() {
       tour.end();
       await openSite(id);
     }
+    const view = params.get("view");
+    if (view === "radar" || view === "satellite") picture.setView(view === "satellite" ? "photo" : "radar"); // anything else is ignored; before the date, so the slider has the view's stops
     if (date) timeline.goTo(date);
     const feature = current.changes.features.find((f) => f.properties.id === params.get("change"));
     if (feature) {

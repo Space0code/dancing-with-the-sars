@@ -164,7 +164,8 @@ export function createTimeline({ onDate }) {
     setStops(list) {
       if (!own) return;
       const iso = stops[index()]?.date;
-      stops = list?.length ? list : own.stops;
+      const end = own.stops.at(-1); // photos that end before the site's last date: keep that date as a final stop, so no change drops out
+      stops = list?.length ? (list.at(-1).date < end.date ? [...list, { date: end.date, sensor: "" }] : list) : own.stops;
       slider.max = stops.length - 1; // before the value: a range input clamps to its old max
       slider.value = nearest(iso);
       build();

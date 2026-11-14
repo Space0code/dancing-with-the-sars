@@ -10,8 +10,10 @@ export function createDrawer({ onClose, onBack, onShow }) {
   const tabs = { overview: $("tab-overview"), inbox: $("tab-inbox") };
   let mode = null; // the open view, or null when closed
   let lastTab = "inbox"; // what "back" returns to
+  let opener = null; // the element that had focus when the drawer opened: it gets focus back on close
 
   function show(view) {
+    if (!mode && document.activeElement && !el.contains(document.activeElement)) opener = document.activeElement;
     mode = view;
     if (view !== "card") lastTab = view;
     el.inert = false;
@@ -27,10 +29,13 @@ export function createDrawer({ onClose, onBack, onShow }) {
 
   function close() {
     if (!mode) return;
+    const hadFocus = el.contains(document.activeElement);
     mode = null;
     el.classList.remove("open");
     el.inert = true; // out of the tab order while hidden
     el.parentElement.classList.remove("drawer-open");
+    if (hadFocus) (opener?.isConnected && !opener.disabled && !opener.hidden ? opener : $("changes-btn")).focus();
+    opener = null;
     onClose?.();
   }
 
