@@ -1,8 +1,21 @@
 {
- "headline": "Agroparc Penedès, Catalonia",
+ "headline": "Agroparc Penedès, Gelida: large earthworks on a contested site",
  "story": [
-  "The written story of this site is coming soon. Until then, the map shows the changes the radar found, and each card says what was seen and when."
+  "Ametller Origen is building the Agroparc, an agri-food park at Gelida, near Barcelona. According to ARA, it is planned for an area of 258 hectares and involves moving 724,482 cubic metres of earth. Neighbours organised as StopAgroparc, and environmental groups, have opposed the project.",
+  "At the end of July 2025 the Barcelona administrative court No. 3 provisionally suspended the urban planning agreement between the company and the Gelida council in the most sensitive areas; ARA reported that the bulk of the work could not begin until it was confirmed that two eagles living in the area can be relocated. In August 2025 the Mossos d'Esquadra and the Agents Rurals found machinery working inside the area covered by the ruling, and the works were stopped; the company said it had paused them temporarily and denied breaching the ruling. In September 2025 the company said it would resume work after the court confirmed it could. On 3 August 2026 ARA reported that the Environmental Prosecutor's Office had dismissed a complaint against the works, filed by StopAgroparc and the Bosc Verd collective.",
+  "What the radar adds: earthworks change the ground surface, so repeated radar images of the site stop matching each other, and new structures reflect radar differently. The map marks where this happened and when it first appeared, so you can compare it with the dates on the timeline. Our sources do not say whether the works continue after August 2026; the most recent radar passes can show it."
  ],
- "events": [],
- "sources": []
+ "events": [
+  {"date": "2025-07-31", "label": "Reported: a Barcelona court suspends the planning agreement in the most sensitive areas (ruling at the end of July, exact day not published)"},
+  {"date": "2025-08-07", "label": "Reported: police find machinery working in the area covered by the ruling; the works are stopped, the company says temporarily"},
+  {"date": "2025-09-09", "label": "The company announces it will resume work after the court confirms it can"},
+  {"date": "2026-08-03", "label": "Reported: the Environmental Prosecutor's Office has dismissed the complaint against the works (decision date not published)"}
+ ],
+ "sources": [
+  {"title": "ARA: The eagles halt the Ametller agropark, judge halts the work until their transfer is confirmed (31 Jul 2025)", "url": "https://en.ara.cat/economy/the-eagles-halt-the-ametller-agropark-judge-halts-the-work-until-their-transfer-is-confirmed_1_5460443.html"},
+  {"title": "VilaWeb: Ametller Origen paralitza els treballs a l'Agroparc de Gelida (7 Aug 2025)", "url": "https://www.vilaweb.cat/noticies/ametller-origen-paralitza-els-treballs-a-lagroparc-de-gelida-per-la-pressio-veinal-i-la-resolucio-judicial/"},
+  {"title": "3Cat: Ametller Origen atura l'Agroparc de Gelida després de l'ordre d'un jutge per protegir dues àguiles (8 Aug 2025)", "url": "https://www.3cat.cat/3catinfo/ametller-origen-atura-lagroparc-de-gelida-despres-de-lordre-dun-jutge-per-protegir-dues-aguiles/noticia/3365393/"},
+  {"title": "ARA: Ametller Origen will resume construction work on the future agropark in Gelida (9 Sep 2025)", "url": "https://en.ara.cat/economy/almendro-origen-will-resume-construction-work-the-future-agropark-in-gelida_25_5491626.html"},
+  {"title": "ARA: The prosecution files the complaint against the works of Agroparc of Ametller Origen (3 Aug 2026)", "url": "https://en.ara.cat/economy/the-prosecution-files-the-complaint-against-the-works-of-agroparc-of-ametller-origen_25_5816220.html"}
+ ]
 }

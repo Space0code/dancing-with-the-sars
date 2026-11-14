@@ -13,6 +13,7 @@ app only reads it. Last updated 2026-11-14. Living example: `app/data/fixture/` 
 | `<site>/evidence/*.png` | radar | small before / after pictures per change, for the card |
 | `<site>/series/<change id>.json` | radar | the signal over time per change, for the chart |
 | `<site>/story.json` | verdict | plain-language story of the site, dated events, sources |
+| `<site>/context/` (optional) | verdict | what the public records say, as map layers the user can switch on |
 
 ## `sites.json`
 `{"version": 1, "sites": [site, ...]}`, each site:
@@ -54,7 +55,40 @@ already plain language (e.g. "Vegetation echo (HV)").
 
 ## `story.json`
 `{"headline", "story": [paragraph, ...], "events": [{date, label}], "sources": [{title, url}]}`. Events are shown as
-markers on the timeline (e.g. "Told an assessment was required").
+markers on the timeline (e.g. "Told an assessment was required"). Optional `"chart": {"title", "file", "note"}`: a
+curve for the story panel (e.g. hectares cleared over time at Muhos); `file` sits next to `story.json` and has the
+`series/<change id>.json` format; the validator does not check it yet (#73).
+
+## `context/` (optional): what the records say
+`context/index.json` = `{"layers": [{id, title, kind, file, source, url, checked, note}]}`: `kind` is `protected` ·
+`zoning` · `buildings` · `solar`; `file` is a GeoJSON next to it (`context/<id>.geojson`, EPSG:4326); `checked` is
+`YYYY-MM-DD`; `title` (≤ 60 chars) and `note` (≤ 160 chars) are plain language. Feature properties: `label` (always:
+the text shown on click) and, where they apply, `class` (zoning: `buildable` · `non_buildable` · `planned`;
+protected: `natura2000` · `pein` · `other`), `year` (buildings: construction year), `name`, `status`, `area_ha`.
+A site without the folder has no record layers. Each file ≤ 1 MB. Made in #45, shown in #52; the validator does not
+check this folder yet.
+
+## Several sensors (optional fields)
+Added for changes seen by more than one satellite; design and wording in `multi-sensor-design.md`. All optional, the
+format stays version 1: data without them is valid, and the app shows it as before.
+- **Change** `not_before` (`YYYY-MM-DD` or null, not after `first_date`): the last date it was known unchanged.
+- **Change** `sources`: list of `{sensor, kind, role, first_date, last_date, not_before, confidence, area_ha, share, note}`.
+  `kind` = `optical` · `radar`; `role` = `detected` · `late_start` · `not_seen` · `not_watching`; dates are
+  `YYYY-MM-DD` or null; `confidence` is `low` · `medium` · `high` or null; `share` is 0..1 (fraction of the change's
+  area); `note` = the plain sentence. Dates, `not_before` and `confidence` must be null for `not_seen` and `not_watching`.
+- **Site** `sources` (in `sites.json`): list of `{sensor, kind, start, end, revisit_days, sees, risky_months}`;
+  `end` may be null (still running), `sees` = change types it can detect, `risky_months` = month numbers 1..12.
+
+```json
+"sources": [
+ {"sensor": "OPERA DIST-ALERT", "kind": "optical", "role": "detected", "first_date": "2025-07-15",
+  "last_date": "2025-07-15", "not_before": "2025-07-05", "confidence": "medium", "area_ha": 61.7, "share": 1.0,
+  "note": "An optical alert found vegetation loss here between 5 and 15 July 2025."},
+ {"sensor": "NISAR L-band", "kind": "radar", "role": "late_start", "first_date": "2026-06-25",
+  "last_date": "2026-06-25", "not_before": null, "confidence": "medium", "area_ha": 58.6, "share": 0.95,
+  "note": "NISAR began watching on 25 Jun 2026 and shows the change already under way."}]
+```
+Fixture: `fixture-0005` (three sources), `fixture-0007` (one source), `fixture-0004` (late start only).
 
 ## Size and hygiene
 Every file under 10 MB (the validator checks); pictures are PNG; nothing here needs credentials or the network.

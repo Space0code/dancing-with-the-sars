@@ -1,0 +1,279 @@
+{
+ "hits": 3,
+ "took": 91,
+ "items": [
+  {
+   "meta": {
+    "concept-id": "G4387947295-LPCLOUD"
+   },
+   "umm": {
+    "GranuleUR": "OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1",
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-10-23T10:02:43.794750Z",
+      "EndingDateTime": "2026-10-23T10:02:43.794750Z"
+     }
+    },
+    "CloudCover": 68,
+    "AdditionalAttributes": [
+     {
+      "Name": "SPATIAL_COVERAGE",
+      "Values": [
+       "99"
+      ]
+     },
+     {
+      "Name": "MGRS_TILE_ID",
+      "Values": [
+       "35WMM"
+      ]
+     },
+     {
+      "Name": "HORIZONTAL_CS_CODE",
+      "Values": [
+       "EPSG:32635"
+      ]
+     }
+    ],
+    "SpatialExtent": {
+     "HorizontalSpatialDomain": {
+      "Geometry": {
+       "GPolygons": [
+        {
+         "Boundary": {
+          "Points": [
+           {
+            "Longitude": 24.8854324,
+            "Latitude": 64.90913477
+           },
+           {
+            "Longitude": 24.95993949,
+            "Latitude": 63.92449111
+           },
+           {
+            "Longitude": 27.1991056,
+            "Latitude": 63.93871258
+           },
+           {
+            "Longitude": 27.20638377,
+            "Latitude": 64.92399554
+           },
+           {
+            "Longitude": 24.8854324,
+            "Latitude": 64.90913477
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    },
+    "RelatedUrls": [
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1_VEG-DIST-STATUS.tif",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1_VEG-DIST-STATUS.tif",
+      "Type": "GET DATA"
+     },
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1_VEG-DIST-DATE.tif",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1_VEG-DIST-DATE.tif",
+      "Type": "GET DATA"
+     },
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1_VEG-DIST-STATUS.png",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1_VEG-DIST-STATUS.png",
+      "Type": "GET RELATED VISUALIZATION"
+     },
+     {
+      "URL": "s3://lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T100041Z_20261025T065842Z_S2A_30_v1_VEG-DIST-STATUS.tif",
+      "Description": "This link provides direct download access via S3 to the granule",
+      "Type": "GET DATA VIA DIRECT ACCESS"
+     }
+    ]
+   }
+  },
+  {
+   "meta": {
+    "concept-id": "G4387947272-LPCLOUD"
+   },
+   "umm": {
+    "GranuleUR": "OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1",
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-10-23T09:52:37.954670Z",
+      "EndingDateTime": "2026-10-23T09:52:37.954670Z"
+     }
+    },
+    "CloudCover": 68,
+    "AdditionalAttributes": [
+     {
+      "Name": "SPATIAL_COVERAGE",
+      "Values": [
+       "99"
+      ]
+     },
+     {
+      "Name": "MGRS_TILE_ID",
+      "Values": [
+       "35WMM"
+      ]
+     },
+     {
+      "Name": "HORIZONTAL_CS_CODE",
+      "Values": [
+       "EPSG:32635"
+      ]
+     }
+    ],
+    "SpatialExtent": {
+     "HorizontalSpatialDomain": {
+      "Geometry": {
+       "GPolygons": [
+        {
+         "Boundary": {
+          "Points": [
+           {
+            "Longitude": 24.8854324,
+            "Latitude": 64.90913477
+           },
+           {
+            "Longitude": 24.95993949,
+            "Latitude": 63.92449111
+           },
+           {
+            "Longitude": 27.1991056,
+            "Latitude": 63.93871258
+           },
+           {
+            "Longitude": 27.20638377,
+            "Latitude": 64.92399554
+           },
+           {
+            "Longitude": 24.8854324,
+            "Latitude": 64.90913477
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    },
+    "RelatedUrls": [
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1_VEG-DIST-STATUS.tif",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1_VEG-DIST-STATUS.tif",
+      "Type": "GET DATA"
+     },
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1_VEG-DIST-DATE.tif",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1_VEG-DIST-DATE.tif",
+      "Type": "GET DATA"
+     },
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1_VEG-DIST-STATUS.png",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1_VEG-DIST-STATUS.png",
+      "Type": "GET RELATED VISUALIZATION"
+     },
+     {
+      "URL": "s3://lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMM_20261023T095049Z_20261025T065822Z_S2B_30_v1_VEG-DIST-STATUS.tif",
+      "Description": "This link provides direct download access via S3 to the granule",
+      "Type": "GET DATA VIA DIRECT ACCESS"
+     }
+    ]
+   }
+  },
+  {
+   "meta": {
+    "concept-id": "G4390027658-LPCLOUD"
+   },
+   "umm": {
+    "GranuleUR": "OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1",
+    "TemporalExtent": {
+     "RangeDateTime": {
+      "BeginningDateTime": "2026-10-21T09:34:39.596400Z",
+      "EndingDateTime": "2026-10-21T09:34:39.596400Z"
+     }
+    },
+    "CloudCover": 70,
+    "AdditionalAttributes": [
+     {
+      "Name": "SPATIAL_COVERAGE",
+      "Values": [
+       "31"
+      ]
+     },
+     {
+      "Name": "MGRS_TILE_ID",
+      "Values": [
+       "35WMN"
+      ]
+     },
+     {
+      "Name": "HORIZONTAL_CS_CODE",
+      "Values": [
+       "Null"
+      ]
+     }
+    ],
+    "SpatialExtent": {
+     "HorizontalSpatialDomain": {
+      "Geometry": {
+       "GPolygons": [
+        {
+         "Boundary": {
+          "Points": [
+           {
+            "Longitude": 25.16644218,
+            "Latitude": 64.82507458
+           },
+           {
+            "Longitude": 27.20571149,
+            "Latitude": 64.83624076
+           },
+           {
+            "Longitude": 27.20763183,
+            "Latitude": 65.08523548
+           },
+           {
+            "Longitude": 25.59177341,
+            "Latitude": 65.33506428
+           },
+           {
+            "Longitude": 25.16644218,
+            "Latitude": 64.82507458
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    },
+    "RelatedUrls": [
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1_VEG-DIST-STATUS.tif",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1_VEG-DIST-STATUS.tif",
+      "Type": "GET DATA"
+     },
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1_VEG-DIST-DATE.tif",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1_VEG-DIST-DATE.tif",
+      "Type": "GET DATA"
+     },
+     {
+      "URL": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1_VEG-DIST-STATUS.png",
+      "Description": "Download OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1_VEG-DIST-STATUS.png",
+      "Type": "GET RELATED VISUALIZATION"
+     },
+     {
+      "URL": "s3://lp-prod-protected/OPERA_L3_DIST-ALERT-HLS_V1/OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1/OPERA_L3_DIST-ALERT-HLS_T35WMN_20261021T093439Z_20261027T020704Z_L8_30_v1_VEG-DIST-STATUS.tif",
+      "Description": "This link provides direct download access via S3 to the granule",
+      "Type": "GET DATA VIA DIRECT ACCESS"
+     }
+    ]
+   }
+  }
+ ]
+}

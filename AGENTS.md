@@ -41,9 +41,15 @@ explain earth-science terms in engineering language (signals, noise, dB, phase, 
 
 ## Git
 - Never commit to `main` directly; never force-push. Branch per issue: `<N>-<short-slug>`. Small PRs, body starts `Closes #N`.
-- **Merge policy:** PRs that only touch `kb/`, `explore/`, docs → the author squash-merges
-  (`gh pr merge --squash --delete-branch`) after self-review. PRs touching shared code (`src/`, `app/`, deps, `.claude/`,
-  this file) → label `status:review`, request review from `TianK003`; the orchestrator merges.
+- **Merge policy: every agent reviews and merges its own PRs.** PRs that only touch `kb/`, `explore/`, docs → the
+  author squash-merges (`gh pr merge --squash --delete-branch`) after self-review. PRs touching shared code (`src/`,
+  `app/`, deps, `.claude/`) → the author's agent **spawns a fresh Opus sub-agent as reviewer** (give it the PR number
+  and the goal, not your conclusions; it runs the tests and tries the change for real), the reviewer posts its review as
+  a PR comment, the author fixes the findings and squash-merges once `python -m pytest -q` and
+  `python -m sarwatch.contract app/data` pass. Then one line on #9: `@TianK003 #N merged (PR #M): …`.
+- **Every PR shows a picture** of what it built (screenshot or rendered image), so humans can judge by looking.
+- **Ask the orchestrator first** (on #9) for changes to the data format (`src/sarwatch/contract.py`,
+  `kb/data-contract.md`), to this file, or to another track's files.
 - Pull/rebase before pushing; resolve conflicts yourself, never by discarding others' work.
 
 ## Repo layout (create folders only when needed)

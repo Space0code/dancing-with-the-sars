@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 from PIL import Image
 from pyproj import Geod, Transformer
+from scipy import ndimage
 from shapely.geometry import shape
 
 from sarwatch import export
@@ -138,7 +139,10 @@ def test_two_runs_give_a_valid_site_in_the_right_place(runs, site):
     assert p["signal"]["delta"] == round(p["signal"]["delta"], 1)
     assert p["verdict"] is None and p["reasons"] == []
     assert "vegetation echo drop by 6 dB" in p["explain"] and "trees" in p["explain"]
-    assert "Aug 2026" in p["explain"]
+    # the radar only knows the change happened between two passes: the one before it showed and the first showing it
+    first = date.fromisoformat(p["first_date"])
+    previous = DATES[DATES.index(first) - 1]
+    assert f"between {previous.day} {previous:%b} and {first.day} {first:%b %Y}," in p["explain"]
     for ring in clearing["geometry"]["coordinates"]:
         assert ring[0] == ring[-1]
         assert all(v == round(v, 6) for pt in ring for v in pt)
@@ -164,8 +168,9 @@ def test_site_pictures_have_array_corners_in_contract_order(runs, site):
         assert np.allclose(layer["coordinates"], expected, atol=2e-6)
         img = Image.open(site_dir / layer["url"])
         assert max(img.size) <= export.MAX_LAYER_PX
-        assert "NISAR" in layer["title"] or "Sentinel-1" in layer["title"]
-        assert "Red = surface echo" in layer["caption"] and "Green = vegetation echo" in layer["caption"]
+        assert layer["title"] in ("NISAR radar, before", "NISAR radar, after",
+                                  "Sentinel-1 radar, before", "Sentinel-1 radar, after")  # the date has its own field
+        assert "Yellow-green = trees" in layer["caption"] and len(layer["caption"]) <= 130
 
     before, after = layers[0], layers[1]
     assert before["date"] == DATES[1].isoformat() and after["date"] == DATES[-2].isoformat()
@@ -215,6 +220,26 @@ def test_series_include_other_sensors_over_the_same_ground(runs, site):
     assert {s["sensor"] for s in series_of("Sentinel-1 C-band", "clearing")["series"]} == {
         "Sentinel-1 C-band", "NISAR L-band"}
     assert {s["sensor"] for s in series_of("NISAR L-band", "structure")["series"]} == {"NISAR L-band"}
+
+
+def test_site_bbox_and_time_range_cover_all_data(runs, site):
+    _, site_dir = site
+    summary = write_site(site_dir, SITE, list(runs))
+
+    # time range: first to last pass of all runs (Sentinel-1 starts earlier, NISAR ends later)
+    assert summary["time_range"] == [S1_DATES[0].isoformat(), DATES[-1].isoformat()]
+    assert write_site(site_dir, SITE, [runs[0]])["time_range"] == [DATES[0].isoformat(), DATES[-1].isoformat()]
+
+    summary = write_site(site_dir, SITE, list(runs))
+    west, south, east, north = summary["bbox"]
+    points = [pt for f in load(site_dir, "changes.geojson")["features"] for ring in f["geometry"]["coordinates"]
+              for pt in ring]
+    points += [pt for layer in load(site_dir, "layers.json")["layers"] for pt in layer["coordinates"]]
+    lons, lats = [p[0] for p in points], [p[1] for p in points]
+    assert west < min(lons) and east > max(lons) and south < min(lats) and north > max(lats)
+    margin = 0.03  # small margin: at most ~3 % of the span on each side
+    assert min(lons) - west < margin * (max(lons) - min(lons)) and north - max(lats) < margin * (max(lats) - min(lats))
+    assert all(v == round(v, 4) for v in summary["bbox"])
 
 
 def test_rerun_with_fewer_changes_leaves_no_stale_files(runs, site):
@@ -294,3 +319,58 @@ def test_polar_stereographic_grid(site):
         assert shape({"type": "Polygon", "coordinates": [layer["coordinates"] + layer["coordinates"][:1]]}).is_valid
         tl, tr, _, bl = layer["coordinates"]
         assert tr[1] < tl[1] and bl[0] < tl[0]  # rotated: the array's right is south, its bottom is west
+
+
+def test_evidence_pictures_are_north_up_on_a_rotated_grid(site):
+    """On the Muhos grid (EPSG:3413, array 'up' = east-north-east) a bright spot placed 240 m north of a round
+    clearing must appear straight above it in the card pictures, and one 240 m east straight to its right; the
+    yellow outline must enclose the darkened patch."""
+    data, site_dir = site
+    epsg, transform, ny, nx = 3413, (20.0, 0.0, 2617240.0, 0.0, -20.0, -898540.0), 80, 80
+    a, _, c, _, e, f = transform
+    rows, cols = np.mgrid[0:ny, 0:nx] + 0.5
+    lon, lat = lonlat(a * cols + c, e * rows + f, epsg)
+    centre = lonlat(a * 40 + c, e * 40 + f, epsg)
+
+    def near(point, radius_m):
+        return GEOD.inv(np.full(lon.shape, point[0]), np.full(lat.shape, point[1]), lon, lat)[2] <= radius_m
+
+    north, east = GEOD.fwd(*centre, 0, 240)[:2], GEOD.fwd(*centre, 90, 240)[:2]
+    rng = np.random.default_rng(7)
+    stack = {"HH": speckle(rng, 0.1, (len(DATES), ny, nx)), "HV": speckle(rng, 0.02, (len(DATES), ny, nx))}
+    stack["HV"][CLEAR_PASS:, near(centre, 160)] *= gain(-6)  # a round clearing, 160 m radius
+    stack["HH"][:, near(north, 30)] *= gain(10)               # unchanging landmarks: never detected
+    stack["HV"][:, near(east, 30)] *= gain(10)
+    run = Run("NISAR L-band", detect_changes(stack, DATES, (20.0, 20.0)), DATES, stack, transform, epsg)
+
+    write_site(site_dir, SITE, [run])
+
+    assert validate(data) == []
+    (feature,) = load(site_dir, "changes.geojson")["features"]
+    evidence = feature["properties"]["evidence"]
+    before = np.array(Image.open(site_dir / evidence["before"]).convert("RGBA")).astype(int)
+    after = np.array(Image.open(site_dir / evidence["after"]).convert("RGBA")).astype(int)
+    h, w = after.shape[:2]
+    assert abs(h - w) <= 2  # a round change gives a square picture: pixels are square in metres
+    r, g, b = after[..., 0], after[..., 1], after[..., 2]
+
+    def centroid(mask):
+        yy, xx = np.nonzero(mask)
+        assert yy.size > 10
+        return xx.mean(), yy.mean()
+
+    ring = (after == export.OUTLINE_RGBA).all(axis=-1)
+    cx, cy = centroid(ring)
+    assert abs(cx - w / 2) < 0.05 * w and abs(cy - h / 2) < 0.05 * h  # the change sits in the middle
+    nx_, ny_ = centroid((r > 240) & (b > 240) & ~ring)  # bright surface echo (red + blue): the north landmark
+    ex, ey = centroid((g > 240) & (b < 30) & ~ring)      # bright vegetation echo (green): the east landmark
+    assert ny_ < cy - 0.2 * h and abs(nx_ - cx) < 0.15 * abs(ny_ - cy)  # north is up
+    assert ex > cx + 0.2 * w and abs(ey - cy) < 0.15 * abs(ex - cx)    # east is right (not mirrored)
+    assert abs(ny_ - cy) == pytest.approx(abs(ex - cx), rel=0.1)       # 240 m is the same length both ways
+
+    # the outline lies on the patch that darkened: inside it the vegetation echo (green) fell, around it it did not
+    inside = ndimage.binary_fill_holes(ring) & ~ring
+    around = ndimage.binary_dilation(ring, iterations=32) & ~ndimage.binary_dilation(ring, iterations=16) & ~inside
+    drop = before[..., 1] - g
+    assert drop[ndimage.binary_erosion(inside, iterations=3)].mean() > 40
+    assert abs(drop[around].mean()) < 15
