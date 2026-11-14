@@ -346,7 +346,13 @@ def main(argv=None) -> int:
     parser.add_argument("--records", help="hand-entered records file (skips the live lookups)")
     parser.add_argument("--dry-run", action="store_true", help="print the label counts, write nothing")
     parser.add_argument("--allow-unchecked", action="store_true", help="write labels even if every lookup failed")
+    parser.add_argument("--offline", action="store_true",
+                        help="answer the lookups from the on-disk cache only (a miss counts as a failed lookup)")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    if args.offline:
+        from sarwatch.context import _common
+
+        _common.OFFLINE = True
     before, after, failed = apply_file(args.changes, args.records, args.dry_run, allow_unchecked=args.allow_unchecked)
     fmt = lambda c: ", ".join(f"{k} {v}" for k, v in sorted(c.items())) or "none"  # noqa: E731
     print(f"labels before: {fmt(before)}\nlabels after:  {fmt(after)}" + ("  (dry run, nothing written)" if args.dry_run else ""))

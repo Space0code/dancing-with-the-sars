@@ -226,6 +226,20 @@ def test_site_outside_spain_uses_no_catalan_lookups(fixture_copy):
     assert reasons and "records_unavailable" not in codes(reasons)  # Catalan services are not applicable in Finland
 
 
+def test_offline_flag_serves_lookups_from_the_cache_only(fixture_copy, monkeypatch, capsys):
+    from sarwatch.context import _common
+    from sarwatch.verdict import main
+
+    monkeypatch.setattr(_common, "OFFLINE", False)
+    monkeypatch.setattr(_common, "CACHE_DIR", fixture_copy / "empty-cache")  # nothing cached: every lookup misses
+    path = fixture_copy / "fixture" / "changes.geojson"
+    original = path.read_text(encoding="utf-8")
+    with pytest.raises(SystemExit) as stop:  # no network is used (it would hang or succeed): all lookups fail
+        main([str(path), "--offline"])
+    assert "Nothing written" in str(stop.value) and _common.OFFLINE is True
+    assert path.read_text(encoding="utf-8") == original
+
+
 # ---- review fixes on PR #31 ----
 
 

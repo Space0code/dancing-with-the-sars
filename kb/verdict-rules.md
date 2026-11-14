@@ -56,6 +56,19 @@ All other reasons that apply are listed after the deciding one: `zoning_urban`, 
   ```
   Each record has the shape of a lookup result; `checked` defaults to true and `source` to "Hand-entered records". A per-change entry replaces `default` for the same key. A record with a **`scope`** (GeoJSON Polygon/MultiPolygon, EPSG:4326) applies only to changes that intersect it, so a stop order for one site does not label changes elsewhere. The `official` record: `assessment_required`, `assessment_completed` (an assessment needed but not finished at the time of the change) and `actions` (`kind` = `stop_order` / `investigation` / other, `date`, `text`, `source`, `url`).
 
+## Run on a site (one command per site)
+After the radar track writes or regenerates `app/data/<site>/changes.geojson`:
+```
+pip install -e ".[verdict]"                                   # once: requests, shapely, pyproj
+python -m sarwatch.verdict app/data/agroparc/changes.geojson   # Catalan site: live lookups, cached on disk
+python -m sarwatch.verdict app/data/muhos/changes.geojson      # Finland: uses app/data/muhos/records.json, no network
+python -m sarwatch.contract app/data                           # always check the result
+```
+- **Cache:** every lookup response is stored under `data/cache/context/` (gitignored; move it with `SARWATCH_CONTEXT_CACHE`), keyed by the request including the change polygon. A re-run after a regeneration only asks the services about polygons it has not seen; unchanged polygons are answered from disk. Failures are not cached, so they are retried.
+- **Re-run is safe and identical:** the command recomputes every verdict from scratch. `--offline` answers from the cache only (a miss counts as a failed lookup, and all-failed refuses to write), which gives a byte-identical file; measured on the 185 Agroparc trial changes: 2 s, 0 requests.
+- **Cold cost** (measured 14 Nov 2026, trial Agroparc run): 326 s for 185 changes = 1.8 s and 6.1 requests per change (protected areas 3, zoning 2, land registry 1, solar list once per municipality). Plan about an hour per 2,000 changes the first time.
+- Failed lookups are printed per service on stderr; they never silently become labels (see above).
+
 ## What we changed from the proposal in `product.md`
 - **Order:** a recorded wildfire that can explain the change is checked first, so a fire inside a protected area is "expected", not "high concern".
 - **Small and unflagged → expected** (row 9). The proposal did not say what happens below 2 ha with no flag; we chose not to bother a regulator with it. `small_area` is shown so the card says why.
