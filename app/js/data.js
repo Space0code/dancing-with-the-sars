@@ -19,10 +19,10 @@ export async function loadSites() {
 
 export async function loadSite(site) {
   const base = `data/${site.id}/`;
-  const [changes, layers, story] = await Promise.all([
+  const [changes, frames, story] = await Promise.all([
     getJson(`${base}changes.geojson`),
-    getJson(`${base}layers.json`, true),
+    getJson(`${base}frames.json`, true), // optional: without it the map shows only the background
     getJson(`${base}story.json`, true),
   ]);
-  return { site, base, changes, layers: layers?.layers ?? [], story };
+  return { site, base, changes, frames, story };
 }

@@ -1,12 +1,11 @@
-// Written by Claude. Wires the intro, site switcher, map, legend, basemap + year photos, timeline, side panel, explainer and tour.
+// Written by Claude. Wires the intro, site switcher, map, the big picture (Radar / Satellite, swipe), legend, timeline, side panel, explainer and tour.
 import { APP, VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
 import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
 import { renderIntro, renderStory, showCard, showHint } from "./panel.js";
-import { renderLayerControl } from "./overlays.js";
 import { createInbox } from "./inbox.js";
-import { providerFor, photoFor } from "./photos.js";
+import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
 
 const $ = (id) => document.getElementById(id);
@@ -26,13 +25,16 @@ function renderLegend() {
   );
 }
 
+// Phones: the legend and the picture's caption fold behind small buttons so most of the map stays visible.
+function wireFolds() {
+  const fold = (btn, box) =>
+    btn.addEventListener("click", () => btn.setAttribute("aria-expanded", String(box.classList.toggle("open"))));
+  fold($("legend-btn"), $("legend-box"));
+  fold($("caption-btn"), $("view-caption"));
+}
+
 function fillSiteSelect(sites) {
-  $("site").replaceChildren(
-    h("option", { value: "" }, "Choose a site…"),
-    ...sites.map((s) =>
-      h("option", { value: s.id, disabled: !s.ready }, s.ready ? s.name : `${s.name} (coming soon)`)
-    )
-  );
+  $("site").replaceChildren(h("option", { value: "" }, "Choose a site…"), ...sites.map((s) => h("option", { value: s.id }, s.name)));
 }
 
 /** One box around every site, for the intro view. */
@@ -52,6 +54,13 @@ function findStepChange(features, step) {
   return matching.sort((a, b) => b.properties.area_ha - a.properties.area_ha)[0] ?? null;
 }
 
+/** Replay a short highlight on an element (the running total, when new changes appear). */
+function bump(el) {
+  el.classList.remove("bump");
+  void el.offsetWidth; // restart the animation
+  el.classList.add("bump");
+}
+
 function setupExplainer() {
   const dialog = $("explainer");
   $("explain-btn").addEventListener("click", () => dialog.showModal());
@@ -64,15 +73,16 @@ async function main() {
   $("app-pitch").textContent = APP.pitch;
   setVerdictColors();
   renderLegend();
+  wireFolds();
   setupExplainer();
   if (!window.maplibregl) return showError("The map library could not be loaded. Check your internet connection and reload.");
 
-  const [sites, tourData] = await Promise.all([loadSites(), loadJson("tour.json").catch(() => ({ steps: [] }))]);
+  const [allSites, tourData] = await Promise.all([loadSites(), loadJson("tour.json").catch(() => ({ steps: [] }))]);
+  const sites = allSites.filter((s) => s.ready && !s.hidden); // the only sites the menu, the intro and the tour know
   fillSiteSelect(sites);
   const overview = allSitesBounds(sites);
   let current = null; // the open site's data, or null on the intro screen
-  let basemap = "satellite";
-  let year = null;
+  let lastDate = null; // the slider's previous date, to spot changes that just appeared
 
   function select(feature) {
     map.select(feature);
@@ -85,13 +95,12 @@ async function main() {
   const map = createChangeMap($("map"), { onSelect: select, bounds: overview });
   await map.ready;
 
-  // The satellite background follows the slider year: that year's photo, or today's imagery when there is none.
-  function showPhoto() {
-    const photo = current && year ? photoFor(providerFor(current.site), year) : null;
-    map.setPhoto(photo);
-    const label = $("photo-label");
-    label.hidden = basemap !== "satellite";
-    label.textContent = photo ? photo.label : current && year ? `Recent satellite imagery (no ${year} photo)` : "Recent satellite imagery";
+  const picture = createPicture(map, document.querySelector(".map-wrap"));
+
+  /** Changes that first show after the previous slider date, up to this one (only when moving forward). */
+  function justAppeared(iso) {
+    if (!current || !lastDate || iso <= lastDate) return [];
+    return current.changes.features.filter((f) => f.properties.first_date > lastDate && f.properties.first_date <= iso).map((f) => f.properties.id);
   }
 
   const refreshTotal = () => {
@@ -110,15 +119,16 @@ async function main() {
   });
   const timeline = createTimeline({
     onDate(iso) {
+      const fresh = justAppeared(iso);
+      lastDate = iso;
       map.setDate(iso);
+      map.flash(fresh);
+      picture.setDate(iso);
       inbox.setDate(iso);
       refreshTotal();
-      const y = Number(iso.slice(0, 4));
-      if (y !== year) {
-        year = y;
-        showPhoto();
-      }
+      if (fresh.length) bump($("total"));
     },
+    onPlay: () => picture.setView("radar"), // the time-lapse always runs on the radar pictures
   });
 
   const tour = createTour(tourData.steps ?? [], sites, {
@@ -148,40 +158,36 @@ async function main() {
 
   function showIntro() {
     current = null;
-    year = null;
+    lastDate = null;
     $("map-error").hidden = true;
     $("site").value = "";
     $("fake-badge").hidden = true;
-    $("layers").hidden = true;
     history.replaceState(null, "", location.pathname + location.search);
     renderIntro(sites, { onPick: (id) => openSite(id).catch((err) => showError(err.message)), onTour: () => tour.start() });
     inbox.setSite([]); // no site, no list: the tabs hide and the Details view shows the intro
     inbox.showTab("details");
     $("panel-tabs").hidden = true;
-    map.setOverlays("", []);
+    picture.setSite(null);
     map.showOverview(overview);
     timeline.clear();
-    showPhoto();
   }
 
   async function openSite(id) {
-    const site = sites.find((s) => s.id === id && s.ready);
+    const site = sites.find((s) => s.id === id);
     if (!site) return;
     $("map-error").hidden = true;
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
-    $("layers").hidden = false;
     $("panel-tabs").hidden = false;
     history.replaceState(null, "", `#site=${site.id}`);
     current = await loadSite(site);
-    year = null; // a new site can mean a new photo series, so redraw it even if the year stays the same
+    lastDate = null; // no flash for the changes already there when the site opens
     renderStory(current.story); // first: it changes the map's size on phones
     showHint();
     inbox.setSite(current.changes.features);
     map.setExtraFilter(null);
     map.showSite(site, current.changes);
-    map.setOverlays(current.base, current.layers);
-    renderLayerControl(current.layers, map);
+    picture.setSite(current);
     timeline.setRange(site, current.changes.features, current.story?.events);
   }
 
@@ -191,19 +197,12 @@ async function main() {
     if (!id) return showIntro();
     openSite(id).catch((err) => showError(err.message));
   });
-  document.querySelectorAll('input[name="basemap"]').forEach((radio) =>
-    radio.addEventListener("change", (e) => {
-      basemap = e.target.value;
-      map.setBasemap(basemap);
-      showPhoto();
-    })
-  );
 
   const wanted = new URLSearchParams(location.hash.slice(1)).get("site");
-  const asked = sites.find((s) => s.id === wanted);
-  if (asked?.ready) return openSite(asked.id);
+  if (sites.some((s) => s.id === wanted)) return openSite(wanted);
   showIntro();
-  if (asked) showError(`${asked.name} is coming soon. Pick another site or start the tour.`, true);
+  const asked = allSites.find((s) => s.id === wanted);
+  if (asked) showError(`${asked.name} is not shown in this version. Pick another site or start the tour.`, true);
 }
 
 main().catch((err) => showError(err.message));

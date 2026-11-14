@@ -21,7 +21,7 @@
   {
    "id": "radar",
    "title": "Radar",
-   "caption": "Radar picture. Grey: unchanged since summer 2025. Orange: the echo from trees and plants dropped here.",
+   "caption": "Radar picture. Grey: unchanged since summer 2025. Pink: the echo from trees and plants dropped here.",
    "frames": [
     {
      "date": "2025-06-02",
@@ -127,16 +127,6 @@
      "date": "2025-09-30",
      "sensor": "Sentinel-1",
      "url": "frames/radar/2025-09-30.jpg"
-    },
-    {
-     "date": "2026-03-11",
-     "sensor": "Sentinel-1",
-     "url": "frames/radar/2026-03-11.jpg"
-    },
-    {
-     "date": "2026-03-23",
-     "sensor": "Sentinel-1",
-     "url": "frames/radar/2026-03-23.jpg"
     },
     {
      "date": "2026-04-04",
