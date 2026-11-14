@@ -765,14 +765,17 @@ def _primary_parts(dets: list, runs: list, n_early: dict, params: dict, site_lis
         clauses, agree, best = [], False, None
         for s in site_list:
             i = next((k for k, r in enumerate(runs) if r.sensor == s.name), None)
-            if s.kind != "radar" or i is None:
+            watching = s.start <= (not_before or day)  # watching over the whole window
+            if s.kind != "radar" or (i is None and watching):
                 continue
-            run, short = runs[i], SHORT.get(s.name, s.name)
-            part = _part_mask(run, gj)
-            hit = part & (run.result.labels > 0)
-            share = hit.sum() / max(part.sum(), 1)
+            short = SHORT.get(s.name, s.name)
+            share = 0.0
+            if i is not None:
+                run = runs[i]
+                part = _part_mask(run, gj)
+                hit = part & (run.result.labels > 0)
+                share = hit.sum() / max(part.sum(), 1)
             if share < ATTACH_MIN:
-                watching = s.start <= (not_before or day)  # watching over the whole window
                 note = f"{short} radar did not flag it." if watching else (
                     f"{s.name} was not flying yet." if s.name.startswith("NISAR") else f"{s.name} starts in {s.start.year}.")
                 entries.append(dict(sensor=s.name, kind="radar", role="not_seen" if watching else "not_watching",

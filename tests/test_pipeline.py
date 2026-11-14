@@ -530,3 +530,98 @@ def test_s1_months_filter_emptying_the_stack_stops_the_run(fake, monkeypatch, ca
     capsys.readouterr()
     assert pipeline.main(["muhos", "--no-nisar", "--offline", *fake.args]) == 2  # offline: the cache keeps nothing
     assert "keep 0 of 10 dates" in capsys.readouterr().err
+
+
+def test_water_mask_can_take_a_wider_shore():
+    hh = np.full((4, 20, 20), 0.1, dtype=np.float32)
+    hh[:, 8:12, 8:12] = 1e-3  # a pond
+    narrow = pipeline._water_mask({"HH": hh}, "nisar", n_early=2, water_db=-16.0)
+    wide = pipeline._water_mask({"HH": hh}, "nisar", n_early=2, water_db=-16.0, grow=3)
+    assert not narrow[7, 10] and narrow[6, 10]  # default: one pixel of shore, as before
+    assert not wide[5, 10] and not wide[6, 6] and wide[4, 10]  # three pixels, diagonals included
+
+
+# ---- several sources: the optical alerts carry the clearing's parts, the radar is attached (Muhos)
+
+def _s1_run(change_pass=5):
+    """A Sentinel-1-like run over the S_RECT clearing (VH -6 dB from change_pass), as the pipeline builds it."""
+    from sarwatch.change import ChangeParams, detect_changes
+    from sarwatch.export import Run
+
+    stack = {p: [] for p in ("VV", "VH")}
+    for k in range(len(S_DAYS)):
+        img = image(100 + k, S_SHAPE, ("VV", "VH"), "VH", k >= change_pass, S_RECT)
+        for p in stack:
+            stack[p].append(img[p])
+    stack = {p: np.stack(v) for p, v in stack.items()}
+    params = ChangeParams(boxcar=3, n_early=3, n_late=3, threshold_db=3.0, persist=2, min_area_ha=1.0)
+    result = detect_changes(stack, S_DAYS, (30.0, 30.0), params)
+    return Run(sensor="Sentinel-1 C-band", result=result, dates=S_DAYS, stack=stack, transform=S_TRANSFORM,
+               epsg=S_EPSG), params
+
+
+def _lonlat_box(rows, cols):
+    from pyproj import Transformer
+    from shapely.geometry import box
+
+    a, _, c, _, e, f = S_TRANSFORM
+    tr = Transformer.from_crs(S_EPSG, 4326, always_xy=True)
+    x0, x1 = c + cols.start * a, c + cols.stop * a
+    y0, y1 = f + rows.stop * e, f + rows.start * e
+    (lon0, lon1), (lat0, lat1) = tr.transform([x0, x1], [y0, y1])
+    return box(lon0, lat0, lon1, lat1)
+
+
+def test_primary_parts_keep_the_optical_dates_and_attach_the_radar():
+    from sarwatch.merge import Detection
+
+    run, params = _s1_run()
+    april = Detection(source=pipeline.OPTICAL, kind="optical", polygon=_lonlat_box(S_RECT[0], S_RECT[1]),
+                      type="clearing", first_date=date(2026, 4, 29), last_date=date(2026, 4, 29), confidence="medium",
+                      not_before=date(2025, 10, 21))
+    july = Detection(source=pipeline.OPTICAL, kind="optical", polygon=_lonlat_box(slice(32, 39), slice(10, 40)),
+                     type="clearing", first_date=date(2026, 7, 31), last_date=date(2026, 7, 31), confidence="medium",
+                     not_before=date(2026, 6, 30))
+    sources = pipeline._site_sources(pipeline.Site(id="t", bbox=(0, 0, 1, 1), nisar=None, sources=(
+        ("OPERA DIST-ALERT", "optical", "2023-01-01", None, 3, ("clearing",), ()),
+        ("Sentinel-1 C-band", "radar", "2025-06-02", None, 6, ("clearing", "other"), ()),
+        ("NISAR L-band", "radar", "2026-06-25", None, 12, ("clearing", "other"), ()))))
+
+    parts = pipeline._primary_parts([july, april], [run], {run.sensor: 3}, {run.sensor: params}, sources)
+
+    assert [p.first_date for p in parts] == [date(2026, 4, 29), date(2026, 7, 31)]  # one change per month, dated
+    first, second = parts                                                           # by the optical alerts
+    assert first.sensor == pipeline.OPTICAL and first.not_before == date(2025, 10, 21) and first.type == "clearing"
+    s1 = next(s for s in first.sources if s["sensor"] == "Sentinel-1 C-band")
+    assert s1["role"] == "detected" and s1["share"] > 0.8 and s1["first_date"] == S_DAYS[5].isoformat()
+    assert s1["not_before"] == S_DAYS[4].isoformat()
+    assert first.confidence == "high"  # optical and radar agree
+    assert first.explain.startswith("An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026")
+    assert "Sentinel-1 radar" in first.explain and first.explain.count(".") == 1  # one sentence: the verdict keeps it
+    nisar_entry = next(s for s in first.sources if s["sensor"] == "NISAR L-band")
+    assert nisar_entry["role"] == "not_watching" and nisar_entry["first_date"] is None  # NISAR started in June
+    s1_later = next(s for s in second.sources if s["sensor"] == "Sentinel-1 C-band")
+    assert s1_later["role"] == "not_seen" and s1_later["first_date"] is None  # unchanged ground: no radar date
+    assert second.confidence == "medium" and second.signal["metric"] == "VH_dB"
+
+
+def test_part_drop_needs_a_lasting_drop_of_the_threshold():
+    run, params = _s1_run(change_pass=5)
+    part = np.zeros(S_SHAPE, bool)
+    part[S_RECT] = True
+    assert pipeline._part_drop(run, part, 3, params) == 5
+    late, _ = _s1_run(change_pass=9)  # only the last pass: not a lasting drop
+    assert pipeline._part_drop(late, part, 3, params) is None
+
+
+def test_sites_json_gets_the_site_sources(tmp_path):
+    path = tmp_path / "sites.json"
+    original = (REPO / "app" / "data" / "sites.json").read_bytes()
+    path.write_bytes(original)
+    sources = pipeline.site_sources_json(pipeline.SITES["muhos"])
+    for _ in range(2):  # the second run replaces the line, it does not add one
+        pipeline.update_sites_index(path, "muhos", ("2026-06-25", "2026-11-04"), sources=sources)
+        assert site_entry(tmp_path, "muhos")["sources"] == sources
+    others = [s for s in json.loads(path.read_bytes())["sites"] if s["id"] != "muhos"]
+    assert others == [s for s in json.loads(original)["sites"] if s["id"] != "muhos"]
+    assert validate(tmp_path) is not None
