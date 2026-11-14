@@ -48,8 +48,15 @@
     </div>
 
     <aside id="panel" aria-label="Details">
-      <details id="story" class="story" open></details>
-      <div id="card" aria-live="polite"></div>
+      <div id="panel-tabs" class="tabs" role="tablist">
+        <button id="tab-details" type="button" role="tab" aria-selected="true" aria-controls="details-view">Details</button>
+        <button id="tab-inbox" type="button" role="tab" aria-selected="false" aria-controls="inbox">Changes <span id="inbox-count" class="n"></span></button>
+      </div>
+      <div id="details-view" class="view" role="tabpanel">
+        <details id="story" class="story" open></details>
+        <div id="card" aria-live="polite"></div>
+      </div>
+      <section id="inbox" class="view inbox" role="tabpanel" aria-label="Changes at this site" hidden></section>
     </aside>
   </main>
 

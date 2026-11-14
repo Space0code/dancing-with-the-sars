@@ -13,7 +13,7 @@ export const VERDICTS = {
   high_concern: { label: "High concern", color: "#D55E00" },
   none: { label: "Not judged yet", color: "#9AA3A8" },
 };
-export const verdictKey = (verdict) => (verdict in VERDICTS ? verdict : "none");
+export const verdictKey = (verdict) => (Object.hasOwn(VERDICTS, verdict) ? verdict : "none"); // null or unknown = not judged yet
 
 const CHANGE_LABELS = {
   clearing: "Forest clearing",

@@ -5,6 +5,7 @@ import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
 import { renderIntro, renderStory, showCard, showHint } from "./panel.js";
 import { renderLayerControl } from "./overlays.js";
+import { createInbox } from "./inbox.js";
 import { providerFor, photoFor } from "./photos.js";
 import { createTour } from "./tour.js";
 
@@ -75,8 +76,11 @@ async function main() {
 
   function select(feature) {
     map.select(feature);
-    if (feature) showCard(feature, current, () => select(null));
-    else showHint();
+    inbox.setSelected(feature ? feature.properties.id : null);
+    if (feature) {
+      showCard(feature, current, () => select(null));
+      inbox.showTab("details");
+    } else showHint();
   }
   const map = createChangeMap($("map"), { onSelect: select, bounds: overview });
   await map.ready;
@@ -90,11 +94,25 @@ async function main() {
     label.textContent = photo ? photo.label : current && year ? `Recent satellite imagery (no ${year} photo)` : "Recent satellite imagery";
   }
 
+  const refreshTotal = () => {
+    const { count, ha } = inbox.stats(); // follows the date and the inbox filters
+    timeline.setTotal(runningTotal(count, ha));
+  };
+  const inbox = createInbox({
+    onOpen(feature) {
+      map.focus(feature, tourRoom());
+      select(feature);
+    },
+    onFilters() {
+      map.setExtraFilter(inbox.mapFilter());
+      refreshTotal();
+    },
+  });
   const timeline = createTimeline({
     onDate(iso) {
       map.setDate(iso);
-      const shown = (current?.changes.features ?? []).filter((f) => f.properties.first_date <= iso);
-      timeline.setTotal(runningTotal(shown.length, shown.reduce((sum, f) => sum + f.properties.area_ha, 0)));
+      inbox.setDate(iso);
+      refreshTotal();
       const y = Number(iso.slice(0, 4));
       if (y !== year) {
         year = y;
@@ -137,6 +155,9 @@ async function main() {
     $("layers").hidden = true;
     history.replaceState(null, "", location.pathname + location.search);
     renderIntro(sites, { onPick: (id) => openSite(id).catch((err) => showError(err.message)), onTour: () => tour.start() });
+    inbox.setSite([]); // no site, no list: the tabs hide and the Details view shows the intro
+    inbox.showTab("details");
+    $("panel-tabs").hidden = true;
     map.setOverlays("", []);
     map.showOverview(overview);
     timeline.clear();
@@ -150,11 +171,14 @@ async function main() {
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
     $("layers").hidden = false;
+    $("panel-tabs").hidden = false;
     history.replaceState(null, "", `#site=${site.id}`);
     current = await loadSite(site);
     year = null; // a new site can mean a new photo series, so redraw it even if the year stays the same
     renderStory(current.story); // first: it changes the map's size on phones
     showHint();
+    inbox.setSite(current.changes.features);
+    map.setExtraFilter(null);
     map.showSite(site, current.changes);
     map.setOverlays(current.base, current.layers);
     renderLayerControl(current.layers, map);

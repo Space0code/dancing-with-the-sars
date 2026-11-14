@@ -122,5 +122,5 @@ export function showCard(feature, site, onClose) {
       chartSlot
     )
   );
-  $("panel").scrollTop = 0;
+  $("details-view").scrollTop = 0;
 }

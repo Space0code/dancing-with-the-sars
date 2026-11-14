@@ -76,6 +76,8 @@ export function createChangeMap(container, { onSelect, bounds }) {
     });
   });
 
+  let extraFilter = null; // the inbox's verdict / kind filters, as a MapLibre expression
+
   // The newest photo goes on top of the photo stack; the others are hidden only once it has loaded, so the map never flashes.
   const wantedPhoto = () => (basemap === "satellite" && photo ? photo.id : null);
   function hideOtherPhotos() {
@@ -95,7 +97,8 @@ export function createChangeMap(container, { onSelect, bounds }) {
   }
 
   function applyDateFilter() {
-    const filter = ["<=", ["get", "first_date"], dateIso];
+    const byDate = ["<=", ["get", "first_date"], dateIso];
+    const filter = extraFilter ? ["all", byDate, extraFilter] : byDate;
     for (const id of DATE_LAYERS) map.setFilter(id, filter);
   }
 
@@ -162,6 +165,10 @@ export function createChangeMap(container, { onSelect, bounds }) {
     },
     select(feature) {
       map.setFilter("changes-selected", ["==", ["get", "id"], feature ? feature.properties.id : ""]);
+    },
+    setExtraFilter(expression) {
+      extraFilter = expression;
+      applyDateFilter();
     },
     setBasemap(name) {
       basemap = name;
