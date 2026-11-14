@@ -49,6 +49,56 @@
     ]
    ],
    "caption": "Radar picture from NISAR: the typical echo of 3 passes, 29 Sep to 23 Oct 2026. Red = surface echo (HH), strong from bare ground and buildings. Green = vegetation echo (HV), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
+  },
+  {
+   "id": "sentinel_1_c_band_before",
+   "title": "Sentinel-1 radar, before (3 to 15 Jun 2025)",
+   "date": "2025-06-09",
+   "url": "layers/sentinel_1_c_band_before.png",
+   "coordinates": [
+    [
+     25.936395,
+     64.890191
+    ],
+    [
+     26.15052,
+     64.891567
+    ],
+    [
+     26.15341,
+     64.799783
+    ],
+    [
+     25.940013,
+     64.798414
+    ]
+   ],
+   "caption": "Radar picture from Sentinel-1: the typical echo of 3 passes, 3 to 15 Jun 2025. Red = surface echo (VV), strong from bare ground and buildings. Green = vegetation echo (VH), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
+  },
+  {
+   "id": "sentinel_1_c_band_after",
+   "title": "Sentinel-1 radar, after (9 to 21 Oct 2026)",
+   "date": "2026-10-15",
+   "url": "layers/sentinel_1_c_band_after.png",
+   "coordinates": [
+    [
+     25.936395,
+     64.890191
+    ],
+    [
+     26.15052,
+     64.891567
+    ],
+    [
+     26.15341,
+     64.799783
+    ],
+    [
+     25.940013,
+     64.798414
+    ]
+   ],
+   "caption": "Radar picture from Sentinel-1: the typical echo of 3 passes, 9 to 21 Oct 2026. Red = surface echo (VV), strong from bare ground and buildings. Green = vegetation echo (VH), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
   }
  ]
 }
