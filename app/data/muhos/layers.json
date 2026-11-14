@@ -7,20 +7,20 @@
    "url": "layers/nisar_l_band_before.png",
    "coordinates": [
     [
-     26.12817,
-     64.917538
+     26.181127,
+     64.898582
     ],
     [
-     26.214953,
-     64.809297
+     26.257388,
+     64.803161
     ],
     [
-     25.962108,
-     64.772357
+     26.038887,
+     64.771343
     ],
     [
-     25.874335,
-     64.880418
+     25.961872,
+     64.866628
     ]
    ],
    "caption": "3 passes, 25 Jun to 19 Jul 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
@@ -32,20 +32,20 @@
    "url": "layers/nisar_l_band_after.png",
    "coordinates": [
     [
-     26.12817,
-     64.917538
+     26.181127,
+     64.898582
     ],
     [
-     26.214953,
-     64.809297
+     26.257388,
+     64.803161
     ],
     [
-     25.962108,
-     64.772357
+     26.038887,
+     64.771343
     ],
     [
-     25.874335,
-     64.880418
+     25.961872,
+     64.866628
     ]
    ],
    "caption": "3 passes, 29 Sep to 23 Oct 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
@@ -53,52 +53,52 @@
   {
    "id": "sentinel_1_c_band_before",
    "title": "Sentinel-1 radar, before",
-   "date": "2025-06-09",
+   "date": "2025-06-08",
    "url": "layers/sentinel_1_c_band_before.png",
    "coordinates": [
     [
-     25.936395,
-     64.890191
+     26.016785,
+     64.87513
     ],
     [
-     26.15052,
-     64.891567
+     26.200401,
+     64.876229
     ],
     [
-     26.15341,
-     64.799783
+     26.202809,
+     64.794942
     ],
     [
-     25.940013,
-     64.798414
+     26.019746,
+     64.793846
     ]
    ],
-   "caption": "3 passes, 3 to 15 Jun 2025. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+   "caption": "3 passes, 2 to 14 Jun 2025. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
   },
   {
    "id": "sentinel_1_c_band_after",
    "title": "Sentinel-1 radar, after",
-   "date": "2026-10-15",
+   "date": "2026-10-20",
    "url": "layers/sentinel_1_c_band_after.png",
    "coordinates": [
     [
-     25.936395,
-     64.890191
+     26.016785,
+     64.87513
     ],
     [
-     26.15052,
-     64.891567
+     26.200401,
+     64.876229
     ],
     [
-     26.15341,
-     64.799783
+     26.202809,
+     64.794942
     ],
     [
-     25.940013,
-     64.798414
+     26.019746,
+     64.793846
     ]
    ],
-   "caption": "3 passes, 9 to 21 Oct 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+   "caption": "3 passes, 14 to 26 Oct 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
   }
  ]
 }
