@@ -1,0 +1,36 @@
+{
+ "series": [
+  {
+   "name": "Vegetation echo (HV)",
+   "unit": "dB",
+   "sensor": "NISAR L-band",
+   "dates": [
+    "2026-06-23",
+    "2026-11-02"
+   ],
+   "values": [
+    -17.73,
+    -16.5
+   ]
+  },
+  {
+   "name": "Surface echo (HH)",
+   "unit": "dB",
+   "sensor": "NISAR L-band",
+   "dates": [
+    "2026-06-23",
+    "2026-11-02"
+   ],
+   "values": [
+    -9.41,
+    -5.44
+   ]
+  }
+ ],
+ "events": [
+  {
+   "date": "2026-11-02",
+   "label": "Change first seen"
+  }
+ ]
+}

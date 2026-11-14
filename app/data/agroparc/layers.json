@@ -1,0 +1,54 @@
+{
+ "layers": [
+  {
+   "id": "nisar_l_band_before",
+   "title": "NISAR radar, before (23 Jun 2026)",
+   "date": "2026-06-23",
+   "url": "layers/nisar_l_band_before.png",
+   "coordinates": [
+    [
+     1.788397,
+     41.490157
+    ],
+    [
+     1.910086,
+     41.491375
+    ],
+    [
+     1.911448,
+     41.409962
+    ],
+    [
+     1.789911,
+     41.408747
+    ]
+   ],
+   "caption": "Radar picture from NISAR: the typical echo of 1 pass, 23 Jun 2026. Red = surface echo (HH), strong from bare ground and buildings. Green = vegetation echo (HV), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
+  },
+  {
+   "id": "nisar_l_band_after",
+   "title": "NISAR radar, after (2 Nov 2026)",
+   "date": "2026-11-02",
+   "url": "layers/nisar_l_band_after.png",
+   "coordinates": [
+    [
+     1.788397,
+     41.490157
+    ],
+    [
+     1.910086,
+     41.491375
+    ],
+    [
+     1.911448,
+     41.409962
+    ],
+    [
+     1.789911,
+     41.408747
+    ]
+   ],
+   "caption": "Radar picture from NISAR: the typical echo of 1 pass, 2 Nov 2026. Red = surface echo (HH), strong from bare ground and buildings. Green = vegetation echo (HV), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
+  }
+ ]
+}
