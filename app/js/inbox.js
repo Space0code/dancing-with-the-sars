@@ -1,6 +1,7 @@
 // Written by Claude. Review inbox: a sortable, filterable list of the open site's changes (the "Changes" tab in the side panel).
 // Filtering on the map is a MapLibre expression (mapFilter), so the map never loops over features in JS. Rows render in chunks.
-import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, formatDate, formatArea } from "./format.js";
+import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, formatArea } from "./format.js";
+import { whenText } from "./seen.js";
 
 const CHUNK = 80; // rows per render step; more load as the list is scrolled
 const CONCERN_ORDER = ["high_concern", "review", "none", "expected"]; // what a regulator should look at first
@@ -108,7 +109,7 @@ export function createInbox({ onOpen, onFilters }) {
         h("span", { class: "swatch", style: `background:${VERDICTS[key].color}`, "aria-hidden": "true" }),
         h("span", { class: "row-main" },
           h("span", { class: "row-title" }, kindName(p.type), h("span", { class: "row-size" }, formatArea(p.area_ha))),
-          h("span", { class: "row-sub" }, `${VERDICTS[key].label} · ${formatDate(p.first_date)} · ${confidenceLabel(p.confidence)} confidence`))));
+          h("span", { class: "row-sub" }, `${VERDICTS[key].label} · ${whenText(p, { short: true })} · ${confidenceLabel(p.confidence)} confidence`))));
   }
 
   function appendChunk() {

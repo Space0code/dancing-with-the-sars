@@ -317,4 +317,20 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
 @media (max-width: 760px) {
   .legend:not(.open) .records { display: none; }
   .records .rec-list, .records .rec-keys { display: block; } /* not the two-column grid of the change legend */
+  .records .legend-title { display: block; } /* the narrow-screen rule hides legend titles; this one names the group */
+  .legend.open { max-height: calc(100% - 70px); overflow-y: auto; } /* with records, keep some map visible */
 }
+/* Card: "Seen by" list (js/seen.js) */
+.seen { list-style: none; margin: 0 0 6px; padding: 0; }
+.seen-row {
+  display: grid; grid-template-columns: 20px 1fr auto; column-gap: 8px; align-items: baseline;
+  padding: 6px 0; border-top: 1px solid var(--line);
+}
+.seen-row:first-child { border-top: 0; }
+.seen-mark { text-align: center; color: var(--accent); }
+.seen-row.not_seen .seen-mark, .seen-row.not_watching .seen-mark { color: var(--muted); }
+.seen-main { display: flex; flex-wrap: wrap; gap: 0 10px; }
+.seen-name { font-weight: 600; }
+.seen-dates { color: var(--muted); }
+.seen-role { font-size: 13px; color: var(--muted); text-align: right; }
+.seen-note { grid-column: 2 / -1; font-size: 13px; color: var(--muted); }

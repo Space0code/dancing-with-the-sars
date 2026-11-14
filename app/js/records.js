@@ -11,14 +11,17 @@ const KINDS = {
     classes: { natura2000: "Natura 2000", pein: "PEIN (Catalan protected area)", other: "Other protected area" },
   },
   zoning: {
-    by: { non_buildable: "#a0522d", buildable: "#7a7a7a", planned: "#6a3d9a" }, fallback: "#7a7a7a", fill: 0.2,
+    // not grey (the "not judged yet" verdict) and not purple (bare ground in the radar picture)
+    by: { non_buildable: "#7f3f1f", buildable: "#8f7f5f", planned: "#17808a" }, fallback: "#8f7f5f", fill: 0.2,
     classes: { non_buildable: "Non-buildable land", buildable: "Buildable land", planned: "Planned development" },
   },
   buildings: { by: {}, fallback: "#2b2b2b", fill: 0.55, classes: {} },
   solar: { by: {}, fallback: "#8c6d1f", fill: 0.35, classes: {} },
 };
 const kindOf = (layer) => KINDS[layer.kind] ?? KINDS.zoning;
-const colorBy = (kind) => ["match", ["coalesce", ["get", "class"], ""], ...Object.entries(kind.by).flat(), kind.fallback];
+// A kind without classes gets one plain colour: a "match" with no cases is an invalid MapLibre expression.
+const colorBy = (kind) =>
+  Object.keys(kind.by).length ? ["match", ["coalesce", ["get", "class"], ""], ...Object.entries(kind.by).flat(), kind.fallback] : kind.fallback;
 
 /** `map` = the MapLibre map; `box` = the element the Records switches go in. */
 export function createRecords(map, box) {
@@ -115,7 +118,10 @@ export function createRecords(map, box) {
       if (!base) return;
       const index = await loadJson(`${base}context/index.json`).catch(() => null);
       if (mine !== token || !Array.isArray(index?.layers)) return;
-      const files = await Promise.all(index.layers.map((l) => loadJson(`${base}context/${l.file}`).then((d) => [l, d]).catch(() => [l, null])));
+      // a layer without an id, or with an id seen before, would clash on the map: skip it, keep the others
+      const seen = new Set();
+      const usable = index.layers.filter((l) => l && typeof l.id === "string" && l.id && l.file && !seen.has(l.id) && seen.add(l.id));
+      const files = await Promise.all(usable.map((l) => loadJson(`${base}context/${l.file}`).then((d) => [l, d]).catch(() => [l, null])));
       if (mine !== token) return;
       const loaded = files.filter(([, d]) => d?.features?.length).map(([l, d]) => add(l, d));
       layers = loaded.map((x) => x.layer);
