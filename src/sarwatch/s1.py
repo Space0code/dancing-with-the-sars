@@ -245,6 +245,22 @@ def _token_host(url: str) -> bool:
     return any(host == h or host.endswith("." + h) for h in TOKEN_HOSTS)
 
 
+def _refusal(r, url: str) -> str:
+    """Message for a 401 / 403 from the archive, with Earthdata's reason and fix when the body is JSON, e.g.
+    {"error": "invalid_token", "error_description": "EULA Acceptance Failure", "resolution_url": "https://urs..."}.
+    The URL never carries the token (it travels in a header), so the message cannot leak it."""
+    try:
+        body = r.json()
+    except ValueError:
+        body = None
+    if not isinstance(body, dict):
+        return f"HTTP {r.status_code} for {url}: token refused or no access"
+    reason = body.get("error_description") or body.get("error") or "token refused or no access"
+    fix = body.get("resolution_url")
+    todo = f": open {fix} while logged in to Earthdata and approve, then retry" if fix else ""
+    return f"{reason}{todo} (HTTP {r.status_code} for {url})"
+
+
 def resolve_url(url: str, token: str, max_hops: int = 6) -> tuple:
     """Follow ASF's redirects to the URL GDAL should range-read. Returns (url, headers GDAL must send).
 
@@ -269,7 +285,7 @@ def resolve_url(url: str, token: str, max_hops: int = 6) -> tuple:
             if r.status_code in (200, 206):
                 return url, headers  # served directly: GDAL must send the token itself
             if r.status_code in (401, 403):
-                raise PermissionError(f"HTTP {r.status_code} for {url}: token refused or no access")
+                raise PermissionError(_refusal(r, url))
             r.raise_for_status()
             raise RuntimeError(f"unexpected HTTP {r.status_code} for {url}")
     raise RuntimeError(f"more than {max_hops} redirects for {url}")

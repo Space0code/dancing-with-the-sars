@@ -5,6 +5,7 @@ read from disk and through a local HTTP server that mimics ASF's redirect chain.
 SARWATCH_LIVE=1 for the search (no login), EARTHDATA_TOKEN=<token> for a real window read.
 """
 import http.server
+import json
 import math
 import os
 import threading
@@ -209,6 +210,9 @@ def test_reads_only_the_requested_polarizations(four_dates):
 
 # ---------------------------------------------------------------- read_stack over HTTP, mimicking ASF
 
+EULA_URL = "https://urs.earthdata.nasa.gov/approve_app?client_id=BO_n7nTIlMljdvU6kRRB3g"  # as the archive sent it
+
+
 class _FakeAsf(http.server.BaseHTTPRequestHandler):
     """datapool -> 307 -> cumulus (checks the bearer token) -> 303 -> pre-signed 'S3' URL (refuses tokens and HEAD)."""
     root = ""
@@ -236,6 +240,16 @@ class _FakeAsf(http.server.BaseHTTPRequestHandler):
         if kind == "datapool":
             return self._redirect(307, f"http://127.0.0.1:{port}/cumulus/{name}")
         if kind == "cumulus":
+            if auth == "Bearer eula-not-approved":  # a valid token whose account has not approved the ASF app
+                body = json.dumps({"error": "invalid_token", "status_code": 403,
+                                   "error_description": "EULA Acceptance Failure",
+                                   "resolution_url": EULA_URL}).encode()
+                self.send_response(403)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if auth != f"Bearer {self.token}":
                 return self._redirect(302, "https://urs.earthdata.nasa.gov/oauth/authorize?app_type=401")
             return self._redirect(303, f"http://127.0.0.1:{port}/s3/{name}?X-Amz-Expires=3600&X-Amz-Signature=abc")
@@ -309,6 +323,17 @@ def test_http_read_with_a_refused_token_says_so(tmp_path, fake_asf):
     remote = _as_remote([make_scene(str(tmp_path), t) for t in range(2)], server.server_address[1])
     with pytest.raises(PermissionError, match="refused"):
         s1.read_stack(remote, lattice_bbox(20, 30, 12, 12), token="wrong")
+
+
+def test_http_read_with_an_unapproved_eula_says_what_to_do(tmp_path, fake_asf):
+    server, _ = fake_asf
+    remote = _as_remote([make_scene(str(tmp_path), t) for t in range(2)], server.server_address[1])
+    with pytest.raises(PermissionError) as err:
+        s1.read_stack(remote, lattice_bbox(20, 30, 12, 12), token="eula-not-approved")
+    message = str(err.value)
+    assert message.startswith("EULA Acceptance Failure: open " + EULA_URL)
+    assert "approve, then retry" in message and "HTTP 403" in message
+    assert "eula-not-approved" not in message  # never the token
 
 
 # ---------------------------------------------------------------- pick_burst, thin, search parsing
