@@ -1,4 +1,4 @@
-# Web app
+# Parallax (web app)
 
 Static site: no build step, no npm. MapLibre GL JS 4.7.1 comes from a CDN; basemaps need no API key.
 

@@ -2,7 +2,7 @@
 
 // The app's name and pitch live only here (working name; the team picks the final one).
 export const APP = {
-  name: "SARwatch",
+  name: "Parallax",
   pitch: "Radar satellites see the ground through clouds and at night. This map shows where the land changed, and which changes deserve a second look.",
 };
 

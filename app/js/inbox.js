@@ -47,7 +47,7 @@ export function createInbox({ onOpen, onFilters }) {
   const clearBtn = h("button", { type: "button", class: "clear-filters", hidden: true, onclick: () => { verdicts.clear(); kinds.clear(); setMinHa(0); filtersChanged(); } }, "Clear filters");
   const downloadBtn = h("button", { type: "button", class: "download-csv", onclick: () => {
     const rows = matching.slice().sort(SORTS[sortKey].cmp); // exactly the list the user sees, in its order
-    downloadText(`${all[0]?.properties.site ?? "site"}-changes.csv`, changesCsv(rows, kindName));
+    downloadText(`parallax-${all[0]?.properties.site ?? "site"}-changes.csv`, changesCsv(rows, kindName));
   } }, "Download CSV");
   const sizeValue = h("span", { class: "size-value" }, "any size");
   const sizeSlider = h("input", { type: "range", min: "0", max: "0", step: "1", value: "0", "aria-label": "Smallest change to show",
