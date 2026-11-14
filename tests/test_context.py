@@ -3,15 +3,16 @@
 Re-record the fixtures (needs network): delete the folder's files, then run this file with
 ``SARWATCH_LIVE=1 SARWATCH_RECORD=1``. ``SARWATCH_LIVE=1`` alone also runs the live smoke test.
 """
+import json
 import math
 import os
 from pathlib import Path
 
 import pytest
-from shapely.geometry import box
+from shapely.geometry import box, mapping, shape
 
 from sarwatch import context
-from sarwatch.context import _common, cadastre, protected
+from sarwatch.context import _common, cadastre, fire, protected
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "context"
 LIVE = os.environ.get("SARWATCH_LIVE") == "1"
@@ -28,6 +29,10 @@ def square(lon, lat, half_m):
 AGROPARC = square(1.85, 41.45, 250)      # Agroparc Penedès, Gelida: ~500 m square
 MONTSENY = square(2.43, 41.77, 50)       # inside Montseny (PEIN + Natura 2000 + natural park)
 BARCELONA = square(2.1635, 41.3915, 50)  # Eixample blocks, central Barcelona
+
+
+COLERA = square(3.15734, 42.41229, 100)  # inside the Colera wildfire (Alt Empordà), 4 Aug 2023, 541 ha
+GAVARRES = square(3.03861, 41.89608, 100)  # inside the Gavarres wildfire near Calonge, 3 Jul 2026 (2,030 ha)
 
 
 @pytest.fixture(autouse=True)
@@ -104,6 +109,72 @@ def test_arcgis_rings_with_a_hole_become_a_polygon_with_a_hole():
     assert protected._shape({"rings": []}) is None and protected._shape(None) is None
 
 
+def test_fire_returns_a_known_2023_wildfire():
+    r = fire.lookup(COLERA)
+    assert r["checked"] and r["recorded"] is True and "error" not in r
+    top = r["fires"][0]
+    assert top["name"] == "Colera" and top["date"] == "2023-08-04" and top["area_ha"] == 541
+    assert top["overlap_share"] == 1.0 and top["country"] == "ES"
+    assert r["source"].startswith("EFFIS") and r["url"].startswith("https://")
+
+
+def test_fire_returns_the_2026_gavarres_wildfire():
+    top = fire.lookup(GAVARRES)["fires"][0]
+    assert top["date"] == "2026-07-03" and top["area_ha"] >= 2000 and top["overlap_share"] == 1.0
+
+
+def test_no_fire_at_agroparc_montseny_or_barcelona(results):
+    for place in ("agroparc", "montseny", "barcelona"):
+        r = results[place]["fire"]
+        assert r["checked"] and r["recorded"] is False and r["fires"] == [], place
+
+
+def test_fire_dates_window():
+    assert fire.lookup(COLERA, until="2023-12-31")["recorded"] is True       # the fire is in the year before
+    assert fire.lookup(COLERA, until="2023-08-03")["fires"] == []            # a change dated before the fire
+    assert fire.lookup(COLERA, until="2025-01-01")["fires"] == []            # more than a year after: old scar
+    assert fire.lookup(COLERA, since="2023-08-01")["recorded"] is True
+    assert fire.lookup(COLERA, since="2023-09-01")["fires"] == []            # ended before ``since``
+
+
+@pytest.mark.parametrize("option", ["since", "until"])
+def test_fire_bad_dates_become_an_error_not_silently_ignored(option):
+    r = fire.lookup(COLERA, **{option: "garbage"})
+    assert r["checked"] is False and f"{option} must be YYYY-MM-DD" in r["error"]
+    assert "recorded" not in r
+
+
+def _fake_fires(monkeypatch, west_share):
+    """EFFIS answer with one fire covering the western ``west_share`` of the Agroparc square."""
+    lon0, lat0, lon1, lat1 = shape(AGROPARC).bounds
+    ring = box(lon0 - 0.01, lat0 - 0.01, lon0 + west_share * (lon1 - lon0), lat1 + 0.01)
+    doc = {"features": [{"type": "Feature", "geometry": mapping(ring), "properties": {
+        "FIREDATE": "2026-07-03 09:34:00", "FINALDATE": None, "AREA_HA": "12", "COMMUNE": "Test", "COUNTRY": "ES"}}]}
+    monkeypatch.setattr(fire, "fetch", lambda *a, **k: json.dumps(doc).encode())
+
+
+def test_fire_recorded_needs_at_least_half_of_the_change_inside(monkeypatch):
+    _fake_fires(monkeypatch, 0.3)
+    r = fire.lookup(AGROPARC)
+    assert r["recorded"] is False and r["fires"][0]["overlap_share"] == pytest.approx(0.3, abs=0.03)
+    assert r["fires"][0]["end"] == "2026-07-03"  # no FINALDATE: the end falls back to the start
+    _fake_fires(monkeypatch, 0.7)
+    assert fire.lookup(AGROPARC)["recorded"] is True
+
+
+def test_fire_axis_order_is_lat_first_in_the_request(monkeypatch):
+    seen = {}
+
+    def fake(source, url, params, **kw):
+        seen.update(params)
+        return b'{"features": []}'
+
+    monkeypatch.setattr(fire, "fetch", fake)
+    fire.lookup(AGROPARC)
+    lat0, lon0, lat1, lon1, crs = seen["bbox"].split(",")
+    assert 41 < float(lat0) < 42 and 1 < float(lon0) < 2 and crs == "urn:ogc:def:crs:EPSG::4326"
+
+
 def test_cadastre(results):
     b = results["barcelona"]["cadastre"]
     assert b["buildings"] > 10 and b["newest_date"][:4].isdigit() and b["built_since"] == 0
@@ -165,3 +236,6 @@ def test_live_smoke(monkeypatch, tmp_path):
     monkeypatch.setattr(_common, "OFFLINE", False)
     r = context.lookup_all(AGROPARC, since="2020-01-01")
     assert all(v["checked"] for v in r.values()), {k: v.get("error") for k, v in r.items()}
+    assert r["fire"]["recorded"] is False  # no fire at Agroparc
+    colera = fire.lookup(COLERA)  # a service change (layer, field names, axis order) would show up here
+    assert colera["checked"] and colera["recorded"] is True and colera["fires"][0]["area_ha"] == 541

@@ -1,0 +1,23 @@
+{
+ "headline": "Muhos, Finland: about 330 hectares of forest cleared before the environmental assessment was done",
+ "story": [
+  "Between March and August 2026, forest at Muhos was cleared for a data centre project prepared by Tuike Finland, the company behind Google's data centre plans there. Helsingin Sanomat reported the cleared area as about 330 hectares. On 30 April the company asked the permit and supervisory agency (Lupa- ja valvontavirasto, LVV) to decide that the clearing did not need a full environmental impact assessment; according to Helsingin Sanomat the agency did not agree, and in May the company learned that one was required. The clearing continued until August.",
+  "On 6 October the agency called on the company to suspend the work immediately and no later than 23 October; the notice covered the Muhos and Kajaani projects. On 14 October the company confirmed that it had suspended the preparatory work at both sites. On 29 October the Oulu Police Department opened a preliminary investigation on suspicion of environmental damage. These are the authorities' steps as reported; this app does not judge them.",
+  "What the radar adds: it shows when and where the forest canopy disappeared over time, whatever the weather. NISAR's calibrated record only starts in late June 2026, so the earlier months come from Sentinel-1, and the March cutting happened under snow, which changes the radar signal. On the map, look at when the changes first appear, compare that with the dates on the timeline, and open a change to see the before and after pictures."
+ ],
+ "events": [
+  {"date": "2026-03-01", "label": "Clearing begins (day in March not published)"},
+  {"date": "2026-04-30", "label": "Tuike Finland asks the permit agency (LVV) to decide that a full environmental impact assessment is not needed"},
+  {"date": "2026-05-01", "label": "The company learns an environmental impact assessment is required (day in May not published); clearing continues"},
+  {"date": "2026-08-01", "label": "Clearing reported to have continued until August (exact day not published)"},
+  {"date": "2026-10-06", "label": "The permit agency (LVV) calls on Tuike Finland to suspend the work, at the latest by 23 October"},
+  {"date": "2026-10-14", "label": "Tuike Finland confirms the preparatory work is suspended at both sites"},
+  {"date": "2026-10-29", "label": "Oulu police open a preliminary investigation"}
+ ],
+ "sources": [
+  {"title": "Yle News: Police open preliminary probe into Google's data centre site activities in Muhos (29 Oct 2026)", "url": "https://yle.fi/a/74-20254086"},
+  {"title": "Kaleva / Helsingin Sanomat: Google yritti saada poikkeusluvan Muhoksen hakkuisiin (28 Sep 2026)", "url": "https://www.kaleva.fi/hs-google-yritti-saada-poikkeusluvan-muhoksen-hakk/13686840"},
+  {"title": "Lupa- ja valvontavirasto: press release asking Tuike Finland Oy to suspend the Muhos and Kajaani preparations (6 Oct 2026)", "url": "https://www.sttinfo.fi/tiedote/72390663/lupa-ja-valvontavirasto-kehottaa-tuike-finland-oyta-keskeyttamaan-muhoksen-ja-kajaanin-datakeskushankkeiden-valmistelutoimet"},
+  {"title": "NISAR mission documentation (ASF)", "url": "https://nisar-docs.asf.alaska.edu/"}
+ ]
+}
