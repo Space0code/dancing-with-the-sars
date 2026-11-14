@@ -166,8 +166,7 @@ def test_nisar_frames_are_dark_where_bare_pink_where_gone_since_the_first_pass(t
     out = tmp_path / "radar"
     listed = frames.nisar_frames("muhos", tmp_path / "stacks", out, WINDOW, skip)
     assert [f["date"] for f in listed] == [d.isoformat() for d in NISAR_DAYS]
-    assert all(f["sensor"] == "NISAR" and f["url"].endswith("-nisar.jpg") and f["caption"] for f in listed)
-    assert "25 Jun 2026" in listed[0]["caption"]
+    assert all(f["sensor"] == "NISAR" and f["url"].endswith("-nisar.jpg") for f in listed)
     from PIL import Image
     imgs = [np.asarray(Image.open(out / Path(f["url"]).name).convert("RGB"), float) for f in listed]
     h, w, _ = imgs[0].shape
@@ -196,8 +195,7 @@ def test_radar_set_is_sentinel1_until_the_first_nisar_pass_then_nisar(tmp_path):
     first = NISAR_DAYS[0].isoformat()
     assert all((s == "NISAR") == (d >= first) for d, s in sensors)
     assert [d for d, s in sensors if s == "Sentinel-1"][-1] == "2026-06-19"
-    assert all("caption" in f for f in listed if f["sensor"] == "NISAR")
-    assert not any("caption" in f for f in listed if f["sensor"] == "Sentinel-1")
+    assert not any("caption" in f for f in listed)      # the app shows the sensor name; no per-picture text
     assert sorted(p.name for p in out.glob("*.jpg")) == sorted(Path(f["url"]).name for f in listed)
 
 
@@ -270,12 +268,3 @@ def test_pick_yearly_takes_the_clearest_per_year_then_spreads_extras_over_the_la
     assert len(kept) == 5 and len(days) == 3 and date(2018, 7, 14) in days and date(2018, 7, 20) not in days   # f is 6 days from e
     assert all(abs((a - b).days) >= 20 for a in days for b in days if a != b)
     assert [d for d, _, _ in kept] == sorted(d for d, _, _ in kept)
-
-
-def test_photo_name_is_only_the_satellite():
-    from types import SimpleNamespace as NS
-
-    assert frames.photo_name(NS(sensor="S30", extra={"platform": "Sentinel-2A"})) == "Sentinel-2"
-    assert frames.photo_name(NS(sensor="L30", extra={"platform": "LANDSAT-8"})) == "Landsat 8"
-    assert frames.photo_name(NS(sensor="L30", extra={"platform": "LANDSAT-9"})) == "Landsat 9"
-    assert frames.photo_name(NS(sensor="L30", extra={})) == "Landsat"

@@ -52,10 +52,8 @@ NISAR_TINT_FROM_DB = 3.0             # tint where HV is this far below NISAR's o
 NISAR_TINT_FULL_DB = 6.0             # ... full strength at this drop
 NISAR_STABLE_MIN_DB = -12.0          # a pixel whose HV never falls below this is "stable forest": sets each pass's offset
 TINT_RGB = (214, 40, 160)              # magenta-pink, apart from the verdict colours
-RADAR_CAPTION = "Radar picture. Grey: unchanged since summer 2025. Pink: the echo from trees and plants dropped here."
-NISAR_CAPTION = ("NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. "
-                 "Pink: trees gone since NISAR's first picture on {first}.")
-PHOTO_CAPTION = "Colour images from Landsat and Sentinel-2 (NASA HLS), cloud-free days only."
+RADAR_CAPTION = "Sentinel-1, NISAR"      # the app shows each picture's own satellite name; a set's caption is just the names
+PHOTO_CAPTION = "Landsat, Sentinel-2"
 
 
 @dataclass(frozen=True)
@@ -74,7 +72,6 @@ class FrameSite:
     tint_db: tuple = (TINT_FROM_DB, TINT_FULL_DB)  # Sentinel-1: tint from this change (dB), full at that
     min_patch_ha: float = MIN_PATCH_HA   # smaller tinted patches are dropped
     time_gap: int = TIME_MAX_GAP_DAYS    # neighbouring passes up to this many days apart are averaged
-    captions: tuple = ()                 # (Sentinel-1 set caption, NISAR caption): the satellite's name only
     photo_yearly: int = -1               # >= 0: one clear photo per year, plus this many more in the last year
 
 
@@ -87,7 +84,7 @@ FRAME_SITES = {
                            width=1400, max_frame_bytes=900_000, s1_range=(-27.0, -3.0), nisar_range=(-28.0, -2.0),
                            baseline_first=5, tint_rise=True, water_mask=True, time_gap=30,
                            tint_db=(4.0, 8.0), min_patch_ha=2.0,
-                           captions=("Sentinel-1", "NISAR"), photo_yearly=3),
+                           photo_yearly=3, photo_exclude=(date(2021, 8, 12),)),  # sea haze at the coast
     "muhos": FrameSite(window=(26.02, 64.795, 26.20, 64.875),
                        photo_periods=((date(2025, 6, 1), date(2025, 9, 30)), (date(2026, 3, 1), date(2026, 11, 14))),
                        photo_exclude=(date(2025, 6, 16), date(2026, 8, 9))),
@@ -324,11 +321,10 @@ def nisar_alphas(dbs: list, water: np.ndarray, pixel_ha: float, rise: bool = Fal
 
 def nisar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, cfg: FrameSite | None = None) -> list:
     """Write one JPEG per usable NISAR pass (grey HV, trees gone since the first pass tinted); returns
-    [{date, sensor, url, caption}] sorted by date. File names end in -nisar so they never meet a Sentinel-1 file."""
+    [{date, sensor, url}] sorted by date. File names end in -nisar so they never meet a Sentinel-1 file."""
     cfg = cfg or FrameSite(window, ())
     days, dbs, water, pixel_ha = nisar_series(site_id, stacks, window, skip_spans, cfg)
     out_dir.mkdir(parents=True, exist_ok=True)
-    caption = cfg.captions[1] if cfg.captions else NISAR_CAPTION.format(first=f"{days[0].day} {days[0]:%b %Y}")
     frames = []
     for day, db, alpha in zip(days, dbs, nisar_alphas(dbs, water, pixel_ha, cfg.tint_rise,
                                                                  cfg.min_patch_ha)):
@@ -338,7 +334,7 @@ def nisar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, cfg: F
         data = jpeg_bytes(tint(grey, alpha), max_bytes=cfg.max_frame_bytes)
         name = f"{day.isoformat()}-nisar.jpg"
         (out_dir / name).write_bytes(data)
-        frames.append({"date": day.isoformat(), "sensor": "NISAR", "url": f"frames/radar/{name}", "caption": caption})
+        frames.append({"date": day.isoformat(), "sensor": "NISAR", "url": f"frames/radar/{name}"})
         if len(data) > cfg.max_frame_bytes:
             log.warning("nisar %s: %d KB (target %d KB)", day, len(data) // 1000, cfg.max_frame_bytes // 1000)
     return frames
@@ -403,14 +399,6 @@ def pick_yearly(candidates, extra: int = 0, min_gap: int = 20, mid_summer=(7, 15
                 kept.append(c)
                 more += 1
     return sorted(kept, key=lambda t: t[0])
-
-
-def photo_name(g) -> str:
-    """The satellite's name: Landsat 8 / Landsat 9 (from the CMR platform) or Sentinel-2."""
-    if g.sensor != "L30":
-        return "Sentinel-2"
-    platform = str(g.extra.get("platform", "")).upper().replace("LANDSAT-", "")
-    return f"Landsat {platform}" if platform.isdigit() else "Landsat"
 
 
 def fill_holes(arrays, empty) -> np.ndarray:
@@ -555,8 +543,6 @@ def photo_frames(site: FrameSite, out_dir: Path, cache_dir: Path, token=None) ->
         (out_dir / f"{day.isoformat()}.jpg").write_bytes(data)
         frames.append({"date": day.isoformat(), "sensor": "Landsat" if g.sensor == "L30" else "Sentinel-2",
                        "url": f"frames/photo/{day.isoformat()}.jpg"})
-        if site.captions:
-            frames[-1]["caption"] = photo_name(g)
         if len(data) > site.max_frame_bytes:
             log.warning("photo %s: %d KB (target %d KB)", day, len(data) // 1000, site.max_frame_bytes // 1000)
     return frames
@@ -574,12 +560,12 @@ def build(site_id: str, stacks=None, root=None, radar: bool = True, photos: bool
     if radar:
         spans = pipeline._skip_spans(pipeline.SITES[site_id])
         frames = radar_set(site_id, stacks, site_dir / "frames" / "radar", site.window, spans, site)
-        sets.append({"id": "radar", "title": "Radar", "caption": site.captions[0] if site.captions else RADAR_CAPTION,
+        sets.append({"id": "radar", "title": "Radar", "caption": RADAR_CAPTION,
                      "frames": frames})
     if photos:
         frames = photo_frames(site, site_dir / "frames" / "photo", root / "data" / "hls" / site_id, token)
         sets.append({"id": "photo", "title": "Satellite photo",
-                     "caption": "Landsat and Sentinel-2" if site.captions else PHOTO_CAPTION, "frames": frames})
+                     "caption": PHOTO_CAPTION, "frames": frames})
     path = site_dir / "frames.json"
     if path.is_file():  # a partial run keeps the other set
         old = {s["id"]: s for s in json.loads(path.read_text(encoding="utf-8"))["sets"]}

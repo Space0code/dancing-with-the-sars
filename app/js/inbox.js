@@ -1,4 +1,4 @@
-// Written by Claude. Review inbox: a sortable, filterable list of the open site's changes (the "Changes" tab in the side panel).
+// Written by Claude. Review inbox: a sortable, filterable list of the open site's changes (the "Changes" tab in the drawer).
 // Filtering on the map is a MapLibre expression (mapFilter), so the map never loops over features in JS. Rows render in chunks.
 import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, formatArea } from "./format.js";
 import { whenText } from "./seen.js";
@@ -7,7 +7,7 @@ import { changesCsv, downloadText } from "./csv.js";
 const CHUNK = 80; // rows per render step; more load as the list is scrolled
 const CONCERN_ORDER = ["high_concern", "review", "none", "expected"]; // what a regulator should look at first
 const SHORT_KIND = { // short names for chips and rows; the card has the full wording
-  clearing: "Forest clearing", structure: "New building", earthworks: "Earth moved",
+  clearing: "Land clearing", structure: "New building", earthworks: "Earth moved",
   ground_motion: "Ground movement", fire: "Burned area", other: "Other change",
 };
 const kindName = (type) => SHORT_KIND[type] ?? changeLabel(type);
@@ -47,7 +47,7 @@ export function createInbox({ onOpen, onFilters }) {
   const clearBtn = h("button", { type: "button", class: "clear-filters", hidden: true, onclick: () => { verdicts.clear(); kinds.clear(); setMinHa(0); filtersChanged(); } }, "Clear filters");
   const downloadBtn = h("button", { type: "button", class: "download-csv", onclick: () => {
     const rows = matching.slice().sort(SORTS[sortKey].cmp); // exactly the list the user sees, in its order
-    downloadText(`${all[0]?.properties.site ?? "site"}-changes.csv`, changesCsv(rows, kindName));
+    downloadText(`parallax-${all[0]?.properties.site ?? "site"}-changes.csv`, changesCsv(rows, kindName));
   } }, "Download CSV");
   const sizeValue = h("span", { class: "size-value" }, "any size");
   const sizeSlider = h("input", { type: "range", min: "0", max: "0", step: "1", value: "0", "aria-label": "Smallest change to show",
@@ -76,18 +76,6 @@ export function createInbox({ onOpen, onFilters }) {
     sizeRow.hidden = sizeSteps.length < 2;
     setMinHa(0);
   }
-
-  // --- tabs ---
-  const tabs = { details: $("tab-details"), inbox: $("tab-inbox") };
-  const views = { details: $("details-view"), inbox: root };
-  function showTab(name) {
-    for (const key of Object.keys(tabs)) {
-      tabs[key].setAttribute("aria-selected", String(key === name));
-      views[key].hidden = key !== name;
-    }
-    if (name === "inbox") render();
-  }
-  for (const [name, button] of Object.entries(tabs)) button.addEventListener("click", () => showTab(name));
 
   // --- filtering ---
   const verdictOf = (f) => verdictKey(f.properties.verdict);
@@ -190,7 +178,8 @@ export function createInbox({ onOpen, onFilters }) {
       el?.setAttribute("aria-current", "true");
       if (!root.hidden) el?.scrollIntoView({ block: "nearest" });
     },
-    showTab,
+    /** The list became visible: build it if the data changed meanwhile. */
+    refresh: render,
     /** MapLibre filter expression for the user's filters (the date is filtered separately), or null. */
     mapFilter() {
       const parts = [];

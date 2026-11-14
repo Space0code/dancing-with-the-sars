@@ -33,7 +33,7 @@ def main():
         im = im.resize((THUMB, round(THUMB * im.height / im.width)))
         d = ImageDraw.Draw(im)
         d.rectangle((0, 0, 200, 14), fill=(0, 0, 0))
-        d.text((3, 2), f"{f['date']} {f.get('caption', f['sensor'])}", fill=(255, 255, 255))
+        d.text((3, 2), f"{f['date']} {f['sensor']}", fill=(255, 255, 255))
         images.append(im)
     th = images[0].height
     rows = -(-len(images) // COLS)

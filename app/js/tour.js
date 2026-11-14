@@ -1,20 +1,11 @@
-// Written by Claude. Guided tour: steps from tour.json (text + site + slider date + optional change to open).
-// Steps whose site is not ready are skipped; steps on a fake site only run while no real step is ready.
+// Written by Claude. Guided tour: generic steps from tour.json (text, optional slider dates, optional change to open), run on the open site.
 import { h } from "./format.js";
 
-export function createTour(steps, sites, { runStep, onEnd }) {
+export function createTour(steps, { runStep, onEnd }) {
   const box = document.getElementById("tour");
-  const byId = new Map(sites.map((s) => [s.id, s]));
-  const ready = (step) => byId.get(step.site)?.ready === true;
-  const fake = (step) => byId.get(step.site)?.fixture === true;
   let list = [];
   let index = 0;
   let busy = false;
-
-  function playable() {
-    const real = steps.filter((s) => ready(s) && !fake(s));
-    return real.length ? real : steps.filter((s) => ready(s) && fake(s));
-  }
 
   function render() {
     const step = list[index];
@@ -46,10 +37,10 @@ export function createTour(steps, sites, { runStep, onEnd }) {
   }
 
   function start() {
-    list = playable();
+    list = steps;
     box.hidden = false;
     if (!list.length) {
-      box.replaceChildren(h("p", {}, "The tour starts once a site is ready."), h("button", { type: "button", onclick: end }, "Close"));
+      box.replaceChildren(h("p", {}, "No tour yet."), h("button", { type: "button", onclick: end }, "Close"));
       return;
     }
     go(0);
@@ -61,7 +52,7 @@ export function createTour(steps, sites, { runStep, onEnd }) {
     onEnd?.();
   }
 
-  document.addEventListener("keydown", (e) => e.key === "Escape" && !box.hidden && !document.querySelector("dialog[open]") && end());
+  document.addEventListener("keydown", (e) => e.key === "Escape" && !e.defaultPrevented && !box.hidden && end());
 
   return { start, end, get active() { return !box.hidden; } };
 }

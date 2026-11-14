@@ -21,7 +21,7 @@
   {
    "id": "radar",
    "title": "Radar",
-   "caption": "Sentinel-1",
+   "caption": "Sentinel-1, NISAR",
    "frames": [
     {
      "date": "2016-06-05",
@@ -286,68 +286,124 @@
     {
      "date": "2026-06-23",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-06-23-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-06-23-nisar.jpg"
     },
     {
      "date": "2026-07-05",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-07-05-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-07-05-nisar.jpg"
     },
     {
      "date": "2026-07-17",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-07-17-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-07-17-nisar.jpg"
     },
     {
      "date": "2026-08-10",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-08-10-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-08-10-nisar.jpg"
     },
     {
      "date": "2026-08-22",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-08-22-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-08-22-nisar.jpg"
     },
     {
      "date": "2026-09-03",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-09-03-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-09-03-nisar.jpg"
     },
     {
      "date": "2026-09-15",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-09-15-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-09-15-nisar.jpg"
     },
     {
      "date": "2026-09-27",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-09-27-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-09-27-nisar.jpg"
     },
     {
      "date": "2026-10-09",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-10-09-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-10-09-nisar.jpg"
     },
     {
      "date": "2026-10-21",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-10-21-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-10-21-nisar.jpg"
     },
     {
      "date": "2026-11-02",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-11-02-nisar.jpg",
-     "caption": "NISAR"
+     "url": "frames/radar/2026-11-02-nisar.jpg"
+    }
+   ]
+  },
+  {
+   "id": "photo",
+   "title": "Satellite photo",
+   "caption": "Landsat, Sentinel-2",
+   "frames": [
+    {
+     "date": "2016-08-26",
+     "sensor": "Sentinel-2",
+     "url": "frames/photo/2016-08-26.jpg"
+    },
+    {
+     "date": "2017-08-17",
+     "sensor": "Landsat",
+     "url": "frames/photo/2017-08-17.jpg"
+    },
+    {
+     "date": "2018-08-20",
+     "sensor": "Landsat",
+     "url": "frames/photo/2018-08-20.jpg"
+    },
+    {
+     "date": "2019-07-12",
+     "sensor": "Sentinel-2",
+     "url": "frames/photo/2019-07-12.jpg"
+    },
+    {
+     "date": "2020-07-08",
+     "sensor": "Landsat",
+     "url": "frames/photo/2020-07-08.jpg"
+    },
+    {
+     "date": "2022-07-14",
+     "sensor": "Landsat",
+     "url": "frames/photo/2022-07-14.jpg"
+    },
+    {
+     "date": "2023-08-20",
+     "sensor": "Sentinel-2",
+     "url": "frames/photo/2023-08-20.jpg"
+    },
+    {
+     "date": "2024-07-27",
+     "sensor": "Landsat",
+     "url": "frames/photo/2024-07-27.jpg"
+    },
+    {
+     "date": "2025-06-28",
+     "sensor": "Landsat",
+     "url": "frames/photo/2025-06-28.jpg"
+    },
+    {
+     "date": "2026-07-09",
+     "sensor": "Landsat",
+     "url": "frames/photo/2026-07-09.jpg"
+    },
+    {
+     "date": "2026-07-30",
+     "sensor": "Sentinel-2",
+     "url": "frames/photo/2026-07-30.jpg"
+    },
+    {
+     "date": "2026-09-03",
+     "sensor": "Landsat",
+     "url": "frames/photo/2026-09-03.jpg"
     }
    ]
   }
