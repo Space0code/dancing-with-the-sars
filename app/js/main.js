@@ -186,7 +186,7 @@ async function main() {
     showHint();
     inbox.setSite(current.changes.features);
     map.setExtraFilter(null);
-    map.showSite(site, current.changes);
+    map.showSite(site, current.changes, current.stages);
     picture.setSite(current);
     timeline.setRange(site, current.changes.features, current.story?.events);
   }

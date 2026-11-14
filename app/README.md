@@ -21,6 +21,9 @@ Missing series files show a message instead of a broken box.
   frame of the slider date. A site without `frames.json` keeps the Esri background and the Radar button is disabled.
 - **New changes**: when the slider moves forward, outlines whose `first_date` was just passed glow briefly and the running
   total flashes.
+- **One growing outline** (optional `stages.geojson`, `map.js`): changes that are members of a stage group have no outline of
+  their own; the map draws the latest stage at or before the slider date as one light fill with one bold outline (verdict
+  colour, white casing). The member parts stay clickable; hover or select shows a thin outline of just that part.
 - **Guided tour** (`tour.json`, run by `js/tour.js`): edit the steps without touching code; the field list is in its
   `about`. Steps whose site isn't ready are skipped; steps on the fake site run only while no real site is ready.
 
