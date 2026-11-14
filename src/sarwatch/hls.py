@@ -51,7 +51,8 @@ def granule_from_umm(item: dict) -> distalert.Granule:
     return distalert.Granule(
         name=name, tile=parts[2][1:] if len(parts) > 2 else "",
         start=datetime.fromisoformat(t.replace("Z", "+00:00")), sensor=parts[1] if len(parts) > 1 else "",
-        urls=urls, footprint=distalert._footprint(umm), extra={"produced": ""})
+        urls=urls, footprint=distalert._footprint(umm),
+        extra={"produced": "", "platform": next((x.get("ShortName", "") for x in umm.get("Platforms", [])), "")})
 
 
 def search(bbox, start, end, products=PRODUCTS, timeout: float = 120) -> list:

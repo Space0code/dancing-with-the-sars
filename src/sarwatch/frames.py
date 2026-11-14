@@ -61,9 +61,31 @@ class FrameSite:
     window: tuple          # (west, south, east, north) degrees
     photo_periods: tuple   # ((first day, last day), ...) searched for photos
     photo_exclude: tuple = ()  # days dropped by eye although Fmask calls them clear (thin haze, small cloud puffs)
+    # The settings below default to Muhos'; a larger or busier site (Barcelona) sets its own.
+    width: int = WIDTH                   # pixels across the picture
+    max_frame_bytes: int = MAX_FRAME_BYTES
+    s1_range: tuple = RADAR_RANGE_DB     # grey stretch of Sentinel-1 VH (dB)
+    nisar_range: tuple = NISAR_RANGE_DB  # grey stretch of NISAR HV (dB)
+    baseline_first: int = 0              # > 0: Sentinel-1 baseline = median of the first N passes (else BASELINE_SPAN)
+    tint_rise: bool = False              # tint echo that rose too (new buildings), not only echo that fell
+    water_mask: bool = False             # water = the pipeline's mask: never tinted, drawn black, levels the passes
+    tint_db: tuple = (TINT_FROM_DB, TINT_FULL_DB)  # Sentinel-1: tint from this change (dB), full at that
+    min_patch_ha: float = MIN_PATCH_HA   # smaller tinted patches are dropped
+    time_gap: int = TIME_MAX_GAP_DAYS    # neighbouring passes up to this many days apart are averaged
+    captions: tuple = ()                 # (Sentinel-1 set caption, NISAR caption): the satellite's name only
+    photo_yearly: int = -1               # >= 0: one clear photo per year, plus this many more in the last year
 
 
 FRAME_SITES = {
+    # Barcelona (#44): 50 x 39 km, so twice the width and a stretch for the city; the sea comes from the pipeline's
+    # mask; the baseline is the 2016 summer (5 passes, as in the detection); echo that rose (buildings) is tinted too
+    "barcelona": FrameSite(window=(1.85, 41.25, 2.45, 41.60),
+                           photo_periods=tuple((date(y, 6, 1), date(y, 9, 30)) for y in range(2016, 2027)) +
+                                         ((date(2026, 10, 1), date(2026, 11, 14)),),
+                           width=1400, max_frame_bytes=900_000, s1_range=(-27.0, -3.0), nisar_range=(-28.0, -2.0),
+                           baseline_first=5, tint_rise=True, water_mask=True, time_gap=30,
+                           tint_db=(4.0, 8.0), min_patch_ha=2.0,
+                           captions=("Sentinel-1", "NISAR"), photo_yearly=3),
     "muhos": FrameSite(window=(26.02, 64.795, 26.20, 64.875),
                        photo_periods=((date(2025, 6, 1), date(2025, 9, 30)), (date(2026, 3, 1), date(2026, 11, 14))),
                        photo_exclude=(date(2025, 6, 16), date(2026, 8, 9))),
@@ -157,7 +179,8 @@ def time_average(stack: list, days: list, max_gap: int = TIME_MAX_GAP_DAYS) -> l
 
 
 def lost_alpha(drop_db: np.ndarray, baseline_db: np.ndarray, pixel_ha: float, from_db: float = TINT_FROM_DB,
-               full_db: float = TINT_FULL_DB, water: np.ndarray | None = None) -> np.ndarray:
+               full_db: float = TINT_FULL_DB, water: np.ndarray | None = None,
+               min_ha: float = MIN_PATCH_HA) -> np.ndarray:
     """Tint strength 0..1 per pixel: 0 below from_db of drop, full at full_db. Patches smaller than MIN_PATCH_HA
     and water (very dark in the baseline, or True in the `water` mask when given) get none."""
     from scipy import ndimage
@@ -168,7 +191,7 @@ def lost_alpha(drop_db: np.ndarray, baseline_db: np.ndarray, pixel_ha: float, fr
     labels, n = ndimage.label(mask, structure=np.ones((3, 3)))
     if n:
         size = ndimage.sum(mask, labels, index=np.arange(1, n + 1))
-        mask &= np.isin(labels, 1 + np.flatnonzero(size * pixel_ha >= MIN_PATCH_HA))
+        mask &= np.isin(labels, 1 + np.flatnonzero(size * pixel_ha >= min_ha))
     alpha = np.clip((d - from_db) / (full_db - from_db), 0.0, 1.0)
     alpha = TINT_MIN_ALPHA + (TINT_MAX_ALPHA - TINT_MIN_ALPHA) * alpha
     return np.where(mask, alpha, 0.0).astype(np.float32)
@@ -181,65 +204,94 @@ def tint(grey: np.ndarray, alpha: np.ndarray) -> np.ndarray:
     return np.round(out * 255).astype(np.uint8)
 
 
-def radar_series(site_id: str, stacks, window, skip_spans) -> tuple:
-    """(days, db, baseline, pixel_ha): the smoothed, per-date levelled VH of every usable pass on the common grid."""
+def pipeline_water(site_id: str, sensor: str, cache, days: list, dst_t, w: int, h: int) -> np.ndarray:
+    """The detection's water mask (pipeline._water_mask: baseline of the site's water polarisation, shore grown) on the
+    common grid, True = water. Reads only the baseline passes of `days` (one more than n_early, as the mask wants)."""
+    site = pipeline.SITES[site_id]
+    settings = site.nisar if sensor == pipeline.NISAR else site.s1
+    n = settings.params.n_early
+    stack, _, transform, epsg = pipeline.load_stack(cache, days[:n + 1], site.bbox)
+    valid = pipeline._water_mask(stack, sensor, n, settings.water_db, settings.water_grow, settings.water_pol)
+    return warp((~valid).astype(np.float32), transform, epsg, dst_t, w, h, "nearest") > 0.5
+
+
+def radar_series(site_id: str, stacks, window, skip_spans, cfg: FrameSite | None = None) -> tuple:
+    """(days, db, baseline, pixel_ha, water): the smoothed, per-date levelled VH of every usable pass on the common
+    grid; water = the pipeline's mask when cfg.water_mask (else None)."""
+    cfg = cfg or FrameSite(window, ())
     cache = Path(stacks) / site_id / "s1"
     days = [d for d in pipeline.cached_days(cache) if not any(lo <= d <= hi for lo, hi in skip_spans)]
     if not days:
         raise pipeline.PipelineError(f"no usable Sentinel-1 passes in {cache}")
-    dst_t, w, h = grid_for(window)
+    dst_t, w, h = grid_for(window, cfg.width)
     warped = []
     for day in days:
         fr = pipeline.load_frame(pipeline.cache_path(cache, day))
         warped.append(warp(smooth_linear(fr.data["VH"]), fr.transform, fr.epsg, dst_t, w, h, "bilinear"))
-    warped = time_average(warped, days)
+    warped = time_average(warped, days, cfg.time_gap)
     dbs = [to_db(a) for a in warped]
-    medians = np.array([np.nanmedian(a) for a in dbs])  # one offset per date: wet / dry days must not flicker
+    water = pipeline_water(site_id, pipeline.S1, cache, days, dst_t, w, h) if cfg.water_mask else None
+    land = slice(None) if water is None else ~water
+    medians = np.array([np.nanmedian(a[land]) for a in dbs])  # one offset per date: wet / dry days must not flicker
     ref = float(np.median(medians))
     log.info("radar: %d passes, per-date median %.1f .. %.1f dB (reference %.1f)", len(days), medians.min(),
              medians.max(), ref)
     dbs = [a - m + ref for a, m in zip(dbs, medians)]
-    base = [a for a, d in zip(dbs, days) if BASELINE_SPAN[0] <= d <= BASELINE_SPAN[1]]
+    if cfg.baseline_first:
+        base = dbs[:cfg.baseline_first]
+    else:
+        base = [a for a, d in zip(dbs, days) if BASELINE_SPAN[0] <= d <= BASELINE_SPAN[1]]
     if not base:
-        raise pipeline.PipelineError("no summer 2025 passes for the baseline")
+        raise pipeline.PipelineError("no passes for the baseline")
     baseline = np.nanmedian(np.stack(base), axis=0)
     west, south, east, north = window
     mid = math.radians((north + south) / 2)
     pixel_ha = (east - west) * 111_320 * math.cos(mid) / w * (north - south) * 110_574 / h / 1e4
-    return days, dbs, baseline, pixel_ha
+    return days, dbs, baseline, pixel_ha, water
 
 
-def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, until: date | None = None) -> list:
+def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, until: date | None = None,
+                 cfg: FrameSite | None = None) -> list:
     """Write one JPEG per usable Sentinel-1 pass before `until` (grey radar, lost vegetation echo tinted); returns
     [{date, sensor, url}] sorted by date. The smoothing and levelling still use every pass."""
-    days, dbs, baseline, pixel_ha = radar_series(site_id, stacks, window, skip_spans)
+    cfg = cfg or FrameSite(window, ())
+    days, dbs, baseline, pixel_ha, water = radar_series(site_id, stacks, window, skip_spans, cfg)
     out_dir.mkdir(parents=True, exist_ok=True)
     frames = []
-    for day, db in zip(days, dbs):
+    for i, (day, db) in enumerate(zip(days, dbs)):
         if until is not None and day >= until:
             continue
-        data = jpeg_bytes(tint(radar_stretch(db), lost_alpha(baseline - db, baseline, pixel_ha)))
+        change = baseline - db
+        alpha = lost_alpha(np.abs(change) if cfg.tint_rise else change, baseline, pixel_ha, *cfg.tint_db, water,
+                           cfg.min_patch_ha)
+        if i < cfg.baseline_first:  # the baseline passes are what "unchanged" means
+            alpha[:] = 0
+        grey = radar_stretch(db, *cfg.s1_range)
+        if water is not None:
+            grey[water] = 0.0  # the sea: no wind streaks, no ships
+        data = jpeg_bytes(tint(grey, alpha), max_bytes=cfg.max_frame_bytes)
         (out_dir / f"{day.isoformat()}.jpg").write_bytes(data)
         frames.append({"date": day.isoformat(), "sensor": "Sentinel-1", "url": f"frames/radar/{day.isoformat()}.jpg"})
-        if len(data) > MAX_FRAME_BYTES:
-            log.warning("radar %s: %d KB (target %d KB)", day, len(data) // 1000, MAX_FRAME_BYTES // 1000)
+        if len(data) > cfg.max_frame_bytes:
+            log.warning("radar %s: %d KB (target %d KB)", day, len(data) // 1000, cfg.max_frame_bytes // 1000)
     return frames
 
 
-def nisar_series(site_id: str, stacks, window, skip_spans) -> tuple:
+def nisar_series(site_id: str, stacks, window, skip_spans, cfg: FrameSite | None = None) -> tuple:
     """(days, db, water, pixel_ha): smoothed, levelled HV of every usable NISAR pass on the common grid, and the
     detection's water mask (pipeline._water_mask: HH baseline, shore grown) on that grid, True = water."""
+    cfg = cfg or FrameSite(window, ())
     site = pipeline.SITES[site_id]
     cache = Path(stacks) / site_id / pipeline.NISAR
     days = [d for d in pipeline.cached_days(cache) if not any(lo <= d <= hi for lo, hi in skip_spans)]
     if not days:
         raise pipeline.PipelineError(f"no usable NISAR passes in {cache}")
-    dst_t, w, h = grid_for(window)
+    dst_t, w, h = grid_for(window, cfg.width)
     warped = []
     for day in days:
         fr = pipeline.load_frame(pipeline.cache_path(cache, day))
         warped.append(warp(smooth_linear(fr.data["HV"]), fr.transform, fr.epsg, dst_t, w, h, "bilinear"))
-    dbs = [to_db(a) for a in time_average(warped, days)]
+    dbs = [to_db(a) for a in time_average(warped, days, cfg.time_gap)]
     stable = np.all([np.nan_to_num(a, nan=-99.0) >= NISAR_STABLE_MIN_DB for a in dbs], axis=0)
     medians = np.array([np.nanmedian(a[stable]) for a in dbs])  # one offset per pass: moisture must not flicker
     ref = float(np.median(medians))
@@ -248,8 +300,11 @@ def nisar_series(site_id: str, stacks, window, skip_spans) -> tuple:
     dbs = [a - m + ref for a, m in zip(dbs, medians)]
     stack, _, transform, epsg = pipeline.load_stack(cache, days, site.bbox)
     s = site.nisar
-    valid = pipeline._water_mask(stack, pipeline.NISAR, s.params.n_early, s.water_db, s.water_grow)
+    valid = pipeline._water_mask(stack, pipeline.NISAR, s.params.n_early, s.water_db, s.water_grow, s.water_pol)
     water = warp((~valid).astype(np.float32), transform, epsg, dst_t, w, h, "nearest") > 0.5
+    s1_cache = Path(stacks) / site_id / pipeline.S1
+    if cfg.water_mask and site.s1 is not None and pipeline.cached_days(s1_cache):  # one sea for both sensors
+        water |= pipeline_water(site_id, pipeline.S1, s1_cache, pipeline.cached_days(s1_cache), dst_t, w, h)
     log.info("nisar: water mask %.1f%% of the window", 100 * water.mean())
     west, south, east, north = window
     mid = math.radians((north + south) / 2)
@@ -257,36 +312,43 @@ def nisar_series(site_id: str, stacks, window, skip_spans) -> tuple:
     return days, dbs, water, pixel_ha
 
 
-def nisar_alphas(dbs: list, water: np.ndarray, pixel_ha: float) -> list:
-    """Tint strength per NISAR pass: HV below the first pass by NISAR_TINT_FROM_DB or more (none on the first pass)."""
-    return [lost_alpha(dbs[0] - db, dbs[0], pixel_ha, NISAR_TINT_FROM_DB, NISAR_TINT_FULL_DB, water) if i
-            else np.zeros(db.shape, np.float32) for i, db in enumerate(dbs)]
+def nisar_alphas(dbs: list, water: np.ndarray, pixel_ha: float, rise: bool = False,
+                 min_ha: float = MIN_PATCH_HA) -> list:
+    """Tint strength per NISAR pass: HV below the first pass by NISAR_TINT_FROM_DB or more (none on the first pass);
+    with rise, above it by that much too."""
+    return [lost_alpha(np.abs(dbs[0] - db) if rise else dbs[0] - db, dbs[0], pixel_ha, NISAR_TINT_FROM_DB,
+                       NISAR_TINT_FULL_DB, water, min_ha) if i else np.zeros(db.shape, np.float32) for i, db in enumerate(dbs)]
 
 
-def nisar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans) -> list:
+def nisar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, cfg: FrameSite | None = None) -> list:
     """Write one JPEG per usable NISAR pass (grey HV, trees gone since the first pass tinted); returns
     [{date, sensor, url, caption}] sorted by date. File names end in -nisar so they never meet a Sentinel-1 file."""
-    days, dbs, water, pixel_ha = nisar_series(site_id, stacks, window, skip_spans)
+    cfg = cfg or FrameSite(window, ())
+    days, dbs, water, pixel_ha = nisar_series(site_id, stacks, window, skip_spans, cfg)
     out_dir.mkdir(parents=True, exist_ok=True)
-    caption = NISAR_CAPTION.format(first=f"{days[0].day} {days[0]:%b %Y}")
+    caption = cfg.captions[1] if cfg.captions else NISAR_CAPTION.format(first=f"{days[0].day} {days[0]:%b %Y}")
     frames = []
-    for day, db, alpha in zip(days, dbs, nisar_alphas(dbs, water, pixel_ha)):
-        data = jpeg_bytes(tint(radar_stretch(db, *NISAR_RANGE_DB), alpha))
+    for day, db, alpha in zip(days, dbs, nisar_alphas(dbs, water, pixel_ha, cfg.tint_rise,
+                                                                 cfg.min_patch_ha)):
+        grey = radar_stretch(db, *cfg.nisar_range)
+        if cfg.water_mask:
+            grey[water] = 0.0
+        data = jpeg_bytes(tint(grey, alpha), max_bytes=cfg.max_frame_bytes)
         name = f"{day.isoformat()}-nisar.jpg"
         (out_dir / name).write_bytes(data)
         frames.append({"date": day.isoformat(), "sensor": "NISAR", "url": f"frames/radar/{name}", "caption": caption})
-        if len(data) > MAX_FRAME_BYTES:
-            log.warning("nisar %s: %d KB (target %d KB)", day, len(data) // 1000, MAX_FRAME_BYTES // 1000)
+        if len(data) > cfg.max_frame_bytes:
+            log.warning("nisar %s: %d KB (target %d KB)", day, len(data) // 1000, cfg.max_frame_bytes // 1000)
     return frames
 
 
-def radar_set(site_id: str, stacks, out_dir: Path, window, skip_spans) -> list:
+def radar_set(site_id: str, stacks, out_dir: Path, window, skip_spans, cfg: FrameSite | None = None) -> list:
     """The radar frames of the app: Sentinel-1 up to NISAR's first pass, NISAR pictures from then on. Files of
     frames no longer listed (the later Sentinel-1 passes, older runs) are deleted."""
     has_nisar = (Path(stacks) / site_id / pipeline.NISAR).is_dir() and pipeline.SITES[site_id].nisar is not None
-    nisar = nisar_frames(site_id, stacks, out_dir, window, skip_spans) if has_nisar else []
+    nisar = nisar_frames(site_id, stacks, out_dir, window, skip_spans, cfg) if has_nisar else []
     until = date.fromisoformat(nisar[0]["date"]) if nisar else None
-    frames = radar_frames(site_id, stacks, out_dir, window, skip_spans, until) + nisar
+    frames = radar_frames(site_id, stacks, out_dir, window, skip_spans, until, cfg) + nisar
     listed = {Path(f["url"]).name for f in frames}
     for path in out_dir.glob("*.jpg"):
         if path.name not in listed:
@@ -318,6 +380,37 @@ def thin_days(candidates, min_gap: int = PHOTO_MIN_GAP_DAYS) -> list:
     return sorted(kept, key=lambda t: t[0])
 
 
+def pick_yearly(candidates, extra: int = 0, min_gap: int = 20, mid_summer=(7, 15)) -> list:
+    """candidates: [(day, score, payload)]. One per calendar year: the best score (to 2 decimals), ties to the day
+    nearest 15 July, so the seasons of different years look alike. Then `extra` more from the last year, best score
+    first, each at least min_gap days from every kept day. Sorted by day."""
+    def near(day):
+        return abs((day - date(day.year, *mid_summer)).days)
+
+    ranked = sorted(candidates, key=lambda c: (-round(c[1], 2), near(c[0]), c[0]))
+    kept, years = [], set()
+    for c in ranked:
+        if c[0].year not in years:
+            years.add(c[0].year)
+            kept.append(c)
+    if kept and extra:
+        last = max(years)
+        more = 0
+        for c in ranked:
+            if more < extra and c[0].year == last and all(abs((c[0] - k[0]).days) >= min_gap for k in kept):
+                kept.append(c)
+                more += 1
+    return sorted(kept, key=lambda t: t[0])
+
+
+def photo_name(g) -> str:
+    """The satellite's name: Landsat 8 / Landsat 9 (from the CMR platform) or Sentinel-2."""
+    if g.sensor != "L30":
+        return "Sentinel-2"
+    platform = str(g.extra.get("platform", "")).upper().replace("LANDSAT-", "")
+    return f"Landsat {platform}" if platform.isdigit() else "Landsat"
+
+
 def photo_frames(site: FrameSite, out_dir: Path, cache_dir: Path, token=None) -> list:
     """Search HLS, keep clear days, write one colour JPEG per day; returns [{date, sensor, url}] sorted by date."""
     from . import hls
@@ -330,9 +423,10 @@ def photo_frames(site: FrameSite, out_dir: Path, cache_dir: Path, token=None) ->
     granules = [g for g in granules if g.tile == tile]
     log.info("photos: %d HLS granules on tile %s", len(granules), tile)
     clear = hls.clear_granules(granules, window, PHOTO_MIN_CLEAR, token)
-    kept = thin_days([(g.start.date(), f, g) for g, f in clear if g.start.date() not in site.photo_exclude])
+    cands = [(g.start.date(), f, g) for g, f in clear if g.start.date() not in site.photo_exclude]
+    kept = pick_yearly(cands, site.photo_yearly) if site.photo_yearly >= 0 else thin_days(cands)
     log.info("photos: %d clear granules, %d days after thinning", len(clear), len(kept))
-    dst_t, w, h = grid_for(window)
+    dst_t, w, h = grid_for(window, site.width)
     cache_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
     frames = []
@@ -347,12 +441,14 @@ def photo_frames(site: FrameSite, out_dir: Path, cache_dir: Path, token=None) ->
                                 y0=grid["y0"])
         transform = (grid["a"], 0.0, grid["x0"], 0.0, grid["e"], grid["y0"])
         chans = [warp(rgb[..., i], transform, grid["epsg"], dst_t, w, h) for i in range(3)]
-        data = jpeg_bytes(photo_stretch(np.stack(chans, axis=-1)))
+        data = jpeg_bytes(photo_stretch(np.stack(chans, axis=-1)), max_bytes=site.max_frame_bytes)
         (out_dir / f"{day.isoformat()}.jpg").write_bytes(data)
         frames.append({"date": day.isoformat(), "sensor": "Landsat" if g.sensor == "L30" else "Sentinel-2",
                        "url": f"frames/photo/{day.isoformat()}.jpg"})
-        if len(data) > MAX_FRAME_BYTES:
-            log.warning("photo %s: %d KB (target %d KB)", day, len(data) // 1000, MAX_FRAME_BYTES // 1000)
+        if site.captions:
+            frames[-1]["caption"] = photo_name(g)
+        if len(data) > site.max_frame_bytes:
+            log.warning("photo %s: %d KB (target %d KB)", day, len(data) // 1000, site.max_frame_bytes // 1000)
     return frames
 
 
@@ -367,11 +463,13 @@ def build(site_id: str, stacks=None, root=None, radar: bool = True, photos: bool
     sets = []
     if radar:
         spans = pipeline._skip_spans(pipeline.SITES[site_id])
-        frames = radar_set(site_id, stacks, site_dir / "frames" / "radar", site.window, spans)
-        sets.append({"id": "radar", "title": "Radar", "caption": RADAR_CAPTION, "frames": frames})
+        frames = radar_set(site_id, stacks, site_dir / "frames" / "radar", site.window, spans, site)
+        sets.append({"id": "radar", "title": "Radar", "caption": site.captions[0] if site.captions else RADAR_CAPTION,
+                     "frames": frames})
     if photos:
         frames = photo_frames(site, site_dir / "frames" / "photo", root / "data" / "hls" / site_id, token)
-        sets.append({"id": "photo", "title": "Satellite photo", "caption": PHOTO_CAPTION, "frames": frames})
+        sets.append({"id": "photo", "title": "Satellite photo",
+                     "caption": "Landsat and Sentinel-2" if site.captions else PHOTO_CAPTION, "frames": frames})
     path = site_dir / "frames.json"
     if path.is_file():  # a partial run keeps the other set
         old = {s["id"]: s for s in json.loads(path.read_text(encoding="utf-8"))["sets"]}
