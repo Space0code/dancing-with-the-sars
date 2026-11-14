@@ -1,0 +1,54 @@
+{
+ "layers": [
+  {
+   "id": "nisar_l_band_before",
+   "title": "NISAR radar, before",
+   "date": "2026-07-05",
+   "url": "layers/nisar_l_band_before.png",
+   "coordinates": [
+    [
+     1.788397,
+     41.490157
+    ],
+    [
+     1.910086,
+     41.491375
+    ],
+    [
+     1.911448,
+     41.409962
+    ],
+    [
+     1.789911,
+     41.408747
+    ]
+   ],
+   "caption": "3 passes, 23 Jun to 17 Jul 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "nisar_l_band_after",
+   "title": "NISAR radar, after",
+   "date": "2026-10-21",
+   "url": "layers/nisar_l_band_after.png",
+   "coordinates": [
+    [
+     1.788397,
+     41.490157
+    ],
+    [
+     1.910086,
+     41.491375
+    ],
+    [
+     1.911448,
+     41.409962
+    ],
+    [
+     1.789911,
+     41.408747
+    ]
+   ],
+   "caption": "3 passes, 9 Oct to 2 Nov 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  }
+ ]
+}

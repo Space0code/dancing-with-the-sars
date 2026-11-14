@@ -391,7 +391,7 @@ def test_site_overrides_then_command_line_overrides(monkeypatch):
     site = pipeline.SITES["agroparc"]
     monkeypatch.setattr(site, "params", {"boxcar": 7, "threshold_db": 2.5})
     p = pipeline._params(site, "nisar")
-    assert (p.boxcar, p.threshold_db, p.min_area_ha) == (7, 2.5, 0.5)
+    assert (p.boxcar, p.threshold_db, p.min_area_ha) == (7, 2.5, 1.0)  # min_area_ha: the sensor entry
     assert pipeline._params(site, "nisar", threshold_db=4.0).threshold_db == 4.0  # the command line wins
     assert site.nisar.params.boxcar == 5  # the sensor defaults are not modified
     monkeypatch.setattr(site, "params", {"treshold_db": 2.5})
