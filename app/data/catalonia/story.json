@@ -1,0 +1,13 @@
+{
+ "headline": "Catalonia: where did the land change, and which changes deserve a second look?",
+ "story": [
+  "This is the overview. Satellite radar passes over Catalonia every few days and sees through cloud, rain and darkness. Wherever the ground cover changed between passes (forest cleared, earth moved, a new building, a burn scar), the map marks the place and colours it by how much attention it needs.",
+  "Each mark gets one of three labels. Expected: the records agree with the change, or it is natural, such as a recorded wildfire. Needs review: no record explains it, or the land is not meant to be built on. High concern: it lies in a protected area, or it is a large clearing or earthworks on land where building is not allowed and nothing on record explains it. A label is a reason to look, not a finding that anything went wrong.",
+  "Drag the timeline to watch changes appear over the months. Click a mark to see what the radar saw, the before and after pictures, and the records behind the label. The radar history starts with Sentinel-1, the European radar satellites. The NASA–ISRO NISAR satellite adds sharper, calibrated data from late June 2026, so the most recent months are the most detailed."
+ ],
+ "events": [],
+ "sources": [
+  {"title": "NISAR mission documentation (ASF)", "url": "https://nisar-docs.asf.alaska.edu/"},
+  {"title": "NISAR applications (NASA JPL)", "url": "https://science.nasa.gov/mission/nisar/societal-benefits/"}
+ ]
+}
