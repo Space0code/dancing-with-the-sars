@@ -412,6 +412,47 @@ def test_scene_from_api_item():
     assert s1.pick_burst([sc], bbox_around(*AGROPARC, 3000)) == [sc]  # its footprint covers Agroparc
 
 
+class _FakeSearch:
+    """Stands in for the search API: answers from a list of items, at most maxResults per query, like the real one."""
+
+    def __init__(self, items):
+        self.items, self.queries = items, []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def get(self, url, params, timeout):
+        t0, t1 = (datetime.fromisoformat(params[k].replace("Z", "+00:00")) for k in ("start", "end"))
+        self.queries.append((t0, t1))
+        hits = [it for it in self.items
+                if t0 <= datetime.fromisoformat(it["startTime"].replace("Z", "+00:00")) <= t1]
+        response = type("Response", (), {})()
+        response.status_code = 200
+        response.json = lambda: {"results": hits[:params["maxResults"]]}
+        return response
+
+
+def test_search_asks_year_by_year_splits_full_answers_and_drops_repeats(monkeypatch):
+    items = []
+    for i, day in enumerate([date(2016, 5, 1), date(2017, 1, 1)] + [date(2020, 3, 1) + timedelta(days=6 * k)
+                                                                     for k in range(9)]):
+        item = dict(API_ITEM, startTime=f"{day:%Y-%m-%d}T00:00:00Z")
+        item["granuleName"] = API_ITEM["granuleName"].replace("20240611T174720Z", f"{day:%Y%m%d}T000000Z")
+        items.append(item)
+    fake = _FakeSearch(items)
+    monkeypatch.setattr(s1, "_session", lambda: fake)
+    monkeypatch.setattr(s1, "MAX_RESULTS", 4)
+
+    scenes = s1.search(BBOX, start="2016-01-01", end=date(2021, 1, 1))
+
+    assert len(scenes) == len(items)  # 2017-01-01 sits on a year edge and comes back twice: kept once
+    assert [sc.start for sc in scenes] == sorted(sc.start for sc in scenes)
+    assert len(fake.queries) > 5  # one per year, plus splits of 2020, which holds more than MAX_RESULTS
+
+
 # ---------------------------------------------------------------- live (opt-in)
 
 def _summary(label, scenes, picked):

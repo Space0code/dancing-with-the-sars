@@ -21,12 +21,14 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin, urlparse
 
 import numpy as np
 
 SEARCH_URL = "https://api.daac.asf.alaska.edu/services/search/param"
+MAX_RESULTS = 2000      # the search API's cap per query
+FIRST_ACQUISITION = datetime(2014, 4, 1, tzinfo=timezone.utc)  # Sentinel-1A launch; OPERA RTC-S1 starts April 2016
 TOKEN_HOSTS = ("asf.alaska.edu", "earthdata.nasa.gov", "earthdatacloud.nasa.gov")  # the token goes only here
 LOGIN_HOST = "urs.earthdata.nasa.gov"  # a redirect here means the token was missing or refused
 MASK_VALID = 0          # mask value of a usable pixel; 1-3 (shadow / layover) and 255 (no data) become NaN
@@ -102,12 +104,13 @@ def _bbox_wkt(bbox) -> str:
     return f"POLYGON(({w} {s},{e} {s},{e} {n},{w} {n},{w} {s}))"
 
 
-def _iso(t) -> str:
-    if isinstance(t, datetime):
-        return t.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") if t.tzinfo else t.strftime("%Y-%m-%dT%H:%M:%SZ")
-    if isinstance(t, date):
-        return t.strftime("%Y-%m-%dT00:00:00Z")
-    return str(t)
+def _utc(t) -> datetime:
+    """date, datetime or ISO string -> aware UTC datetime (naive input is taken as UTC)."""
+    if isinstance(t, str):
+        t = datetime.fromisoformat(t.replace("Z", "+00:00"))
+    elif not isinstance(t, datetime):
+        t = datetime(t.year, t.month, t.day)
+    return t.astimezone(timezone.utc) if t.tzinfo else t.replace(tzinfo=timezone.utc)
 
 
 def _session():
@@ -123,22 +126,39 @@ def _session():
     return s
 
 
+def _search_span(session, bbox, t0: datetime, t1: datetime, timeout: float) -> list:
+    """API results for acquisitions in [t0, t1]. The API refuses (HTTP 400) a query that would return more than
+    MAX_RESULTS unless maxResults is set, so a span that fills maxResults is split in two and asked again."""
+    params = {"dataset": "OPERA-S1", "processingLevel": "RTC", "intersectsWith": _bbox_wkt(bbox), "output": "jsonlite",
+              "start": t0.strftime("%Y-%m-%dT%H:%M:%SZ"), "end": t1.strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "maxResults": MAX_RESULTS}
+    r = session.get(SEARCH_URL, params=params, timeout=timeout)  # gzip: ~0.3 KB per product on the wire
+    if r.status_code >= 400:
+        raise RuntimeError(f"ASF search failed, HTTP {r.status_code}: {r.text[:300]}")
+    results = r.json().get("results", [])
+    if len(results) >= MAX_RESULTS and t1 - t0 > timedelta(days=1):
+        mid = t0 + (t1 - t0) / 2
+        return _search_span(session, bbox, t0, mid, timeout) + _search_span(session, bbox, mid, t1, timeout)
+    return results
+
+
 def search(bbox, start=None, end=None, timeout: float = 180) -> list:
     """All RTC-S1 products whose footprint meets bbox (west, south, east, north degrees), time-sorted. No login.
 
     Includes every burst and track that touches bbox, and reprocessed copies of the same burst and date: pick_burst
-    sorts that out. start / end: date, datetime or ISO string, on the acquisition time.
+    sorts that out. start / end: date, datetime or ISO string (UTC) on the acquisition time; default: all.
+    Asks one year at a time, so long series stay under the API's result cap.
     """
-    params = {"dataset": "OPERA-S1", "processingLevel": "RTC", "intersectsWith": _bbox_wkt(bbox), "output": "jsonlite"}
-    if start is not None:
-        params["start"] = _iso(start)
-    if end is not None:
-        params["end"] = _iso(end)
+    t0 = _utc(start) if start is not None else FIRST_ACQUISITION
+    t1 = _utc(end) if end is not None else datetime.now(timezone.utc)
+    items = {}
     with _session() as s:
-        r = s.get(SEARCH_URL, params=params, timeout=timeout)  # gzip: ~0.3 KB per product on the wire
-        r.raise_for_status()
-        results = r.json().get("results", [])
-    return sorted((scene_from_api(item) for item in results), key=lambda sc: sc.start)
+        while t0 < t1:
+            t_next = min(t1, datetime(t0.year + 1, 1, 1, tzinfo=timezone.utc))
+            for item in _search_span(s, bbox, t0, t_next, timeout):
+                items[item["granuleName"]] = item  # a product on a span edge comes back twice
+            t0 = t_next
+    return sorted((scene_from_api(item) for item in items.values()), key=lambda sc: sc.start)
 
 
 def _one_per_date(scenes) -> list:
