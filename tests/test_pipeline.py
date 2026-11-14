@@ -541,6 +541,35 @@ def test_water_mask_can_take_a_wider_shore():
     assert not wide[5, 10] and not wide[6, 6] and wide[4, 10]  # three pixels, diagonals included
 
 
+def test_water_mask_can_use_the_cross_pol():
+    """The sea under wind: co-pol as bright as land, cross-pol near the noise floor."""
+    vv = np.full((4, 20, 20), 0.08, dtype=np.float32)
+    vh = np.full((4, 20, 20), 0.02, dtype=np.float32)
+    vh[:, :, 12:] = 1e-3  # the sea, east of column 12: VH -30 dB, VV unchanged
+    assert pipeline._water_mask({"VV": vv, "VH": vh}, "s1", n_early=2, water_db=-24.0).all()  # co-pol sees none
+    sea = ~pipeline._water_mask({"VV": vv, "VH": vh}, "s1", n_early=2, water_db=-24.0, pol="VH")
+    assert sea[:, 11:].all() and not sea[:, :11].any()  # the sea plus one pixel of shore
+
+
+def test_top_changes_keeps_the_largest_and_counts_low_confidence_at_half():
+    from sarwatch.export import Merged
+
+    def change(side_deg, confidence, day):
+        ring = [[2.0, 41.0], [2.0 + side_deg, 41.0], [2.0 + side_deg, 41.0 + side_deg], [2.0, 41.0 + side_deg],
+                [2.0, 41.0]]
+        return Merged(geometry={"type": "Polygon", "coordinates": [ring]}, type="other", first_date=day,
+                      last_date=day, not_before=None, confidence=confidence, sensor="x", explain="", sources=[], run=0)
+
+    big_low = change(0.010, "low", date(2020, 6, 1))      # ~93 ha, counts ~47
+    mid = change(0.008, "medium", date(2021, 6, 1))       # ~60 ha
+    small = change(0.004, "high", date(2019, 6, 1))       # ~15 ha
+    tiny_low = change(0.002, "low", date(2018, 6, 1))
+    changes = [big_low, mid, small, tiny_low]
+    assert pipeline.top_changes(changes, 2) == [big_low, mid]  # the input order is kept
+    assert pipeline.top_changes(changes, 1) == [mid]
+    assert pipeline.top_changes(changes, 10) is changes
+
+
 # ---- several sources: the optical alerts carry the clearing's parts, the radar is attached (Muhos)
 
 def _s1_run(change_pass=5):

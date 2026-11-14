@@ -71,6 +71,7 @@ class NisarSettings:
     params: ChangeParams = field(default_factory=ChangeParams)  # 20 m pixels: the change-core defaults
     water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
     water_grow: int = 1            # pixels of shore masked around the water
+    water_pol: str | None = None   # the polarization water_db applies to (None = co-pol)
     drop_baseline_dated: bool = False  # as S1Settings: a region dated inside the baseline passes is left out
 
 
@@ -85,6 +86,8 @@ class S1Settings:
     params: ChangeParams = field(default_factory=lambda: ChangeParams(boxcar=3))  # 30 m pixels: smaller window
     water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
     water_grow: int = 1            # pixels of shore masked around the water
+    water_pol: str | None = None   # the polarization water_db applies to (None = co-pol). Cross-pol for the sea:
+                                   # wind lifts the sea's VV to land levels, its VH stays near the noise floor
     drop_baseline_dated: bool = False  # drop regions dated inside the baseline passes: for a short baseline that
                                        # defines "before" (Muhos), such a date is an artefact, not a change
     mosaic: bool = False             # window larger than one burst: read the bursts of ONE track that cover it as one
@@ -111,6 +114,8 @@ class Site:
     sources: tuple = ()           # merge.SiteSource per source: with them, detections become one change per place
     primary_scope: str | None = None  # GeoJSON outline (repo path): inside it the optical alerts are the primary
                                       # source, one change per month of first detection, radar attached as sources
+    max_changes: int | None = None  # a large window: keep only this many changes (largest first, low confidence
+                                    # counted at half its area); needs `sources` (applies to the merged changes)
 
 
 @dataclass
@@ -187,8 +192,15 @@ SITES = {
         nisar=NisarSettings(start=date(2026, 6, 1), track=130, frame=22, direction="ASCENDING",
                             params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True)),
         s1=S1Settings(start=date(2016, 4, 1), min_gap_days=20, months=(6, 7, 8, 9), mosaic=True, track=132,
+                      water_db=-24.0, water_pol="VH", water_grow=2,
                       params=ChangeParams(boxcar=3, n_early=10, n_late=6, persist=99, threshold_db=3.0,
                                           min_area_ha=1.0, normalize=True, hold=True)),
+        sources=(
+            ("Sentinel-1 C-band", "radar", "2016-06-05", None, 12, ("clearing", "structure", "earthworks", "other"),
+             ()),
+            ("NISAR L-band", "radar", "2026-06-23", None, 12, ("clearing", "structure", "earthworks", "other"), ()),
+        ),
+        max_changes=100,
     ),
 }
 
@@ -223,12 +235,13 @@ def _skip_spans(site: Site, skip_dates=None) -> list:
     return spans
 
 
-def _water_mask(stack: dict, sensor: str, n_early: int, water_db: float, grow: int = 1) -> np.ndarray:
-    """valid mask for detect_changes: False on open water (co-pol baseline median below water_db), plus `grow`
-    pixels around it (the shore, where the boxcar mixes water into land)."""
+def _water_mask(stack: dict, sensor: str, n_early: int, water_db: float, grow: int = 1, pol: str | None = None
+                ) -> np.ndarray:
+    """valid mask for detect_changes: False on open water (baseline median of `pol`, default the co-pol, below
+    water_db), plus `grow` pixels around it (the shore, where the boxcar mixes water into land)."""
     from scipy import ndimage
 
-    arr = stack[POLS[sensor][0]]
+    arr = stack[pol or POLS[sensor][0]]
     copol = np.nanmedian(arr[:max(1, min(n_early, len(arr) - 1))], axis=0)  # the baseline, as detect_changes takes it
     with np.errstate(divide="ignore", invalid="ignore"):
         water = ndimage.median_filter(10 * np.log10(copol), size=3) < water_db  # NaN compares False
@@ -572,10 +585,11 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     pixel = (math.hypot(a, d), math.hypot(b, e))
     settings = site.nisar if sensor == NISAR else site.s1
     water_db = settings.water_db
-    valid = None if water_db is None else _water_mask(stack, sensor, params.n_early, water_db, settings.water_grow)
+    valid = None if water_db is None else _water_mask(stack, sensor, params.n_early, water_db, settings.water_grow,
+                                                      settings.water_pol)
     if valid is not None:
-        log.info("%s: %.1f%% of the window is water (co-pol below %.0f dB), left out", sensor,
-                 100 * (1 - valid.mean()), water_db)
+        log.info("%s: %.1f%% of the window is water (%s below %.0f dB), left out", sensor,
+                 100 * (1 - valid.mean()), settings.water_pol or "co-pol", water_db)
     n_early = max(1, min(params.n_early, len(dates) - 1))  # the windows detect_changes will use
     n_late = max(1, min(params.n_late, len(dates) - n_early))
     log.info("%s: baseline %s .. %s (%d passes), end state %s .. %s (%d passes)", sensor, dates[0],
@@ -1071,6 +1085,23 @@ def merged_changes(runs: list, site: Site, n_early: dict, optical=None, params: 
     return out, sorted(used_states)
 
 
+CONFIDENCE_WEIGHT = {"low": 0.5, "medium": 1.0, "high": 1.0}  # top_changes: a low-confidence change counts half
+
+
+def top_changes(merged: list, n: int) -> list:
+    """The n changes that matter most on a large site: largest geodesic area first, a low-confidence one counted at
+    CONFIDENCE_WEIGHT of its area. Order of the kept ones is unchanged (write_site sorts them by date anyway)."""
+    from shapely.geometry import shape
+
+    from . import merge
+
+    if n is None or len(merged) <= n:
+        return merged
+    score = {id(m): merge.area_ha(shape(m.geometry)) * CONFIDENCE_WEIGHT.get(m.confidence, 1.0) for m in merged}
+    keep = {id(m) for m in sorted(merged, key=lambda m: -score[id(m)])[:n]}
+    return [m for m in merged if id(m) in keep]
+
+
 def _site_entry(index_path: Path, site_id: str) -> dict:
     if not index_path.is_file():
         raise PipelineError(f"{index_path} not found (use --out to point at app/data)")
@@ -1251,6 +1282,12 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         sources = site_sources_json(site)
         log.info("merged: %d changes from %s", len(merged), ", ".join(SHORT.get(r.sensor, r.sensor) for r in runs)
                  + (" and the optical alerts" if optical else ""))
+        if site.max_changes is not None and len(merged) > site.max_changes:
+            merged = top_changes(merged, site.max_changes)
+            log.info("kept the %d largest changes (max_changes)", len(merged))
+            optical_days = [d for d in optical_days if any(m.first_date == d for m in merged)]
+    elif site.max_changes is not None:
+        raise PipelineError(f"{site_id}: max_changes needs the site's `sources` (it applies to the merged changes)")
     written = write_site(site_dir, site_id, runs, merged=merged)
     if merged and write_stages(site_dir, site):
         log.info("wrote %s", site_dir / "stages.geojson")
