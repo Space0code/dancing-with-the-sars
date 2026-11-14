@@ -18,13 +18,14 @@ import io
 import json
 import logging
 import math
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
 import numpy as np
 
-from . import pipeline
+from . import distalert, pipeline, s1
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ FRAME_SITES = {
     # Barcelona (#44): 50 x 39 km, so twice the width and a stretch for the city; the sea comes from the pipeline's
     # mask; the baseline is the 2016 summer (5 passes, as in the detection); echo that rose (buildings) is tinted too
     "barcelona": FrameSite(window=(1.85, 41.25, 2.45, 41.60),
-                           photo_periods=tuple((date(y, 6, 1), date(y, 9, 30)) for y in range(2016, 2027)) +
+                           photo_periods=tuple((date(y, 6, 15), date(y, 9, 10)) for y in range(2016, 2027)) +
                                          ((date(2026, 10, 1), date(2026, 11, 14)),),
                            width=1400, max_frame_bytes=900_000, s1_range=(-27.0, -3.0), nisar_range=(-28.0, -2.0),
                            baseline_first=5, tint_rise=True, water_mask=True, time_gap=30,
@@ -411,34 +412,122 @@ def photo_name(g) -> str:
     return f"Landsat {platform}" if platform.isdigit() else "Landsat"
 
 
-def photo_frames(site: FrameSite, out_dir: Path, cache_dir: Path, token=None) -> list:
-    """Search HLS, keep clear days, write one colour JPEG per day; returns [{date, sensor, url}] sorted by date."""
+def fill_holes(arrays, empty) -> np.ndarray:
+    """Overlay same-shaped arrays: where the first is empty (empty(array) -> bool mask), take the next one."""
+    out = arrays[0].copy()
+    for a in arrays[1:]:
+        hole = empty(out)
+        out[hole] = a[hole]
+    return out
+
+
+def tiles_over(granules, window, min_cover: float = 0.02) -> set:
+    """MGRS tiles whose footprint covers at least min_cover of the window (a window over a tile border needs both)."""
+    from shapely import wkt
+    from shapely.geometry import box
+
+    area = box(*window)
+    cover = {}
+    for g in granules:
+        try:
+            frac = wkt.loads(g.footprint).intersection(area).area / area.area
+        except Exception:
+            frac = 0.0
+        cover.setdefault(g.tile, []).append(frac)
+    return {t for t, v in cover.items() if float(np.median(v)) >= min_cover}
+
+
+def clear_groups(groups, window, token, min_clear: float, workers: int = 12, cache: Path | None = None) -> list:
+    """[(day, clear fraction, granules)] of the groups (granules of one satellite pass on one day, one per tile)
+    whose Fmasks, laid side by side, are at least min_clear clear over the window. Unreadable ones are dropped.
+    cache: a JSON file of fractions by group, so a rerun does not read the Fmasks again."""
     from . import hls
 
-    window = site.window
-    granules = []
-    for first, last in site.photo_periods:
-        granules += hls.search(window, first, last)
-    tile = hls.pick_tile(granules, window)
-    granules = [g for g in granules if g.tile == tile]
-    log.info("photos: %d HLS granules on tile %s", len(granules), tile)
-    clear = hls.clear_granules(granules, window, PHOTO_MIN_CLEAR, token)
-    cands = [(g.start.date(), f, g) for g, f in clear if g.start.date() not in site.photo_exclude]
-    kept = pick_yearly(cands, site.photo_yearly) if site.photo_yearly >= 0 else thin_days(cands)
-    log.info("photos: %d clear granules, %d days after thinning", len(clear), len(kept))
-    dst_t, w, h = grid_for(window, site.width)
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    frames = []
-    for day, _, g in kept:
+    known = json.loads(cache.read_text(encoding="utf-8")) if cache is not None and cache.is_file() else {}
+
+    def one(item):
+        (day, _), members = item
+        key = "+".join(sorted(g.name for g in members))
+        if key in known:
+            return day, known[key], members
+        try:
+            masks = [hls.read_fmask(g, window, token)[0] for g in members]
+            if len({m.shape for m in masks}) != 1:
+                return day, 0.0, members
+            known[key] = hls.clear_fraction(fill_holes(masks, lambda a: a == hls.FMASK_NODATA))
+            return day, known[key], members
+        except Exception as exc:  # one broken granule must not stop the run
+            log.warning("%s: Fmask unreadable (%s)", members[0].name, exc)
+            return day, 0.0, members
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        results = list(pool.map(one, groups.items()))
+    if cache is not None:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(known), encoding="utf-8")
+    return [r for r in results if r[1] >= min_clear]
+
+
+def tile_epsg(tile: str) -> int:
+    """UTM EPSG code of an MGRS tile name such as 31TDF (the HLS COGs carry no EPSG code)."""
+    return (32600 if tile[2].upper() >= "N" else 32700) + int(tile[:2])
+
+
+def read_group(members, window, cache_dir: Path, token) -> tuple:
+    """(rgb, grid) of one group: each granule's window (cached), the tiles laid side by side on one grid."""
+    from . import hls
+
+    parts = []
+    for g in members:
         cache = cache_dir / f"{g.name}.npz"
         if cache.is_file():
             with np.load(cache) as z:
                 rgb, grid = z["rgb"], {k: float(z[k]) for k in ("a", "e", "x0", "y0")} | {"epsg": int(z["epsg"])}
         else:
             rgb, grid = hls.read_rgb(g, window, token)
+            grid["epsg"] = grid["epsg"] or tile_epsg(g.tile)
             np.savez_compressed(cache, rgb=rgb, epsg=grid["epsg"], a=grid["a"], e=grid["e"], x0=grid["x0"],
                                 y0=grid["y0"])
+        parts.append((rgb, grid))
+    first = parts[0][1]
+    if any((r.shape, g["x0"], g["y0"], g["a"], g["e"], g["epsg"]) != (parts[0][0].shape, first["x0"], first["y0"],
+                                                                       first["a"], first["e"], first["epsg"])
+           for r, g in parts):
+        raise ValueError(f"tiles of {members[0].name} are not on one grid")
+    return fill_holes([r for r, _ in parts], lambda a: np.isnan(a[..., 0])), first
+
+
+def photo_frames(site: FrameSite, out_dir: Path, cache_dir: Path, token=None) -> list:
+    """Search HLS, keep clear days, write one colour JPEG per day; returns [{date, sensor, url}] sorted by date.
+    Granules of one pass on one day from tiles that each cover part of the window are laid side by side."""
+    from . import hls
+
+    window = site.window
+    granules = []
+    for first, last in site.photo_periods:
+        granules += hls.search(window, first, last)
+    if site.photo_yearly >= 0:
+        tiles = tiles_over(granules, window)
+    else:
+        tiles = {hls.pick_tile(granules, window)}
+    groups = {}
+    for g in granules:
+        if g.tile in tiles:
+            groups.setdefault((g.start.date(), g.sensor), []).append(g)
+    log.info("photos: %d HLS granules on tiles %s, %d passes", sum(map(len, groups.values())), sorted(tiles),
+             len(groups))
+    token = distalert._token(token) if any(s1._remote(u) for g in granules for u in g.urls.values()) else token
+    clear = clear_groups(groups, window, token, PHOTO_MIN_CLEAR, cache=cache_dir / "clear.json")
+    cands = [(day, f, members) for day, f, members in clear if day not in site.photo_exclude]
+    kept = pick_yearly(cands, site.photo_yearly) if site.photo_yearly >= 0 else thin_days(cands)
+    log.info("photos: %d clear passes, %d days after thinning", len(clear), len(kept))
+    dst_t, w, h = grid_for(window, site.width)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    frames = []
+    for day, _, members in kept:
+        g = members[0]
+        rgb, grid = read_group(members, window, cache_dir, token)
         transform = (grid["a"], 0.0, grid["x0"], 0.0, grid["e"], grid["y0"])
         chans = [warp(rgb[..., i], transform, grid["epsg"], dst_t, w, h) for i in range(3)]
         data = jpeg_bytes(photo_stretch(np.stack(chans, axis=-1)), max_bytes=site.max_frame_bytes)
