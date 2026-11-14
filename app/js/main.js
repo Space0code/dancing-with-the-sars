@@ -1,7 +1,8 @@
 // Written by Claude. Wires the site switcher, map, legend and basemap toggle together.
-import { VERDICTS, setVerdictColors, h } from "./format.js";
+import { VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
 import { loadSites, loadSite } from "./data.js";
 import { createChangeMap } from "./map.js";
+import { createTimeline } from "./timeline.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -37,14 +38,24 @@ async function main() {
   const map = createChangeMap($("map"), { onSelect: () => {} });
   await map.ready;
 
+  let current = null; // the open site's data
+  const timeline = createTimeline({
+    onDate(iso) {
+      map.setDate(iso);
+      const shown = (current?.changes.features ?? []).filter((f) => f.properties.first_date <= iso);
+      timeline.setTotal(runningTotal(shown.length, shown.reduce((sum, f) => sum + f.properties.area_ha, 0)));
+    },
+  });
+
   async function openSite(id) {
     const site = sites.find((s) => s.id === id && s.ready);
     if (!site) return;
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
     history.replaceState(null, "", `#site=${site.id}`);
-    const data = await loadSite(site);
-    map.showSite(site, data.changes);
+    current = await loadSite(site);
+    map.showSite(site, current.changes);
+    timeline.setRange(site.time_range, current.story?.events);
   }
 
   $("site").addEventListener("change", (e) => openSite(e.target.value).catch((err) => showError(err.message)));
