@@ -7,7 +7,7 @@ the connected area below BARE_DB in the median of the last three good passes (29
 frozen), grown from a seed inside the clearing and kept inside a search box, so neighbouring fields and bogs do not
 leak in. Prints the hectares below BARE_DB inside the outline at every pass (each pass levelled to the same
 scene median first), and how much of it the change detector
-(app/data/muhos/changes.geojson) covers. Writes explore/muhos/clearing_scope.geojson (lon/lat).
+(app/data/muhos/changes.geojson) covers. Writes explore/muhos/clearing_radar_outline.geojson (lon/lat).
 
 Caveat: a bog or an old clear-cut is just as dark; what marks this area as the 2026 clearing is that it grows at its
 north-east edge from 19 Jul to 24 Aug (quick-looks in explore/muhos/).
@@ -37,7 +37,7 @@ SEARCH = (26.065, 64.815, 26.150, 64.860)  # lon/lat box the outline must stay i
 CLOSE_PX = 3   # close gaps up to ~6 px (120 m): skid trails, strips of standing trees
 OPEN_PX = 4    # then drop strips narrower than ~8 px (160 m): the road and rail corridor, river banks
 WATER_HH_DB = -14.0  # HH below this is open water (the river), never part of the clearing
-OUT = REPO_ROOT / "explore" / "muhos" / "clearing_scope.geojson"
+OUT = REPO_ROOT / "explore" / "muhos" / "clearing_radar_outline.geojson"
 GEOD = Geod(ellps="WGS84")
 
 

@@ -9,7 +9,7 @@ Jun-Sep 2025 passes. A pixel counts as felled if its median drop over Jun-Oct 20
 the first pass from which it stays at least half that far down for PERSIST passes. The site's skip dates
 (pipeline.py: May 2025, Oct 2025 - 6 Mar 2026, Nov 2026) are left out unless --all-dates is given (snow and frozen
 ground change C-band backscatter; see the quick-looks).
-Prints felled hectares inside clearing_scope.geojson and in the search box around it, by month first seen.
+Prints felled hectares inside clearing_radar_outline.geojson and in the search box around it, by month first seen.
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ DROP_DB = 1.5    # C-band VH: felling removes the canopy volume, but slash and s
 PERSIST = 3      # passes (18-36 days) the drop must hold to date it
 BOXCAR = 5
 SEARCH = (26.065, 64.815, 26.150, 64.860)  # same box as clearing_scope.py
-SCOPE = REPO_ROOT / "explore" / "muhos" / "clearing_scope.geojson"
+SCOPE = REPO_ROOT / "explore" / "muhos" / "clearing_radar_outline.geojson"
 
 
 def smooth_db(power, k=BOXCAR):
