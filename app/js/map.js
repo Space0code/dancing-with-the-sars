@@ -13,8 +13,20 @@ const STYLE = {
       maxzoom: 19,
       attribution: "Background imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community",
     },
+    // Light grey base map (Esri Light Gray Canvas, no key). CARTO's free Positron tiles now answer "API KEY REQUIRED".
+    // Only fetched while its layer is visible. Its native detail ends at zoom 16; closer in, the tiles are stretched.
+    light: {
+      type: "raster",
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"],
+      tileSize: 256,
+      maxzoom: 16,
+      attribution: "Background map © Esri, HERE, Garmin, © OpenStreetMap contributors and the GIS User Community",
+    },
   },
-  layers: [{ id: "base-satellite", type: "raster", source: "satellite" }],
+  layers: [
+    { id: "base-satellite", type: "raster", source: "satellite" },
+    { id: "base-light", type: "raster", source: "light", layout: { visibility: "none" } },
+  ],
 };
 
 const verdictColor = [
@@ -174,7 +186,7 @@ export function createChangeMap(container, { onSelect, bounds }) {
           map.removeSource("frame");
         }
         map.addSource("frame", { type: "canvas", canvas, coordinates, animate: false });
-        map.addLayer({ id: "frame", type: "raster", source: "frame", paint: { "raster-fade-duration": 0 } }, map.getStyle().layers[1]?.id); // right above the satellite, so record layers (records.js) and change shapes stay on top
+        map.addLayer({ id: "frame", type: "raster", source: "frame", paint: { "raster-fade-duration": 0 } }, map.getStyle().layers.find((l) => !l.id.startsWith("base-"))?.id); // right above the base maps, so record layers (records.js) and change shapes stay on top
       } else {
         if (JSON.stringify(source.coordinates) !== JSON.stringify(coordinates)) source.setCoordinates(coordinates);
         source.play(); // play + pause = copy the canvas to the map once
@@ -182,6 +194,10 @@ export function createChangeMap(container, { onSelect, bounds }) {
       }
       map.setLayoutProperty("frame", "visibility", "visible");
       map.triggerRepaint();
+    },
+    /** Show one base map, "satellite" or "light"; the picture, marked areas and record layers stay as they are. */
+    setBase(id) {
+      for (const base of ["satellite", "light"]) map.setLayoutProperty(`base-${base}`, "visibility", base === id ? "visible" : "none");
     },
     /** Screen position (px from the map's top-left) of a [lon, lat] point. */
     project(lonLat) {
