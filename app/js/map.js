@@ -1,6 +1,7 @@
 // Written by Claude. MapLibre map: satellite background (no API key), the big picture of the slider date (a canvas
 // drawn by picture.js), verdict-colored change polygons with a date filter, selection, and a switch that hides them all.
-// A site with stages.geojson draws its grouped changes as ONE area with one bold outline that grows with the date.
+// A site with stages.geojson draws its grouped changes as growth rings: every stage up to the slider date is a thin contour,
+// the latest one bold and filled. The stages nest (each covers the earlier), so they read like the rings of a cut trunk.
 import { VERDICTS } from "./format.js";
 
 const STYLE = {
@@ -59,9 +60,10 @@ export function createChangeMap(container, { onSelect, bounds }) {
       map.addSource("changes", { type: "geojson", data: EMPTY });
       map.addSource("stage", { type: "geojson", data: EMPTY });
       // the grown area: one light fill, one bold outline with a thin white casing (reads on the grey and the colour picture)
-      map.addLayer({ id: "stage-fill", type: "fill", source: "stage", paint: { "fill-color": verdictColor, "fill-opacity": 0.16 } });
-      map.addLayer({ id: "stage-casing", type: "line", source: "stage", layout: { "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": 5.5 } });
-      map.addLayer({ id: "stage-line", type: "line", source: "stage", layout: { "line-join": "round" }, paint: { "line-color": verdictColor, "line-width": 3 } });
+      const LATEST = ["get", "latest"];
+      map.addLayer({ id: "stage-fill", type: "fill", source: "stage", filter: LATEST, paint: { "fill-color": verdictColor, "fill-opacity": 0.16 } });
+      map.addLayer({ id: "stage-casing", type: "line", source: "stage", layout: { "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": ["case", LATEST, 5.5, 3], "line-opacity": 0.9, "line-opacity-transition": { duration: 450 } } });
+      map.addLayer({ id: "stage-line", type: "line", source: "stage", layout: { "line-join": "round" }, paint: { "line-color": ["case", LATEST, verdictColor, "#0d1b2a"], "line-width": ["case", LATEST, 3, 1.1], "line-opacity-transition": { duration: 450 } } });
       // grouped parts stay clickable but add no fill (a hairline opacity keeps them hit-testable)
       map.addLayer({ id: "changes-fill", type: "fill", source: "changes", paint: { "fill-color": verdictColor, "fill-opacity": ["case", ["get", "grouped"], 0.01, 0.3] } });
       map.addLayer({ id: "changes-casing", type: "line", source: "changes", filter: OWN_OUTLINE, paint: { "line-color": "#1b1b1b", "line-width": byZoom(2.6, 4.5) } });
@@ -96,10 +98,11 @@ export function createChangeMap(container, { onSelect, bounds }) {
     for (const id of DATE_LAYERS) map.setFilter(id, id === "changes-fill" ? filter : ["all", filter, OWN_OUTLINE]);
   }
 
-  /** The stage to draw at the slider date: the latest one at or before it (none before the first). */
+  /** The rings to draw at the slider date: every stage at or before it, the latest one marked (none before the first). */
   function applyStage() {
-    const now = stages.filter((f) => f.properties.date <= dateIso).at(-1);
-    map.getSource("stage").setData(now ? { type: "FeatureCollection", features: [now] } : EMPTY);
+    const upTo = stages.filter((f) => f.properties.date <= dateIso);
+    const rings = upTo.map((f, i) => ({ ...f, properties: { ...f.properties, ring: i, latest: i === upTo.length - 1 } }));
+    map.getSource("stage").setData(rings.length ? { type: "FeatureCollection", features: rings } : EMPTY);
   }
 
   /** A grouped part gets a thin outline while the pointer is on it or it is selected; other changes have their own. */

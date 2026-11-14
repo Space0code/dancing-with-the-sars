@@ -118,10 +118,48 @@ async function main() {
 
   const picture = createPicture(map, document.querySelector(".map-wrap"));
 
-  const refreshTotal = () => {
-    const { count, ha } = inbox.stats(); // follows the date and the inbox filters
-    timeline.setTotal(runningTotal(count, ha));
+  // The headline figure over the timeline. A site with stages shows its clearing so far (the member changes of the latest
+  // stage, which is the sum the story quotes); any other site shows the hectares marked so far. It counts to the new
+  // value instead of flashing, and just jumps when the visitor prefers reduced motion.
+  const figure = { box: $("figure"), num: $("figure-num"), cap: $("figure-cap"), shown: 0, raf: 0 };
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const drawFigure = (ha) => {
+    figure.shown = ha;
+    figure.num.textContent = ha >= 10 ? String(Math.round(ha)) : ha.toFixed(1);
   };
+  function showFigure(ha, caption) {
+    figure.box.hidden = false;
+    figure.cap.textContent = caption;
+    cancelAnimationFrame(figure.raf);
+    const from = figure.shown;
+    if (reduced.matches || from === ha) return drawFigure(ha);
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / 520);
+      drawFigure(from + (ha - from) * (1 - (1 - k) ** 4));
+      if (k < 1) figure.raf = requestAnimationFrame(step);
+    };
+    figure.raf = requestAnimationFrame(step);
+  }
+  function figureAt(iso, stats) {
+    const all = current.stages?.features ?? [];
+    if (!all.length) return { ha: stats.ha, cap: `Marked so far, ${stats.count} ${stats.count === 1 ? "change" : "changes"}` };
+    const seen = all.filter((f) => f.properties.date <= iso).sort((a, b) => a.properties.date.localeCompare(b.properties.date));
+    const latest = seen.at(-1);
+    if (!latest) return { ha: 0, cap: `${all[0].properties.title ?? "Marked area"}: none seen yet` };
+    const ids = new Set(latest.properties.members);
+    const ha = current.changes.features.filter((f) => ids.has(f.properties.id)).reduce((sum, f) => sum + f.properties.area_ha, 0);
+    return { ha, cap: `${latest.properties.title ?? "Marked area"}, seen in ${seen.length} ${seen.length === 1 ? "step" : "steps"}` };
+  }
+  const refreshTotal = () => {
+    const stats = inbox.stats(); // follows the date and the inbox filters
+    timeline.setTotal(runningTotal(stats.count, stats.ha));
+    if (current && lastDateForFigure) {
+      const { ha, cap } = figureAt(lastDateForFigure, stats);
+      showFigure(ha, cap);
+    }
+  };
+  let lastDateForFigure = null;
   const inbox = createInbox({
     onOpen(feature) {
       map.focus(feature, tourRoom());
@@ -138,6 +176,7 @@ async function main() {
       picture.setDate(iso);
       inbox.setDate(iso);
       setStoryDate(iso);
+      lastDateForFigure = iso;
       refreshTotal();
       lastDate = iso;
       writeHash();
@@ -185,6 +224,8 @@ async function main() {
     picture.setSite(null);
     map.showOverview(overview);
     timeline.clear();
+    figure.box.hidden = true;
+    lastDateForFigure = null;
   }
 
   async function openSite(id) {

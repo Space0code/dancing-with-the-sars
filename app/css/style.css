@@ -408,10 +408,21 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .row-sub { display: block; margin-top: 2px; font-size: var(--t-small); color: var(--muted); }
 
 /* ---------- timeline ---------- */
-.timeline { background: var(--raised); border-top: 1px solid var(--line); padding: var(--s-3) var(--s-4); }
+.timeline {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: end; column-gap: var(--s-6);
+  background: var(--raised); border-top: 1px solid var(--line-strong); padding: var(--s-4) var(--s-5) var(--s-3);
+}
+.timeline:has(.figure[hidden]) { grid-template-columns: minmax(0, 1fr); }
+.strip { min-width: 0; }
+/* the headline figure: one number at architectural scale, one short caption; it counts to its new value, never flashes */
+.figure { display: grid; row-gap: var(--s-2); min-width: 8ch; padding-bottom: var(--s-1); }
+.figure-line { display: flex; align-items: baseline; gap: var(--s-3); margin: 0; }
+.figure-num { font: 600 clamp(60px, 7vw, 96px)/.88 var(--font-display); letter-spacing: -0.045em; font-variant-numeric: tabular-nums; }
+.figure-unit { font: 600 26px/1 var(--font-display); letter-spacing: -0.02em; color: var(--action); }
+.figure-cap { margin: 0; max-width: 26ch; text-wrap: balance; font-size: var(--t-small); line-height: 1.35; color: var(--muted); }
 .timeline-top {
   display: flex; justify-content: space-between; gap: var(--s-1) var(--s-3); flex-wrap: wrap; align-items: baseline;
-  margin-bottom: var(--s-2); /* the red bars reach above the track: keep them off the text */
+  margin-bottom: var(--s-5); /* the ring notches and their month labels reach above the track: keep them off the text */
 }
 .date-label { font: 500 var(--t-title)/1.3 var(--font-display); letter-spacing: -0.01em; }
 .date-sub { font: 400 var(--t-label) var(--font-text); letter-spacing: 0; color: var(--muted); }
@@ -430,7 +441,19 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 @media (hover: hover) and (pointer: fine) { .play:not(:disabled):hover { background: #2e2e2e; transform: translateY(var(--lift)); transition-duration: var(--m-in); } }
 .play:disabled { opacity: .3; }
 .track { position: relative; flex: 1; min-width: 0; }
-#slider { width: 100%; margin: 0; height: 28px; accent-color: var(--ink); cursor: pointer; }
+#slider { width: 100%; margin: 0; height: 28px; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; }
+/* the core sample: a hairline rule, and a ring-shaped handle */
+#slider::-webkit-slider-runnable-track { height: 2px; background: var(--ink); }
+#slider::-moz-range-track { height: 2px; background: var(--ink); }
+#slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; margin-top: -10px; border-radius: 50%; border: 5px solid var(--action);
+  background: var(--raised); box-shadow: 0 0 0 3px var(--raised); transition: transform var(--m-in) var(--ease);
+}
+#slider::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%; border: 5px solid var(--action); background: var(--raised);
+  box-shadow: 0 0 0 3px var(--raised);
+}
+#slider:active::-webkit-slider-thumb { transform: scale(1.18); }
 #slider:disabled { cursor: default; }
 .events { position: relative; height: 16px; margin: -4px 9px 0; }
 .event-marker {
@@ -442,11 +465,16 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .ticks { position: absolute; top: 0; left: 9px; right: 9px; height: 28px; pointer-events: none; }
 .tick { position: absolute; bottom: 3px; width: 1px; height: 6px; background: #a8a8a8; transform: translateX(-50%); }
 .change-bar {
-  position: absolute; top: -5px; height: 38px; width: 13px; padding: 0; border: 0; border-radius: 2px; transform: translateX(-50%);
-  pointer-events: auto; background: linear-gradient(var(--bar), var(--bar)) center / 4px 100% no-repeat;
+  position: absolute; top: -9px; height: 26px; width: 15px; padding: 0; border: 0; border-radius: 1px; transform: translateX(-50%);
+  pointer-events: auto; background: linear-gradient(var(--bar), var(--bar)) center / 2px 100% no-repeat;
   transition: background-size var(--m-out) var(--ease);
 }
-.change-bar:hover, .change-bar:focus-visible { background-size: 6px 100%; transition-duration: var(--m-in); }
+.change-bar:hover, .change-bar:focus-visible { background-size: 4px 100%; transition-duration: var(--m-in); }
+/* a month label above each notch (js/timeline.js sets data-month; omitted when there are too many to read) */
+.ticks.labelled .change-bar::after {
+  content: attr(data-month); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 2px;
+  font-size: var(--t-label); font-weight: 600; color: var(--ink); letter-spacing: .01em; pointer-events: none;
+}
 .range-ends { display: flex; justify-content: space-between; gap: var(--s-2); font-size: var(--t-label); color: var(--muted); }
 .event-note { flex: 1; text-align: center; color: var(--ink); font-weight: 500; }
 
@@ -507,7 +535,13 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
   .legend ul { display: grid; grid-template-columns: auto auto; gap: 0 var(--s-3); padding: 0 var(--s-3); font-size: var(--t-label); }
   .swatch { width: 12px; height: 12px; }
   .maplibregl-ctrl-bottom-right { bottom: var(--r-lg); }
-  .timeline { padding: var(--s-3) var(--s-3) calc(var(--s-2) + env(safe-area-inset-bottom)); }
+  .timeline { grid-template-columns: minmax(0, 1fr); row-gap: var(--s-3); padding: var(--s-3) var(--s-3) calc(var(--s-2) + env(safe-area-inset-bottom)); }
+  .figure { grid-template-columns: auto 1fr; align-items: end; column-gap: var(--s-3); }
+  .figure-num { font-size: 52px; }
+  .figure-unit { font-size: 20px; }
+  .figure-cap { max-width: none; }
+  .timeline-top { margin-bottom: var(--s-4); }
+  .ticks.labelled .change-bar::after { display: none; } /* the labels would collide at this width */
   .date-label { font-size: 16px; }
   .total { margin-left: 0; font-size: var(--t-small); }
   .explainer { padding: var(--s-4) var(--s-4) var(--s-5); }

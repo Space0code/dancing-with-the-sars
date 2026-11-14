@@ -100,6 +100,7 @@ export function createTimeline({ onDate, onPlay }) {
       nodes.push(
         h("button", {
           class: "change-bar", type: "button", style: `left:${pct(i)}%`, title: text, "aria-label": text,
+          "data-month": formatDate(stops[i].date).replace(/^\d+\s/, "").replace(/\s\d{4}$/, ""),
           onclick: () => {
             goToIndex(i);
             $("event-note").textContent = "";
@@ -108,6 +109,7 @@ export function createTimeline({ onDate, onPlay }) {
         })
       );
     }
+    $("ticks").classList.toggle("labelled", counts.size <= 12); // a month label over each notch, unless they would collide
     $("ticks").replaceChildren(...nodes);
   }
 
