@@ -112,7 +112,29 @@ def _check_site_meta(site, i: int, errors: list[str]) -> bool:
         errors.append(f"{where}: time_range must be [start, end] dates")
     if "sources" in site:
         _check_site_sources(site["sources"], where, errors)
+    if "snapshots" in site:
+        _check_snapshots(site["snapshots"], rng, where, errors)
     return True
+
+
+def _check_snapshots(snapshots, rng, where: str, errors: list[str]) -> None:
+    """Optional `snapshots`: [{"date", "sensor"}, ...], dates strictly increasing and inside time_range."""
+    if not isinstance(snapshots, list):
+        errors.append(f"{where}: snapshots must be a list")
+        return
+    previous = None
+    for j, snap in enumerate(snapshots):
+        at = f"{where}: snapshots[{j}]"
+        if not (isinstance(snap, dict) and _is_date(snap.get("date"))):
+            errors.append(f"{at}: must be an object with a YYYY-MM-DD date")
+            return
+        if not isinstance(snap.get("sensor"), str) or not snap["sensor"].strip():
+            errors.append(f"{at}: sensor must be a non-empty string")
+        if previous is not None and snap["date"] <= previous:
+            errors.append(f"{at}: dates must be sorted, one per date ({snap['date']} after {previous})")
+        previous = snap["date"]
+        if isinstance(rng, list) and len(rng) == 2 and all(_is_date(v) for v in rng) and not rng[0] <= snap["date"] <= rng[1]:
+            errors.append(f"{at}: {snap['date']} is outside time_range")
 
 
 def _is_date_or_null(value) -> bool:

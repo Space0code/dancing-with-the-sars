@@ -156,6 +156,7 @@ def test_run_builds_a_valid_site_and_a_rerun_fetches_nothing(fake, capsys):
     assert 25 <= clearing[0]["area_ha"] <= 45  # 875 px of 0.04 ha = 35 ha on the grid
     entry = site_entry(fake.data, "muhos")
     assert entry["ready"] is True and entry["time_range"] == [str(N_DAYS[0]), str(N_DAYS[-1])]
+    assert entry["snapshots"] == [{"date": str(d), "sensor": "NISAR L-band"} for d in N_DAYS]
     layer_lons = [pt[0] for layer in json.loads((fake.data / "muhos" / "layers.json").read_text(encoding="utf-8"))[
         "layers"] for pt in layer["coordinates"]]
     assert entry["bbox"][0] < min(layer_lons) and entry["bbox"][2] > max(layer_lons)  # the rotated picture fits
@@ -273,6 +274,24 @@ def test_sites_json_update_keeps_other_sites_untouched(tmp_path):
     assert len(old_lines) == len(new_lines) and changed  # same layout and line endings, edited in place
     start = next(i for i, line in enumerate(old_lines) if '"id": "agroparc"' in line)
     assert all(start <= i < start + 3 for i in changed)
+
+
+def test_snapshots_are_written_in_place_and_replaced_on_a_rerun(tmp_path):
+    path = tmp_path / "sites.json"
+    original = (REPO / "app" / "data" / "sites.json").read_bytes()
+    path.write_bytes(original)
+    runs = [SimpleNamespace(sensor="NISAR L-band", dates=[date(2026, 6, 25), date(2026, 7, 7)]),
+            SimpleNamespace(sensor="Sentinel-1 C-band", dates=[date(2026, 6, 20), date(2026, 7, 7)])]
+    snaps = pipeline.snapshot_list(runs)
+    assert snaps == [{"date": "2026-06-20", "sensor": "Sentinel-1 C-band"}, {"date": "2026-06-25", "sensor": "NISAR L-band"},
+                     {"date": "2026-07-07", "sensor": "NISAR L-band + Sentinel-1 C-band"}]
+
+    for _ in range(2):  # the second pass replaces the first one's list
+        pipeline.update_sites_index(path, "agroparc", ("2026-06-20", "2026-07-07"), snapshots=snaps)
+        assert site_entry(tmp_path, "agroparc")["snapshots"] == snaps
+    before = json.loads(original)
+    after = json.loads(path.read_bytes())
+    assert [s for s in after["sites"] if s["id"] != "agroparc"] == [s for s in before["sites"] if s["id"] != "agroparc"]
 
 
 def test_sites_json_bbox_is_edited_in_place(tmp_path):

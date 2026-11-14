@@ -63,3 +63,32 @@ def test_not_ready_site_needs_no_files(copy):
         site["ready"] = False
     (copy / "sites.json").write_text(json.dumps(index), encoding="utf-8")
     assert validate(copy) == []
+
+
+def _set_snapshots(data_dir, snapshots):
+    path = data_dir / "sites.json"
+    index = json.loads(path.read_text(encoding="utf-8"))
+    next(s for s in index["sites"] if s["id"] == "fixture")["snapshots"] = snapshots
+    path.write_text(json.dumps(index), encoding="utf-8")
+
+
+def test_valid_snapshots_are_accepted(copy):
+    _set_snapshots(copy, [{"date": "2024-01-01", "sensor": "NISAR L-band"},
+                          {"date": "2025-03-04", "sensor": "NISAR L-band + Sentinel-1 C-band"}])
+    assert validate(copy) == []
+
+
+@pytest.mark.parametrize("snapshots, message", [
+    ("2024-01-01", "must be a list"),
+    ([{"date": "2024-13-01", "sensor": "x"}], "YYYY-MM-DD"),
+    (["2024-01-01"], "YYYY-MM-DD"),
+    ([{"date": "2024-02-01", "sensor": ""}], "sensor"),
+    ([{"date": "2024-02-01"}], "sensor"),
+    ([{"date": "2024-03-01", "sensor": "x"}, {"date": "2024-02-01", "sensor": "x"}], "sorted"),
+    ([{"date": "2024-03-01", "sensor": "x"}, {"date": "2024-03-01", "sensor": "y"}], "sorted"),
+    ([{"date": "2023-12-31", "sensor": "x"}], "outside time_range"),
+    ([{"date": "2030-01-01", "sensor": "x"}], "outside time_range"),
+])
+def test_bad_snapshots_are_rejected(copy, snapshots, message):
+    _set_snapshots(copy, snapshots)
+    assert any(message in e for e in validate(copy))

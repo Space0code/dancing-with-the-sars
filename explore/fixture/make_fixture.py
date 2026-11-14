@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import random
 import struct
 import zlib
@@ -249,7 +250,29 @@ def main() -> None:
         "sources": [{"title": "Hand-off contract", "url": "https://github.com/Space0code/dancing-with-the-sars"}],
     }
     (OUT / "story.json").write_text(json.dumps(story, indent=1), encoding="utf-8")
+    write_snapshots()
     print(f"wrote {len(features)} fake changes to {OUT}")
+
+
+def write_snapshots() -> None:
+    """The fixture's timeline stops (every image date its fake series use) into its entry in sites.json, in place."""
+    path = OUT.parent / "sites.json"
+    text = path.read_bytes().decode("utf-8")
+    nl = "\r\n" if "\r\n" in text else "\n"
+    by_date: dict = {}
+    for sensor, days in (("NISAR L-band", NISAR_DATES), ("Sentinel-1 C-band", S1_DATES)):
+        for d in days:
+            by_date.setdefault(d.isoformat(), []).append(sensor)
+    snaps = [{"date": d, "sensor": " + ".join(sorted(s))} for d, s in sorted(by_date.items())]
+    rows = [", ".join(json.dumps(s) for s in snaps[i:i + 3]) for i in range(0, len(snaps), 3)]
+    new = '"snapshots": [' + nl + f",{nl}".join("    " + r for r in rows) + "]"
+    start = text.index(f'"id": "{SITE}"')
+    head, block = text[:start], text[start:]
+    block, n = re.subn(r'"snapshots":\s*\[[^\]]*\]', lambda _: new, block, count=1)
+    if not n:
+        block, n = re.subn(r'("time_range":\s*\[[^\]]*\])', lambda g: g.group(1) + "," + nl + "   " + new, block, count=1)
+    assert n == 1, "fixture entry not found in sites.json"
+    path.write_bytes((head + block).encode("utf-8"))
 
 
 if __name__ == "__main__":
