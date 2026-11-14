@@ -92,3 +92,12 @@ def test_valid_snapshots_are_accepted(copy):
 def test_bad_snapshots_are_rejected(copy, snapshots, message):
     _set_snapshots(copy, snapshots)
     assert any(message in e for e in validate(copy))
+
+
+@pytest.mark.parametrize("note", ["", 5])
+def test_bad_series_note_is_rejected(copy, note):
+    path = next((copy / "fixture").glob("series/*.json"))
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    doc["series"][0]["note"] = note
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    assert any("note" in e for e in validate(copy))

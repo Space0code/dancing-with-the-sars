@@ -74,7 +74,8 @@ def main():
         total += by_day[d]
         dates.append(d)
         values.append(round(total, 1))
-    series.append({"name": f"Optical alerts: vegetation loss confirmed, cumulative, {where}", "unit": "ha",
+    series.append({"name": "Optical alerts",
+                   "note": f"Optical alerts: vegetation loss confirmed, cumulative, {where}.", "unit": "ha",
                    "sensor": pl.OPTICAL, "dates": dates, "values": values})
 
     # Sentinel-1: flagged ground, cumulative by first-change pass
@@ -88,8 +89,9 @@ def main():
     first = next(t for t in range(n0, len(s1.dates)) if s1.dates[t].year >= 2026)
     dates = [str(d) for d in s1.dates[first:]]
     values = [round(float((idx <= t).sum() * px_ha), 1) for t in range(first, len(s1.dates))]
-    series.append({"name": f"Sentinel-1 radar: ground flagged as changed, cumulative, {where} "
-                           "(winter 2025-26 not observed; edges dated early)", "unit": "ha",
+    series.append({"name": "Sentinel-1 radar",
+                   "note": f"Sentinel-1 radar: ground flagged as changed, cumulative, {where}. "
+                           "Winter 2025-26 was not observed and edges are dated early.", "unit": "ha",
                    "sensor": s1.sensor, "dates": dates, "values": values})
 
     # NISAR: bare-looking ground on each pass
@@ -106,7 +108,8 @@ def main():
         db = 10 * np.log10(np.maximum(mean, 1e-12))
         bare = (db - np.median(db[ok])) <= -BARE_DB
         values.append(round(float((bare & part & ok).sum() * px_ha), 1))
-    series.append({"name": f"NISAR radar: bare-looking ground on each pass, {where} (true ground area)", "unit": "ha", "sensor": run.sensor,
+    series.append({"name": "NISAR radar", "unit": "ha", "sensor": run.sensor,
+                   "note": f"NISAR radar: bare-looking ground on each pass, {where}, as true ground area.",
                    "dates": [str(d) for d in ndates], "values": values})
 
     story = json.loads((SITE_DIR / "story.json").read_text(encoding="utf-8"))
