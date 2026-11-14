@@ -21,6 +21,12 @@ app only reads it. Last updated 2026-11-14. Living example: `app/data/fixture/` 
 data, the app shows a badge) · `center` `[lon, lat]` · `zoom` · `bbox` `[west, south, east, north]` ·
 `time_range` `[start, end]` (the timeline's ends).
 
+**`snapshots`** (optional, per site): the timeline's stops, `[{"date": "YYYY-MM-DD", "sensor": "<name>"}, ...]`, one per
+image date actually used, strictly sorted by date (a date two sensors share is one stop, sensor `"A + B"`), every date
+inside `time_range`. The slider steps through these only; a red bar marks each stop where a change has its `first_date`
+(a change dated between stops counts at the next stop). Written by `pipeline.py` (`snapshot_list`) and `make_fixture.py`.
+Without it the app falls back to the distinct `first_date` values plus both ends of `time_range`.
+
 ## `changes.geojson`
 GeoJSON FeatureCollection in EPSG:4326 (lon, lat). Geometry: Polygon or MultiPolygon. Properties of each change:
 | Field | Type | Meaning |

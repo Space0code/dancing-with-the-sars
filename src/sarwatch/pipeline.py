@@ -540,18 +540,37 @@ def _format_sites(index: dict, nl: str) -> str:
     blocks = []
     for site in index["sites"]:
         groups = [[k for k in keys if k in site] for keys in SITE_LINES]
-        groups[-1] += [k for k in site if not any(k in keys for keys in SITE_LINES)]
+        groups[-1] += [k for k in site if k != "snapshots" and not any(k in keys for keys in SITE_LINES)]
         lines = [", ".join(f"{json.dumps(k)}: {json.dumps(site[k], ensure_ascii=False)}" for k in g)
                  for g in groups if g]
+        if "snapshots" in site:
+            lines.append(_snapshots_text(site["snapshots"], nl))
         blocks.append("  {" + f",{nl}   ".join(lines) + "}")
     head = [k for k in index if k != "sites"]
     out = ["{"] + [f" {json.dumps(k)}: {json.dumps(index[k])}," for k in head] + [' "sites": [']
     return nl.join(out + [f",{nl}".join(blocks), " ]", "}"]) + nl
 
 
-def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None) -> dict:
-    """Set the site's ready = true, time_range and (if given) bbox; every other site and field stays as it was
-    (text included)."""
+def snapshot_list(runs) -> list:
+    """The timeline's stops: one {"date", "sensor"} per image date used, oldest first. A date two sensors share
+    becomes one stop naming both."""
+    by_date: dict = {}
+    for run in runs:
+        for day in run.dates:
+            names = by_date.setdefault(str(day), [])
+            if run.sensor not in names:
+                names.append(run.sensor)
+    return [{"date": d, "sensor": " + ".join(sorted(names))} for d, names in sorted(by_date.items())]
+
+
+def _snapshots_text(snapshots: list, nl: str) -> str:
+    rows = [", ".join(json.dumps(s, ensure_ascii=False) for s in snapshots[i:i + 3]) for i in range(0, len(snapshots), 3)]
+    return '"snapshots": [' + nl + f",{nl}".join("    " + r for r in rows) + "]"
+
+
+def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, snapshots=None) -> dict:
+    """Set the site's ready = true, time_range, (if given) bbox and snapshots; every other site and field stays as
+    it was (text included)."""
     index_path = Path(index_path)
     _site_entry(index_path, site_id)
     text = index_path.read_bytes().decode("utf-8")
@@ -561,18 +580,30 @@ def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None) -
     entry["time_range"] = [str(time_range[0]), str(time_range[1])]
     if bbox is not None:
         entry["bbox"] = [float(v) for v in bbox]
+    if snapshots is not None:
+        entry["snapshots"] = snapshots
     new = None
-    m = re.search(r'\{[^{}]*"id":\s*' + re.escape(json.dumps(site_id)) + r"[^{}]*\}", text)
-    if m:  # edit the values in place, so the hand-written layout survives
-        block, n1 = re.subn(r'"ready":\s*(?:true|false)', '"ready": true', m.group(0))
-        block, n2 = re.subn(r'"time_range":\s*\[[^\]]*\]', '"time_range": ' + json.dumps(entry["time_range"]), block)
+    nl = "\r\n" if "\r\n" in text else "\n"
+    m = re.search(r'\{\s*"id":\s*' + re.escape(json.dumps(site_id)), text)
+    if m:  # edit the values in place (this site's first of each key), so the hand-written layout survives
+        head, block = text[:m.start()], text[m.start():]
+        block, n1 = re.subn(r'"ready":\s*(?:true|false)', '"ready": true', block, count=1)
+        block, n2 = re.subn(r'"time_range":\s*\[[^\]]*\]', lambda _: '"time_range": ' + json.dumps(entry["time_range"]),
+                            block, count=1)
         n3 = 1
         if bbox is not None:
-            block, n3 = re.subn(r'"bbox":\s*\[[^\]]*\]', '"bbox": ' + json.dumps(entry["bbox"]), block)
-        if n1 == n2 == n3 == 1:
-            new = text[:m.start()] + block + text[m.end():]
+            block, n3 = re.subn(r'"bbox":\s*\[[^\]]*\]', lambda _: '"bbox": ' + json.dumps(entry["bbox"]), block, count=1)
+        n4 = 1
+        if snapshots is not None:
+            line = _snapshots_text(snapshots, nl)
+            block, n4 = re.subn(r'"snapshots":\s*\[[^\]]*\]', lambda _: line, block, count=1)
+            if not n4:  # first time: right after time_range
+                block, n4 = re.subn(r'("time_range":\s*\[[^\]]*\])', lambda g: g.group(1) + "," + nl + "   " + line,
+                                    block, count=1)
+        if n1 == n2 == n3 == n4 == 1:
+            new = head + block
     if new is None or json.loads(new) != index:
-        new = _format_sites(index, "\r\n" if "\r\n" in text else "\n")
+        new = _format_sites(index, nl)
     index_path.write_bytes(new.encode("utf-8"))
     return entry
 
@@ -656,7 +687,7 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     site_dir = out / site_id
     written = write_site(site_dir, site_id, runs)
     (first, last), bbox = written["time_range"], written["bbox"]  # first to last pass used; around all changes
-    update_sites_index(out / "sites.json", site_id, (first, last), bbox)
+    update_sites_index(out / "sites.json", site_id, (first, last), bbox, snapshot_list(runs))
     if ensure_story(site_dir, entry.get("name") or site_id):
         log.info("wrote a placeholder %s", site_dir / "story.json")
     problems = validate(out)
