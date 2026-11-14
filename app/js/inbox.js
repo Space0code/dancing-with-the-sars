@@ -2,6 +2,7 @@
 // Filtering on the map is a MapLibre expression (mapFilter), so the map never loops over features in JS. Rows render in chunks.
 import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, formatArea } from "./format.js";
 import { whenText } from "./seen.js";
+import { changesCsv, downloadText } from "./csv.js";
 
 const CHUNK = 80; // rows per render step; more load as the list is scrolled
 const CONCERN_ORDER = ["high_concern", "review", "none", "expected"]; // what a regulator should look at first
@@ -44,6 +45,10 @@ export function createInbox({ onOpen, onFilters }) {
   const sortSelect = h("select", { id: "inbox-sort", "aria-label": "Sort changes by", onchange: (e) => { sortKey = e.target.value; sorted = null; stale = true; render(); } },
     Object.entries(SORTS).map(([key, s]) => h("option", { value: key }, s.label)));
   const clearBtn = h("button", { type: "button", class: "clear-filters", hidden: true, onclick: () => { verdicts.clear(); kinds.clear(); setMinHa(0); filtersChanged(); } }, "Clear filters");
+  const downloadBtn = h("button", { type: "button", class: "download-csv", onclick: () => {
+    const rows = matching.slice().sort(SORTS[sortKey].cmp); // exactly the list the user sees, in its order
+    downloadText(`${all[0]?.properties.site ?? "site"}-changes.csv`, changesCsv(rows, kindName));
+  } }, "Download CSV");
   const sizeValue = h("span", { class: "size-value" }, "any size");
   const sizeSlider = h("input", { type: "range", min: "0", max: "0", step: "1", value: "0", "aria-label": "Smallest change to show",
     oninput: (e) => { setMinHa(sizeSteps[Number(e.target.value)] ?? 0); filtersChanged(); } });
@@ -53,7 +58,7 @@ export function createInbox({ onOpen, onFilters }) {
   root.replaceChildren(
     h("div", { class: "inbox-controls" },
       h("div", { class: "inbox-top" }, h("label", { class: "sort" }, "Sort by ", sortSelect), clearBtn),
-      verdictChips, kindChips, sizeRow, summary),
+      verdictChips, kindChips, sizeRow, h("div", { class: "inbox-bottom" }, summary, downloadBtn)),
     list
   );
 

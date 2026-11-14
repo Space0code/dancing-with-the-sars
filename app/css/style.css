@@ -315,3 +315,12 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
 .seen-dates { color: var(--muted); }
 .seen-role { font-size: 13px; color: var(--muted); text-align: right; }
 .seen-note { grid-column: 2 / -1; font-size: 13px; color: var(--muted); }
+
+/* Changes tab: smallest-change slider and CSV download (js/inbox.js, js/csv.js) */
+.size-filter { display: flex; align-items: center; gap: 8px; padding: 2px 0 6px; font-size: 13px; color: var(--muted); }
+.size-filter[hidden] { display: none; }
+.size-filter input { flex: 1; min-width: 80px; accent-color: var(--accent); }
+.size-value { min-width: 84px; text-align: right; color: var(--ink); font-weight: 600; }
+.inbox-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.inbox-bottom .inbox-summary { margin: 2px 0 6px; }
+.download-csv { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: 13px; color: var(--accent); }
