@@ -249,6 +249,22 @@ def test_a_busy_site_tints_echo_that_rose_and_keeps_the_sea_black_and_the_baseli
     assert np.abs(late_plain[building][..., 0] - late_plain[building][..., 2]).max() < 8   # Muhos' rule: falls only
 
 
+def test_persist_tints_only_a_change_that_holds_to_the_end_of_the_record(tmp_path):
+    change = np.array([8.0, 8.0, -8.0, 1.0])
+    end = np.array([8.0, 0.5, 8.0, 8.0])        # holds, gone again, opposite sign, holds (size is lost_alpha's test)
+    assert frames.persists(change, end, 4.0).tolist() == [True, False, False, True]
+    # NISAR: a field that rose in summer and fell back is not tinted; a rise that stays is; a fall never is
+    base = np.zeros((40, 40), np.float32)
+    dbs = [base.copy() for _ in range(4)]
+    for k in (1, 2, 3):
+        dbs[k][:, :10] = 9.0                                  # rises and stays
+        dbs[k][:, 10:20] = 9.0 if k == 1 else 0.0              # rises, gone by the end
+        dbs[k][:, 20:30] = -9.0                               # falls and stays
+    water = np.zeros((40, 40), bool)
+    alpha = frames.nisar_alphas(dbs, water, 1.0, rise=True, min_ha=0.0, persist=True)[1]
+    assert alpha[:, :10].min() > 0 and alpha[:, 10:30].max() == 0
+
+
 def test_baseline_passes_get_no_tint_even_when_they_differ(tmp_path):
     listed, imgs = _city_frames(tmp_path, width=200, baseline_first=3, tint_rise=True, tint_db=(0.5, 1.0),
                                 min_patch_ha=0.0)

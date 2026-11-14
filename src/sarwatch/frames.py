@@ -51,6 +51,7 @@ NISAR_RANGE_DB = (-17.5, -8.0)       # fixed grey stretch of HV: forest (median 
 NISAR_TINT_FROM_DB = 3.0             # tint where HV is this far below NISAR's own first pass ...
 NISAR_TINT_FULL_DB = 6.0             # ... full strength at this drop
 NISAR_STABLE_MIN_DB = -12.0          # a pixel whose HV never falls below this is "stable forest": sets each pass's offset
+PERSIST_LAST = 3                     # tint_persist: "the end of the record" = median of the last this many passes
 TINT_RGB = (214, 40, 160)              # magenta-pink, apart from the verdict colours
 RADAR_CAPTION = "Sentinel-1, NISAR"      # the app shows each picture's own satellite name; a set's caption is just the names
 PHOTO_CAPTION = "Landsat, Sentinel-2"
@@ -73,6 +74,8 @@ class FrameSite:
     min_patch_ha: float = MIN_PATCH_HA   # smaller tinted patches are dropped
     time_gap: int = TIME_MAX_GAP_DAYS    # neighbouring passes up to this many days apart are averaged
     photo_yearly: int = -1               # >= 0: one clear photo per year, plus this many more in the last year
+    tint_persist: bool = False           # tint a change only if it also holds at the end of the sensor's record (crop cycles
+                                         # come and go, buildings stay); NISAR then tints echo that rose, not echo that fell
 
 
 FRAME_SITES = {
@@ -84,7 +87,9 @@ FRAME_SITES = {
                            width=1400, max_frame_bytes=900_000, s1_range=(-27.0, -3.0), nisar_range=(-28.0, -2.0),
                            baseline_first=5, tint_rise=True, water_mask=True, time_gap=30,
                            tint_db=(4.0, 8.0), min_patch_ha=2.0,
-                           photo_yearly=3, photo_exclude=(date(2021, 8, 12),)),  # sea haze at the coast
+                           photo_yearly=3, tint_persist=True,
+                           photo_exclude=(date(2021, 8, 12),    # sea haze at the coast
+                                          date(2020, 7, 8))),   # small clouds and their shadows
     "muhos": FrameSite(window=(26.02, 64.795, 26.20, 64.875),
                        photo_periods=((date(2025, 6, 1), date(2025, 9, 30)), (date(2026, 3, 1), date(2026, 11, 14))),
                        photo_exclude=(date(2025, 6, 16), date(2026, 8, 9))),
@@ -196,6 +201,12 @@ def lost_alpha(drop_db: np.ndarray, baseline_db: np.ndarray, pixel_ha: float, fr
     return np.where(mask, alpha, 0.0).astype(np.float32)
 
 
+def persists(change: np.ndarray, end_change: np.ndarray, from_db: float) -> np.ndarray:
+    """True where `change` (dB against the baseline) also holds at the end of the record: `end_change` is past from_db
+    and has the same sign. Fields that go bare and green again fail this; buildings pass it."""
+    return (np.abs(end_change) >= from_db) & (np.sign(end_change) == np.sign(change))
+
+
 def tint(grey: np.ndarray, alpha: np.ndarray) -> np.ndarray:
     """grey (h, w) 0..1 and alpha (h, w) -> uint8 RGB with TINT_RGB blended over the grey picture."""
     rgb = np.asarray(TINT_RGB, np.float32) / 255.0
@@ -256,11 +267,14 @@ def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, until:
     cfg = cfg or FrameSite(window, ())
     days, dbs, baseline, pixel_ha, water = radar_series(site_id, stacks, window, skip_spans, cfg)
     out_dir.mkdir(parents=True, exist_ok=True)
+    end_change = baseline - np.nanmedian(np.stack(dbs[-PERSIST_LAST:]), axis=0)
     frames = []
     for i, (day, db) in enumerate(zip(days, dbs)):
         if until is not None and day >= until:
             continue
         change = baseline - db
+        if cfg.tint_persist:
+            change = np.where(persists(change, end_change, cfg.tint_db[0]), change, 0.0)
         alpha = lost_alpha(np.abs(change) if cfg.tint_rise else change, baseline, pixel_ha, *cfg.tint_db, water,
                            cfg.min_patch_ha)
         if i < cfg.baseline_first:  # the baseline passes are what "unchanged" means
@@ -277,8 +291,9 @@ def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, until:
 
 
 def nisar_series(site_id: str, stacks, window, skip_spans, cfg: FrameSite | None = None) -> tuple:
-    """(days, db, water, pixel_ha): smoothed, levelled HV of every usable NISAR pass on the common grid, and the
-    detection's water mask (pipeline._water_mask: HH baseline, shore grown) on that grid, True = water."""
+    """(days, db, water, pixel_ha, sea): smoothed, levelled HV of every usable NISAR pass on the common grid, the
+    detection's water mask (pipeline._water_mask: HH baseline, shore grown) on that grid, True = water (it also
+    flags dry fields, so it only keeps the tint off), and the Sentinel-1 sea mask when cfg.water_mask (else None)."""
     cfg = cfg or FrameSite(window, ())
     site = pipeline.SITES[site_id]
     cache = Path(stacks) / site_id / pipeline.NISAR
@@ -302,35 +317,49 @@ def nisar_series(site_id: str, stacks, window, skip_spans, cfg: FrameSite | None
     valid = pipeline._water_mask(stack, pipeline.NISAR, s.params.n_early, s.water_db, s.water_grow, s.water_pol)
     water = warp((~valid).astype(np.float32), transform, epsg, dst_t, w, h, "nearest") > 0.5
     s1_cache = Path(stacks) / site_id / pipeline.S1
+    sea = None
     if cfg.water_mask and site.s1 is not None and pipeline.cached_days(s1_cache):  # one sea for both sensors
-        water |= pipeline_water(site_id, pipeline.S1, s1_cache, pipeline.cached_days(s1_cache), dst_t, w, h)
+        sea = pipeline_water(site_id, pipeline.S1, s1_cache, pipeline.cached_days(s1_cache), dst_t, w, h)
+        water |= sea
     log.info("nisar: water mask %.1f%% of the window", 100 * water.mean())
     west, south, east, north = window
     mid = math.radians((north + south) / 2)
     pixel_ha = (east - west) * 111_320 * math.cos(mid) / w * (north - south) * 110_574 / h / 1e4
-    return days, dbs, water, pixel_ha
+    return days, dbs, water, pixel_ha, sea
 
 
 def nisar_alphas(dbs: list, water: np.ndarray, pixel_ha: float, rise: bool = False,
-                 min_ha: float = MIN_PATCH_HA) -> list:
+                 min_ha: float = MIN_PATCH_HA, persist: bool = False) -> list:
     """Tint strength per NISAR pass: HV below the first pass by NISAR_TINT_FROM_DB or more (none on the first pass);
-    with rise, above it by that much too."""
-    return [lost_alpha(np.abs(dbs[0] - db) if rise else dbs[0] - db, dbs[0], pixel_ha, NISAR_TINT_FROM_DB,
-                       NISAR_TINT_FULL_DB, water, min_ha) if i else np.zeros(db.shape, np.float32) for i, db in enumerate(dbs)]
+    with rise, above it by that much too. With persist, only echo that rose is tinted, and only where it is still
+    up at the end of the record (the last two passes)."""
+    end = np.nanmedian(np.stack(dbs[-2:]), axis=0) - dbs[0]
+    out = []
+    for i, db in enumerate(dbs):
+        if not i:
+            out.append(np.zeros(db.shape, np.float32))
+            continue
+        if persist:
+            change = db - dbs[0]  # positive = rose
+            drop = np.where(persists(change, end, NISAR_TINT_FROM_DB) & (change > 0), change, 0.0)
+        else:
+            drop = np.abs(dbs[0] - db) if rise else dbs[0] - db
+        out.append(lost_alpha(drop, dbs[0], pixel_ha, NISAR_TINT_FROM_DB, NISAR_TINT_FULL_DB, water, min_ha))
+    return out
 
 
 def nisar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, cfg: FrameSite | None = None) -> list:
     """Write one JPEG per usable NISAR pass (grey HV, trees gone since the first pass tinted); returns
     [{date, sensor, url}] sorted by date. File names end in -nisar so they never meet a Sentinel-1 file."""
     cfg = cfg or FrameSite(window, ())
-    days, dbs, water, pixel_ha = nisar_series(site_id, stacks, window, skip_spans, cfg)
+    days, dbs, water, pixel_ha, sea = nisar_series(site_id, stacks, window, skip_spans, cfg)
     out_dir.mkdir(parents=True, exist_ok=True)
     frames = []
     for day, db, alpha in zip(days, dbs, nisar_alphas(dbs, water, pixel_ha, cfg.tint_rise,
-                                                                 cfg.min_patch_ha)):
+                                                                 cfg.min_patch_ha, cfg.tint_persist)):
         grey = radar_stretch(db, *cfg.nisar_range)
-        if cfg.water_mask:
-            grey[water] = 0.0
+        if sea is not None:
+            grey[sea] = 0.0  # only the sea is black: NISAR's own mask marks dry fields as water too
         data = jpeg_bytes(tint(grey, alpha), max_bytes=cfg.max_frame_bytes)
         name = f"{day.isoformat()}-nisar.jpg"
         (out_dir / name).write_bytes(data)
