@@ -13,6 +13,7 @@ Layout: `index.html` · `css/style.css` · `js/` (`main.js` wires `map.js`, `tim
 Missing pictures, series files or radar-picture layers show a message instead of a broken box.
 
 - **Name and pitch:** `APP` in `js/format.js` (one place). Explainer text: the `<dialog>` in `index.html`.
+- **Timeline** (`js/timeline.js`): the slider steps through the site's `snapshots` (one stop per image date; without them: the change dates plus both ends of `time_range`). A red bar crosses the track at every stop where changes first show (click = jump there); story events are grey flags. Dates from the tour or a link snap to the stop on or before them.
 - **Year photos** (`js/photos.js`): in photo view the background follows the slider year. ICGC aerial photos inside
   Catalonia (2016–2025, 2026 provisional), EOX Sentinel-2 cloudless elsewhere (2017–2025); other years fall back to Esri.
 - **Guided tour** (`tour.json`, run by `js/tour.js`): edit the steps without touching code; the field list is in its

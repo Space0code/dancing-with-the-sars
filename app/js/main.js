@@ -182,7 +182,7 @@ async function main() {
     map.showSite(site, current.changes);
     map.setOverlays(current.base, current.layers);
     renderLayerControl(current.layers, map);
-    timeline.setRange(site.time_range, current.story?.events);
+    timeline.setRange(site, current.changes.features, current.story?.events);
   }
 
   $("site").addEventListener("change", (e) => {
