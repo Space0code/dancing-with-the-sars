@@ -9,6 +9,7 @@ What we know, written for engineers (CS / math / EE), not geologists. One line p
 | [data-contract.md](data-contract.md) | The data format shared by radar, verdict and app (`app/data/`) |
 | [project-context.md](project-context.md) | Challenge, NISAR facts, data timeline, Catalonia + Finland cases, resources |
 | [verdict-rules.md](verdict-rules.md) | How a change gets expected / needs review / high concern: rule table, reason codes, records file, CLI |
+| [multi-sensor-design.md](multi-sensor-design.md) | **Proposal:** how optical alerts, Sentinel-1 and NISAR detections become one change: merging, dating, confidence, card wording, contract additions, task split |
 | [data-sources.md](data-sources.md) | NASA / Copernicus / Catalan datasets: coverage, access, what each is good for |
 | [data-nisar-gcov.md](data-nisar-gcov.md) | NISAR GCOV files: HDF5 layout, units, grid, masks, finding granules, reading a window over HTTPS, gotchas |
 | [sar-primer.md](sar-primer.md) | How radar imaging works: backscatter, polarization, speckle, InSAR, L vs C band, products |
