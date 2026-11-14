@@ -40,8 +40,34 @@ to move it. Its south-west corner overlaps the Agroparc window (1.79-1.91, 41.41
 - **Measured cost:** 82–90 MB and about 60 s per date. 11 dates ≈ 0.95 GB, ≈ 11 min.
 
 ## Budget
-Both stacks: ≈ 2.6 GB and ≈ 25 minutes of reads (limit: 10 GB, 60 min). Cache:
+Used: Sentinel-1 57 dates = 1.63 GB in 706 s of reads; NISAR 11 dates = 0.90 GB in 681 s (the two ran in parallel,
+about 15 min wall clock). Total **2.53 GB, 23 min of reads** (limit: 10 GB, 60 min). Cache:
 `data/stacks/barcelona/{s1,nisar}/<date>.npz` (gitignored; ≈ 15 MB per date): reruns with other settings run
 offline with `python -m sarwatch.pipeline barcelona --offline`.
+
+## Detection settings (`pipeline.SITES["barcelona"]`) and why
+Starting point: Agroparc's (summer against summer, `normalize`, `hold`, `persist=99`, 3 dB, 1 ha). Changes, each
+found by looking at quick-looks (`explore/barcelona/look.py`):
+- **Sea:** wind lifts the sea's VV to −11 dB, a land level, so the co-pol water mask fails; its VH stays at −30 dB.
+  Water = baseline cross-pol median below −24 dB (Sentinel-1) / −23 dB (NISAR HV), plus 2–3 pixels of shore
+  (`water_pol`). Before the mask, NISAR called the windy sea "structure" (HH −20 → −16 dB). After it: no change on water.
+- **Baseline = the 2016 summer only** (5 passes, `n_early=5`), so changes of 2017 are dated (with 2016 + 2017 as
+  baseline, 87 regions, 303 ha, were dated inside it and could not be dated). End state = the 6 passes of summer
+  2026, all of which must show the change.
+- **Busy surfaces** (`noise_k=2`, new): a pixel counts only if its change is at least twice its own pass-to-pass
+  spread in the two windows. Sentinel-1 VV spread over the 2016 passes: median 0.5 dB, 99th percentile 2.1 dB; quay
+  edges where ships berth are the brightest spots of the spread map. Removes 42 of 742 Sentinel-1 regions: after `hold` it adds little, but it is cheap insurance.
+- **NISAR keeps clearing, structure, earthworks only** (`keep_types`): its 4.5-month record compares June with
+  October, and on the Llobregat delta and Maresme fields the "other" class was whole fields whose HV rose 5–7 dB (crops
+  growing). 137 of 203 regions. `structure_db=6` turns weaker HH rises into "other" first. A year-to-year "churn" mask
+  from the Sentinel-1 decade was tried and rejected: construction sites churn as much as fields (both ~1–1.5 dB).
+- **100 changes** (`max_changes`): the largest merged changes, a low-confidence one counted at half its area.
+  Site pictures above 2 MB get a 256-colour palette (`layer_bytes`): the folder is 6.6 MB.
+
+## First result (14 Nov 2026)
+742 Sentinel-1 + 66 NISAR regions → 762 merged changes → the 100 largest: structure 74 = 511 ha, earthworks 15 =
+94 ha, clearing 9 = 47 ha, other 2 = 14 ha (666 ha). 96 from Sentinel-1, 4 from NISAR (2026). Zoning (MUC): 68 on
+urban land, 23 developable, 9 non-buildable (port land counts as non-buildable in MUC). Pictures and the list of
+what is still wrong: PR #110.
 
 <sub>Written by Claude</sub>
