@@ -87,7 +87,16 @@ class Site:
     nisar: NisarSettings | None
     s1: S1Settings | None = None
     use_s1: bool = True
+    skip_dates: tuple[str, ...] = ()  # "YYYY-MM-DD" passes left out of detection (frozen ground, ...); still cached
+    params: dict = field(default_factory=dict)  # ChangeParams overrides for every sensor of this site
 
+
+# Muhos tuning (#27, NISAR quick-looks in explore/muhos/). 4 Nov is a frozen pass: HV 2 dB lower over the whole
+# window, forest most, so it is left out (23 Oct looks normal and stays). The late clearing only drops HV by 2-3 dB at
+# L-band (slash and stumps stay), so the threshold is 2.5 dB; a 7 x 7 boxcar keeps speckle well below that, and 2 ha
+# drops the field-sized specks of autumn tillage and wet ground.
+MUHOS_SKIP = ("2026-11-04",)
+MUHOS_PARAMS = {"boxcar": 7, "threshold_db": 2.5, "min_area_ha": 2.0}
 
 SITES = {
     # Google's reported clear-cut; NISAR stack measured on 14 Nov: 11 dates 25 Jun -> 4 Nov 2026, grid EPSG:3413.
@@ -95,6 +104,7 @@ SITES = {
         id="muhos", bbox=(25.94, 64.80, 26.15, 64.89),
         nisar=NisarSettings(start=date(2026, 6, 1), track=157, frame=35, direction="ASCENDING"),
         s1=S1Settings(start=date(2026, 1, 1), end=date(2026, 11, 10), max_dates=30),
+        skip_dates=MUHOS_SKIP, params=MUHOS_PARAMS,
     ),
     # Agroparc Penedes earthworks; Sentinel-1 gives the years before NISAR, about one scene a month.
     "agroparc": Site(
@@ -106,9 +116,23 @@ SITES = {
 
 
 def _params(site: Site, sensor: str, threshold_db=None, min_area_ha=None) -> ChangeParams:
+    """The sensor's defaults, then the site's overrides, then the command line's."""
     params = (site.nisar if sensor == NISAR else site.s1).params
-    changes = {k: v for k, v in (("threshold_db", threshold_db), ("min_area_ha", min_area_ha)) if v is not None}
-    return dataclasses.replace(params, **changes)
+    known = {f.name for f in dataclasses.fields(ChangeParams)}
+    if set(site.params) - known:
+        raise PipelineError(f"{site.id}: unknown change parameter(s) {sorted(set(site.params) - known)}; "
+                            f"known: {sorted(known)}")
+    cli = {k: v for k, v in (("threshold_db", threshold_db), ("min_area_ha", min_area_ha)) if v is not None}
+    return dataclasses.replace(params, **{**site.params, **cli})
+
+
+def _skip_days(site: Site, skip_dates=None) -> set:
+    """The passes to leave out: the command line's list if given (even empty), else the site's."""
+    names = site.skip_dates if skip_dates is None else skip_dates
+    try:
+        return {date.fromisoformat(str(d).strip()) for d in names if str(d).strip()}
+    except ValueError as exc:
+        raise PipelineError(f"skip dates must be YYYY-MM-DD: {exc}") from None
 
 
 # ---------------------------------------------------------------- token
@@ -490,7 +514,7 @@ def _tally(site_dir: Path, key: str) -> dict:
 
 
 def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1), offline=False, fetch_only=False,
-        max_new=None, threshold_db=None, min_area_ha=None) -> int:
+        max_new=None, threshold_db=None, min_area_ha=None, skip_dates=None) -> int:
     """The whole site run; prints a summary. Returns 0 if the data passes the contract, 1 if not."""
     site = SITES[site_id]
     out, cache = Path(out), Path(cache)
@@ -506,6 +530,12 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     if offline and not any(days.values()):
         raise PipelineError(f"--offline: nothing cached for {site_id} under {cache / site_id}; "
                             "run once without --offline to fetch the dates")
+    skip = _skip_days(site, skip_dates)
+    for sensor in use:
+        left_out = [d for d in days[sensor] if d in skip]
+        if left_out:
+            log.info("%s: left out %s (skip dates)", sensor, ", ".join(map(str, left_out)))
+            days[sensor] = [d for d in days[sensor] if d not in skip]
 
     def summary(per_sensor=None) -> list:
         lines = [f"{site_id}: {'fetched' if fetch_only else 'done'}"]
@@ -556,8 +586,10 @@ def main(argv=None) -> int:
     p.add_argument("--max-dates", type=int, metavar="N", help="fetch at most N new dates this run (all sensors)")
     p.add_argument("--no-s1", action="store_true", help="skip Sentinel-1")
     p.add_argument("--no-nisar", action="store_true", help="skip NISAR")
-    p.add_argument("--threshold-db", type=float, help="change threshold in dB (default 3.0 for both sensors)")
-    p.add_argument("--min-area-ha", type=float, help="smallest change kept, hectares (default 0.5)")
+    p.add_argument("--threshold-db", type=float, help="change threshold in dB (default: the site's, else 3.0)")
+    p.add_argument("--min-area-ha", type=float, help="smallest change kept, hectares (default: the site's, else 0.5)")
+    p.add_argument("--skip-dates", metavar="D1,D2", help="comma-separated YYYY-MM-DD passes to leave out of "
+                   "detection; replaces the site's own list ('' = use every date)")
     args = p.parse_args(argv)
     if args.fetch_only and args.offline:
         p.error("--fetch-only and --offline exclude each other")
@@ -569,7 +601,8 @@ def main(argv=None) -> int:
     try:
         return run(args.site, args.out, args.cache, sensors=sensors, offline=args.offline,
                    fetch_only=args.fetch_only, max_new=args.max_dates, threshold_db=args.threshold_db,
-                   min_area_ha=args.min_area_ha)
+                   min_area_ha=args.min_area_ha,
+                   skip_dates=None if args.skip_dates is None else tuple(args.skip_dates.split(",")))
     except (PipelineError, PermissionError) as exc:  # PermissionError: the archive refused the token
         print(f"error: {exc}", file=sys.stderr)
         return 2

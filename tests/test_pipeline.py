@@ -367,3 +367,31 @@ def test_sensor_defaults_and_overrides():
     p = pipeline._params(site, "s1", threshold_db=4.0, min_area_ha=1.0)
     assert (p.boxcar, p.threshold_db, p.min_area_ha) == (3, 4.0, 1.0)
     assert site.s1.params.threshold_db == 3.0  # the site definition is not modified
+
+
+def test_site_overrides_then_command_line_overrides(monkeypatch):
+    site = pipeline.SITES["agroparc"]
+    monkeypatch.setattr(site, "params", {"boxcar": 7, "threshold_db": 2.5})
+    p = pipeline._params(site, "nisar")
+    assert (p.boxcar, p.threshold_db, p.min_area_ha) == (7, 2.5, 0.5)
+    assert pipeline._params(site, "nisar", threshold_db=4.0).threshold_db == 4.0  # the command line wins
+    assert site.nisar.params.boxcar == 5  # the sensor defaults are not modified
+    monkeypatch.setattr(site, "params", {"treshold_db": 2.5})
+    with pytest.raises(pipeline.PipelineError, match="treshold_db"):
+        pipeline._params(site, "nisar")
+
+
+def test_skip_dates_from_the_site_or_the_command_line(fake, monkeypatch, capsys):
+    monkeypatch.setattr(pipeline.SITES["muhos"], "skip_dates", (str(N_DAYS[-1]),))
+    assert pipeline.main(["muhos", "--no-s1", *fake.args]) == 0
+    assert sorted(fake.nisar.reads) == N_DAYS  # a skipped date is still fetched and cached, only not used
+    assert site_entry(fake.data, "muhos")["time_range"] == [str(N_DAYS[0]), str(N_DAYS[-2])]
+    assert f"{len(N_DAYS) - 1} dates" in capsys.readouterr().out
+
+    skip = f"{N_DAYS[0]},{N_DAYS[-1]}"  # the flag replaces the site's list
+    assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", skip, *fake.args]) == 0
+    assert site_entry(fake.data, "muhos")["time_range"] == [str(N_DAYS[1]), str(N_DAYS[-2])]
+    assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", "", *fake.args]) == 0  # '' = all dates
+    assert site_entry(fake.data, "muhos")["time_range"] == [str(N_DAYS[0]), str(N_DAYS[-1])]
+    assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", "4 Nov", *fake.args]) == 2
+    assert "YYYY-MM-DD" in capsys.readouterr().err
