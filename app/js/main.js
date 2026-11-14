@@ -1,10 +1,12 @@
-// Written by Claude. Wires the site switcher, map, legend, basemap toggle, timeline and side panel together.
+// Written by Claude. Wires the intro, site switcher, map, legend, basemap + year photos, timeline, side panel, explainer and tour.
 import { VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
-import { loadSites, loadSite } from "./data.js";
+import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
-import { renderStory, showCard, showHint } from "./panel.js";
+import { renderIntro, renderStory, showCard, showHint } from "./panel.js";
 import { renderLayerControl } from "./overlays.js";
+import { providerFor, photoFor } from "./photos.js";
+import { createTour } from "./tour.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -25,35 +27,102 @@ function renderLegend() {
 
 function fillSiteSelect(sites) {
   $("site").replaceChildren(
+    h("option", { value: "" }, "Choose a site…"),
     ...sites.map((s) =>
       h("option", { value: s.id, disabled: !s.ready }, s.ready ? s.name : `${s.name} (coming soon)`)
     )
   );
 }
 
+/** One box around every site, for the intro view. */
+function allSitesBounds(sites) {
+  const boxes = sites.map((s) => s.bbox).filter(Boolean);
+  return [
+    [Math.min(...boxes.map((b) => b[0])), Math.min(...boxes.map((b) => b[1]))],
+    [Math.max(...boxes.map((b) => b[2])), Math.max(...boxes.map((b) => b[3]))],
+  ];
+}
+
+function setupExplainer() {
+  const dialog = $("explainer");
+  $("explain-btn").addEventListener("click", () => dialog.showModal());
+  dialog.querySelector(".close").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (e) => e.target === dialog && dialog.close()); // a click on the backdrop closes it
+}
+
 async function main() {
   setVerdictColors();
   renderLegend();
+  setupExplainer();
   if (!window.maplibregl) return showError("The map library could not be loaded. Check your internet connection and reload.");
 
-  const sites = await loadSites();
+  const [sites, tourData] = await Promise.all([loadSites(), loadJson("tour.json").catch(() => ({ steps: [] }))]);
   fillSiteSelect(sites);
-  let current = null; // the open site's data
+  const overview = allSitesBounds(sites);
+  let current = null; // the open site's data, or null on the intro screen
+  let basemap = "satellite";
+  let year = null;
+
   function select(feature) {
     map.select(feature);
     if (feature) showCard(feature, current, () => select(null));
     else showHint();
   }
-  const map = createChangeMap($("map"), { onSelect: select });
+  const map = createChangeMap($("map"), { onSelect: select, bounds: overview });
   await map.ready;
+
+  // The satellite background follows the slider year: that year's photo, or today's imagery when there is none.
+  function showPhoto() {
+    const photo = current && year ? photoFor(providerFor(current.site), year) : null;
+    map.setPhoto(photo);
+    const label = $("photo-label");
+    label.hidden = basemap !== "satellite";
+    label.textContent = photo ? photo.label : current && year ? `Recent satellite imagery (no ${year} photo)` : "Recent satellite imagery";
+  }
 
   const timeline = createTimeline({
     onDate(iso) {
       map.setDate(iso);
       const shown = (current?.changes.features ?? []).filter((f) => f.properties.first_date <= iso);
       timeline.setTotal(runningTotal(shown.length, shown.reduce((sum, f) => sum + f.properties.area_ha, 0)));
+      const y = Number(iso.slice(0, 4));
+      if (y !== year) {
+        year = y;
+        showPhoto();
+      }
     },
   });
+
+  const tour = createTour(tourData.steps ?? [], sites, {
+    async runStep(step) {
+      if (current?.site.id !== step.site) await openSite(step.site);
+      const feature = step.change && current.changes.features.find((f) => f.properties.id === step.change);
+      timeline.goTo(step.date ?? current.site.time_range[1], step.note ?? "");
+      if (feature) {
+        select(feature);
+        map.focus(feature);
+      } else {
+        select(null);
+        map.view(current.site);
+      }
+    },
+  });
+  $("tour-btn").addEventListener("click", () => tour.start());
+
+  function showIntro() {
+    current = null;
+    year = null;
+    $("map-error").hidden = true;
+    $("site").value = "";
+    $("fake-badge").hidden = true;
+    $("layers").hidden = true;
+    history.replaceState(null, "", location.pathname + location.search);
+    renderIntro(sites, { onPick: (id) => openSite(id).catch((err) => showError(err.message)), onTour: () => tour.start() });
+    map.setOverlays("", []);
+    map.showOverview(overview);
+    timeline.clear();
+    showPhoto();
+  }
 
   async function openSite(id) {
     const site = sites.find((s) => s.id === id && s.ready);
@@ -61,8 +130,10 @@ async function main() {
     $("map-error").hidden = true;
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
+    $("layers").hidden = false;
     history.replaceState(null, "", `#site=${site.id}`);
     current = await loadSite(site);
+    year = null; // a new site can mean a new photo series, so redraw it even if the year stays the same
     renderStory(current.story); // first: it changes the map's size on phones
     showHint();
     map.showSite(site, current.changes);
@@ -71,17 +142,25 @@ async function main() {
     timeline.setRange(site.time_range, current.story?.events);
   }
 
-  $("site").addEventListener("change", (e) => openSite(e.target.value).catch((err) => showError(err.message)));
+  $("site").addEventListener("change", (e) => {
+    tour.end();
+    const id = e.target.value;
+    if (!id) return showIntro();
+    openSite(id).catch((err) => showError(err.message));
+  });
   document.querySelectorAll('input[name="basemap"]').forEach((radio) =>
-    radio.addEventListener("change", (e) => map.setBasemap(e.target.value))
+    radio.addEventListener("change", (e) => {
+      basemap = e.target.value;
+      map.setBasemap(basemap);
+      showPhoto();
+    })
   );
 
   const wanted = new URLSearchParams(location.hash.slice(1)).get("site");
-  const first = sites.find((s) => s.id === wanted && s.ready) ?? sites.find((s) => s.ready);
-  if (!first) return showError("No site is ready yet.");
-  await openSite(first.id);
   const asked = sites.find((s) => s.id === wanted);
-  if (asked && !asked.ready) showError(`${asked.name} is coming soon. Showing ${first.name} instead.`, true);
+  if (asked?.ready) return openSite(asked.id);
+  showIntro();
+  if (asked) showError(`${asked.name} is coming soon. Pick another site or start the tour.`, true);
 }
 
 main().catch((err) => showError(err.message));

@@ -1,4 +1,4 @@
-// Written by Claude. Side panel: the collapsible site story and the change card (reasons, before/after swipe, signal chart).
+// Written by Claude. Side panel: the intro screen, the collapsible site story and the change card (reasons, before/after swipe, signal chart).
 import { buildChart } from "./chart.js";
 import { buildSwipe } from "./swipe.js";
 import { loadJson } from "./data.js";
@@ -53,6 +53,29 @@ function evidenceBlock(evidence, base, layers) {
   const single = before ?? after;
   if (single) return h("figure", { class: "single" }, h("img", { src: single.src, alt: `${single.label} picture of this place` }), h("figcaption", {}, single.label));
   return h("p", { class: "note" }, "No before and after pictures for this change yet.");
+}
+
+/** The first screen, before any site is open: what the app is for, the tour, and the sites. */
+export function renderIntro(sites, { onPick, onTour }) {
+  $("story").hidden = true;
+  const siteButton = (s) =>
+    h("li", {},
+      h("button", { type: "button", class: "site-btn", disabled: !s.ready, onclick: () => onPick(s.id) },
+        s.name,
+        s.fixture ? h("span", { class: "fake-badge" }, "Fake data") : null,
+        s.ready ? null : h("span", { class: "soon" }, "coming soon")
+      )
+    );
+  $("card").replaceChildren(
+    h("section", { class: "intro" },
+      h("h2", {}, "Which land changes need a closer look?"),
+      h("p", {}, "Radar satellites pass over every few days, day and night, even through clouds. This app finds where the land changed: forest cut, buildings put up, earth moved, ground sinking. Then it checks each change against public records, so you know where to look first."),
+      h("button", { type: "button", class: "primary big", onclick: onTour }, "Start the two-minute tour"),
+      h("h3", {}, "Or open a site"),
+      h("ul", { class: "site-list" }, sites.map(siteButton)),
+      h("p", { class: "note" }, "The app points out changes for a person to check. It does not decide whether anyone broke a rule.")
+    )
+  );
 }
 
 export function showHint() {

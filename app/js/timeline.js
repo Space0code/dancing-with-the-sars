@@ -65,6 +65,7 @@ export function createTimeline({ onDate }) {
     /** Set the site's date range and its story events; the slider starts at the end so everything is visible. */
     setRange([start, end], events = []) {
       stop();
+      slider.disabled = playBtn.disabled = false;
       startDay = toDay(start);
       const days = toDay(end) - startDay;
       slider.max = days;
@@ -87,6 +88,19 @@ export function createTimeline({ onDate }) {
           )
       );
       emit();
+    },
+    /** No site open: the timeline is inactive and says so. */
+    clear() {
+      stop();
+      slider.disabled = playBtn.disabled = true;
+      for (const id of ["range-start", "range-end", "event-note", "total"]) $(id).textContent = "";
+      $("events").replaceChildren();
+      $("date-label").textContent = "Choose a site to see its changes over time";
+    },
+    /** Jump to a date (used by the guided tour); the note explains why we are there. */
+    goTo(iso, note = "") {
+      goTo(iso);
+      $("event-note").textContent = note;
     },
     setTotal(text) {
       $("total").textContent = text;
