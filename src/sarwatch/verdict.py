@@ -17,7 +17,8 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 
-BIG_HA = 5.0  # clearing / earthworks at least this big, on non-buildable land, with no record -> high concern
+SCOPE_MAIN_SHARE = 0.5  # a change counts as part of the record's outline when at least this much of it lies inside
+BIG_HA = 5.0 # clearing / earthworks at least this big, on non-buildable land, with no record -> high concern
 MID_HA = 2.0  # at least this big with no matching record -> needs review
 NON_BUILDABLE_SHARE = 0.25  # share of the polygon on non-buildable land that makes the zoning count as non-buildable
 PLANNED_SHARE = 0.5  # share on developable land needed to count as a planned development area
@@ -99,7 +100,7 @@ def _area_name(area: dict) -> str:
     return area.get("name") or area.get("kind") or "a protected area"
 
 
-def _zoning(zon) -> tuple[str | None, bool]:
+def _zoning(zon) -> tuple[str | None, bool, dict]:
     """(effective zone, is a planned development area). Mixed polygons use the shares the lookup returns: a
     substantial non-buildable part makes the whole change count as non-buildable. ``zone: None`` with ``checked``
     true means no zoning polygon there (e.g. the sea): unknown, not a failure."""
@@ -109,7 +110,7 @@ def _zoning(zon) -> tuple[str | None, bool]:
     zone = zon.get("zone")
     # "planned development area" is judged on its own share, before a non-buildable part overrides the zone: a place
     # that is 51 % developable and 49 % non-buildable is both (and the label stays "needs review": rule row 5)
-    planned = shares.get("developable", 1.0 if zone == "developable" else 0.0) >= PLANNED_SHARE
+    planned = shares.get("developable", 1.0 if zone == "developable" and not shares else 0.0) >= PLANNED_SHARE
     if shares.get("non_buildable", 0) >= NON_BUILDABLE_SHARE:
         zone = "non_buildable"
     return zone, planned, shares
@@ -200,7 +201,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     big_enough = area >= BIG_HA or in_scope
     # no land registry for this country: a small ordinary clearing is not flagged by size alone
     small_forestry = (isinstance(cad, dict) and bool(cad.get("not_applicable")) and ctype == "clearing"
-                      and area < BIG_HA)
+                      and area < BIG_HA and not _ok(off))  # an official record that applies here is never "no records"
     actions = [a for a in (off.get("actions") or []) if isinstance(a, dict)] if _ok(off) else []
     action_keys = [f"{_action_code(a.get('kind'))}:{i}" for i, a in enumerate(actions)]
     small_uncertain = area < MID_HA and change.get("confidence") == "low"
@@ -309,8 +310,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if decisive == "small_no_records":
         facts["small_no_records"] = _reason(
             "small_no_records",
-            f"The change is small ({area:g} ha), too small to flag on its own. "
-            "No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+            f"The change is small ({area:g} ha), too small to flag on its own. No land registry or zoning records are "
+            "connected for this country yet, and no official record we have covers this spot.",
             "lowers", source=detector)
     if decisive == "size_only":
         no_records = (cad or {}).get("not_applicable")  # outside Spain the Catalan registry does not apply
@@ -320,7 +321,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
             if no_records
             else "The land registry could not be checked, so a change of this size is flagged for review.",
             "raises", source=detector)
-    if verdict != "high_concern":
+    if verdict != "high_concern" and decisive != "small_no_records":  # that reason already says the change is small
         if small_uncertain:
             facts["small_uncertain"] = _reason(
                 "small_uncertain", f"The change is too small ({area:g} ha) and too uncertain to flag on its own.",
@@ -397,6 +398,17 @@ def _in_scope(geometry: dict, scope: dict) -> bool:
     return g.intersects(s) and not g.touches(s)  # sharing only a border is outside
 
 
+def _scope_share(geometry: dict, scope: dict) -> float:
+    """Share of the change's area that lies inside the scope (0 to 1; ratio of areas in degrees, fine for a ratio)."""
+    from shapely.geometry import shape
+    from shapely.validation import make_valid
+
+    g, s = make_valid(shape(geometry)), make_valid(shape(scope))
+    if g.area == 0:  # a point or a line: inside or not
+        return 1.0 if g.intersects(s) else 0.0
+    return g.intersection(s).area / g.area
+
+
 def records_for(doc: dict, change_id: str, geometry: dict | None = None) -> dict:
     """The hand-entered records that apply to one change (``default`` overridden by the change's own entries; a
     record whose ``scope`` does not reach ``geometry`` is left out). A record from ``default`` without a ``scope``
@@ -411,7 +423,9 @@ def records_for(doc: dict, change_id: str, geometry: dict | None = None) -> dict
         site_wide = key not in own and not scope
         out[key] = {"checked": True, "source": "Hand-entered records", "url": None,
                     **({"site_wide": True} if site_wide else {}),
-                    **({"in_scope": True} if scope and geometry is not None else {}),
+                    # "part of the same clearing" only if most of the change lies inside the outline
+                    **({"in_scope": True} if scope and geometry is not None
+                       and _scope_share(geometry, scope) >= SCOPE_MAIN_SHARE else {}),
                     **{k: v for k, v in rec.items() if k != "scope"}}
     return out
 

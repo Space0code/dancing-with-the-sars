@@ -3677,13 +3677,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (3.24 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (3.24 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.24 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.24 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0002_before.png",
      "after": "evidence/muhos-0002_after.png",
@@ -4041,13 +4041,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (3.06 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.06 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0003_before.png",
      "after": "evidence/muhos-0003_after.png",
@@ -4309,13 +4309,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (2.88 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (2.88 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.88 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.88 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0004_before.png",
      "after": "evidence/muhos-0004_after.png",
@@ -4537,13 +4537,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (2.7 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (2.7 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.7 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.7 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0005_before.png",
      "after": "evidence/muhos-0005_after.png",
@@ -4773,13 +4773,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (2.61 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (2.61 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.61 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.61 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0006_before.png",
      "after": "evidence/muhos-0006_after.png",
@@ -4935,13 +4935,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (2.43 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (2.43 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.43 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.43 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0007_before.png",
      "after": "evidence/muhos-0007_after.png",
@@ -5139,13 +5139,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (2.34 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (2.34 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.34 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.34 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0008_before.png",
      "after": "evidence/muhos-0008_after.png",
@@ -12713,13 +12713,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (2.07 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (2.07 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 31 May and 30 Jun 2026. The change is small (2.07 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 31 May and 30 Jun 2026. The change is small (2.07 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0011_before.png",
      "after": "evidence/muhos-0011_after.png",
@@ -18112,13 +18112,13 @@
     "reasons": [
      {
       "code": "small_no_records",
-      "text": "The change is small (3.06 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+      "text": "The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
       "source": "NASA optical alerts (Landsat + Sentinel-2)",
       "url": null,
       "effect": "lowers"
      }
     ],
-    "explain": "An optical alert found vegetation loss here between 30 Jun and 31 Jul 2026. The change is small (3.06 ha), too small to flag on its own. No public land or permit records are connected for this country yet, so nothing was checked beyond size.",
+    "explain": "An optical alert found vegetation loss here between 30 Jun and 31 Jul 2026. The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
     "evidence": {
      "before": "evidence/muhos-0014_before.png",
      "after": "evidence/muhos-0014_after.png",
