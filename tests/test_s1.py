@@ -405,6 +405,75 @@ def test_thin_by_gap_and_by_count():
     assert s1.thin(series[::-1]) == series  # always time-sorted
 
 
+# ---------------------------------------------------------------- several bursts: pick_bursts, read_mosaic
+
+NORTH = _box_wkt(0.5, 41.05, 1.5, 41.5)   # the upper half of BBOX and beyond
+SOUTH = _box_wkt(0.5, 40.5, 1.5, 41.06)   # the lower half, overlapping NORTH a little
+
+
+def test_pick_bursts_keeps_one_track_whose_bursts_cover_the_window_on_shared_dates():
+    north = _scenes("T001_000002_IW2", range(0, 60, 12), NORTH)
+    south = _scenes("T001_000001_IW2", [0, 12, 36, 48], SOUTH)  # no product on day 24
+    rare = _scenes("T001_000009_IW1", [12], PARTIAL)             # one date only: never joins
+    other = _scenes("T002_000005_IW2", range(0, 120, 6), PARTIAL)  # more dates, but half the window
+
+    sets = s1.pick_bursts(north + south + rare + other, BBOX)
+
+    assert [s.burst_ids for s in sets] == [("T001_000001_IW2", "T001_000002_IW2")] * 4
+    assert [s.start.date() for s in sets] == [date(2024, 1, 1) + timedelta(days=d) for d in (0, 12, 36, 48)]
+    assert {s.track for s in sets} == {1} and all(" + " in s.name for s in sets)
+    assert s1.thin(sets, min_gap_days=20) == [sets[0], sets[2]]  # thins like single scenes
+    fixed = s1.pick_bursts(north + south + other, BBOX, track=2)
+    assert {s.burst_ids for s in fixed} == {("T002_000005_IW2",)} and len(fixed) == 20
+    assert s1.pick_bursts([], BBOX) == []
+
+
+def test_pick_bursts_leaves_out_a_burst_that_adds_nothing():
+    whole = _scenes("T001_000001_IW2", range(0, 36, 12), COVERS)
+    inside = _scenes("T001_000002_IW2", range(0, 36, 12), PARTIAL)
+    assert {s.burst_ids for s in s1.pick_bursts(whole + inside, BBOX)} == {("T001_000001_IW2",)}
+
+
+def _burst(folder, t, burst, offset, shape, **kwargs):
+    os.makedirs(folder, exist_ok=True)
+    sc = make_scene(folder, t, offset=offset, shape=shape, **kwargs)
+    sc.burst_id = burst
+    return sc
+
+
+def test_read_mosaic_joins_bursts_on_the_shared_lattice(tmp_path):
+    def brighter(vv, vh):  # the second burst reads 10 % brighter where the two overlap (rows 40-59 of the lattice)
+        vv[:20] *= 1.1
+
+    upper = _burst(str(tmp_path / "a"), 0, "T001_000001_IW2", (0, 0), (60, SIZE))
+    mask = np.zeros((60, SIZE), np.uint8)
+    mask[10:20, :10] = 2  # layover in the overlap (lattice rows 50-59, cols 0-9): the first burst alone
+    lower = _burst(str(tmp_path / "b"), 0, "T001_000002_IW2", (40, 0), (60, SIZE), edit=brighter, mask=mask)
+    bbox = lattice_bbox(10, 5, 80, 30)  # rows 10-89: across both bursts
+
+    data, transform, epsg = s1.read_mosaic(s1.BurstSet(upper.start, [lower, upper], 1, "ASCENDING"), bbox)
+
+    row0, col0 = window_of(transform, data["VV"].shape)
+    ny, nx = data["VV"].shape
+    assert epsg == EPSG and row0 <= 10 and col0 <= 5 and row0 + ny >= 90 and col0 + nx >= 35
+    truth = pattern(0, row0, col0, ny, nx)
+    rows = np.arange(row0, row0 + ny)[:, None] + np.zeros((1, nx), int)
+    cols = np.arange(col0, col0 + nx)[None, :] + np.zeros((ny, 1), int)
+    overlap = (rows >= 40) & (rows < 60)
+    alone = overlap & (rows >= 50) & (cols < 10)  # the second burst is masked there
+    assert alone.any() and (overlap & ~alone).any()
+    expect = np.where(overlap & ~alone, truth * 1.05, truth)  # mean of 1.0 and 1.1 in linear power
+    np.testing.assert_allclose(data["VV"], expect, rtol=1e-5)
+    np.testing.assert_allclose(data["VH"], truth / 5, rtol=1e-5)
+    assert s1.last_read_stats["bursts"] == 2 and s1.last_read_stats["files"] == 6
+
+    off = _burst(str(tmp_path / "c"), 0, "T001_000003_IW2", (40, 0), (60, SIZE), shift_m=(15.0, 0.0))
+    with pytest.raises(ValueError, match="grid mismatch"):
+        s1.read_mosaic([upper, off], bbox)
+    with pytest.raises(ValueError, match="no valid pixel"):
+        s1.read_mosaic([upper], lattice_bbox(SIZE + 50, SIZE + 50, 10, 10))
+
+
 API_ITEM = {  # one real result of the ASF search API (output=jsonlite), trimmed to the fields the reader uses
     "flightDirection": "ASCENDING", "path": 132, "polarization": ["VV", "VH"],
     "granuleName": "OPERA_L2_RTC-S1_T132-281622-IW2_20240611T174720Z_20240614T193701Z_S1A_30_v1.0",

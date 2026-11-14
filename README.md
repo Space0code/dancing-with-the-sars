@@ -1,4 +1,4 @@
-# Dancing with the SARs (SARwatch)
+# Dancing with the SARs (Parallax)
 
 NASA Space Apps Challenge 2026, Barcelona. An interactive map that uses **radar satellites** (NASA-ISRO **NISAR** and
 Copernicus **Sentinel-1**) to watch the land and tell a regulator **which changes look expected and which need a look**.

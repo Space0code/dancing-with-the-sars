@@ -298,6 +298,29 @@ def test_snapshots_are_written_in_place_and_replaced_on_a_rerun(tmp_path):
     assert [s for s in after["sites"] if s["id"] != "agroparc"] == [s for s in before["sites"] if s["id"] != "agroparc"]
 
 
+def test_a_first_write_edits_only_its_own_site_block(tmp_path):
+    """A site without snapshots or sources yet, followed by a site that has both: the first write adds them to its
+    own block and leaves every other line of the file as it was."""
+    path = tmp_path / "sites.json"
+    nl = "\n"
+    text = ('{\n "version": 1,\n "sites": [\n'
+            '  {"id": "new", "name": "New", "country": "ES", "ready": false,\n   "center": [2, 41], "zoom": 10, '
+            '"bbox": [1, 40, 3, 42],\n   "time_range": ["2016-01-01", "2026-01-01"]},\n'
+            '  {"id": "old", "name": "Old", "country": "ES", "ready": true,\n   "center": [2, 41], "zoom": 10, '
+            '"bbox": [1, 40, 3, 42],\n   "time_range": ["2016-01-01", "2026-01-01"], "sources": [{"sensor": "x"}],\n'
+            '   "snapshots": [\n    {"date": "2016-01-01", "sensor": "x"}]}\n ]\n}\n')
+    path.write_text(text, encoding="utf-8")
+    snaps = [{"date": "2016-06-05", "sensor": "Sentinel-1 C-band"}]
+    sources = [{"sensor": "Sentinel-1 C-band"}]
+    pipeline.update_sites_index(path, "new", ("2016-06-05", "2026-09-30"), snapshots=snaps, sources=sources)
+    out = path.read_text(encoding="utf-8")
+    old_block = text[text.index('  {"id": "old"'):]
+    assert out.endswith(old_block)  # the other site's lines untouched, not reformatted
+    entry = site_entry(tmp_path, "new")
+    assert entry["ready"] is True and entry["snapshots"] == snaps and entry["sources"] == sources
+    assert nl.join(out.splitlines()[:3]) == nl.join(text.splitlines()[:3])
+
+
 def test_sites_json_bbox_is_edited_in_place(tmp_path):
     path = tmp_path / "sites.json"
     original = (REPO / "app" / "data" / "sites.json").read_bytes()
@@ -508,6 +531,12 @@ def test_regions_dated_inside_the_baseline_are_dropped():
     assert out.first_change_idx[1, 1] == 5 and out.first_change_idx[0, 0] == -1
     assert pipeline._drop_baseline_dated(result, date(2025, 6, 1)) is result
 
+    result.regions[1].type = "other"  # keep_types: only the listed types stay, labels renumbered the same way
+    kept = pipeline._keep_types(result, ("structure", "clearing"))
+    assert [(r.label, r.first_date) for r in kept.regions] == [(1, date(2025, 6, 9)), (2, date(2025, 9, 25))]
+    assert kept.labels[0, 0] == 1 and kept.labels[2, 2] == 2 and kept.labels[1, 1] == 0
+    assert pipeline._keep_types(result, ("structure", "other")) is result
+
 
 def test_s1_months_that_leave_nothing_to_compare_are_an_error():
     for bad in ((), (0, 6), (13,), (6.5,)):
@@ -539,6 +568,35 @@ def test_water_mask_can_take_a_wider_shore():
     wide = pipeline._water_mask({"HH": hh}, "nisar", n_early=2, water_db=-16.0, grow=3)
     assert not narrow[7, 10] and narrow[6, 10]  # default: one pixel of shore, as before
     assert not wide[5, 10] and not wide[6, 6] and wide[4, 10]  # three pixels, diagonals included
+
+
+def test_water_mask_can_use_the_cross_pol():
+    """The sea under wind: co-pol as bright as land, cross-pol near the noise floor."""
+    vv = np.full((4, 20, 20), 0.08, dtype=np.float32)
+    vh = np.full((4, 20, 20), 0.02, dtype=np.float32)
+    vh[:, :, 12:] = 1e-3  # the sea, east of column 12: VH -30 dB, VV unchanged
+    assert pipeline._water_mask({"VV": vv, "VH": vh}, "s1", n_early=2, water_db=-24.0).all()  # co-pol sees none
+    sea = ~pipeline._water_mask({"VV": vv, "VH": vh}, "s1", n_early=2, water_db=-24.0, pol="VH")
+    assert sea[:, 11:].all() and not sea[:, :11].any()  # the sea plus one pixel of shore
+
+
+def test_top_changes_keeps_the_largest_and_counts_low_confidence_at_half():
+    from sarwatch.export import Merged
+
+    def change(side_deg, confidence, day):
+        ring = [[2.0, 41.0], [2.0 + side_deg, 41.0], [2.0 + side_deg, 41.0 + side_deg], [2.0, 41.0 + side_deg],
+                [2.0, 41.0]]
+        return Merged(geometry={"type": "Polygon", "coordinates": [ring]}, type="other", first_date=day,
+                      last_date=day, not_before=None, confidence=confidence, sensor="x", explain="", sources=[], run=0)
+
+    big_low = change(0.010, "low", date(2020, 6, 1))      # ~93 ha, counts ~47
+    mid = change(0.008, "medium", date(2021, 6, 1))       # ~60 ha
+    small = change(0.004, "high", date(2019, 6, 1))       # ~15 ha
+    tiny_low = change(0.002, "low", date(2018, 6, 1))
+    changes = [big_low, mid, small, tiny_low]
+    assert pipeline.top_changes(changes, 2) == [big_low, mid]  # the input order is kept
+    assert pipeline.top_changes(changes, 1) == [mid]
+    assert pipeline.top_changes(changes, 10) is changes
 
 
 # ---- several sources: the optical alerts carry the clearing's parts, the radar is attached (Muhos)
@@ -693,3 +751,38 @@ def test_sites_json_gets_the_site_sources(tmp_path):
     others = [s for s in json.loads(path.read_bytes())["sites"] if s["id"] != "muhos"]
     assert others == [s for s in json.loads(original)["sites"] if s["id"] != "muhos"]
     assert validate(tmp_path) is not None
+
+
+def test_s1_mosaic_reads_one_burst_set_per_date(fake, monkeypatch, capsys):
+    """A window larger than one burst: the site's track reaches pick_bursts, each date is read with read_mosaic,
+    and the dates stack and detect like single-burst dates."""
+    from sarwatch import s1
+
+    calls = {"track": [], "mosaic": []}
+
+    def pick_bursts(scenes, bbox, track=None):
+        calls["track"].append(track)
+        return [s1.BurstSet(start=sc.start, track=track, direction="ASCENDING",
+                            scenes=[SimpleNamespace(name=f"{sc.name}_{b}", burst_id=b, start=sc.start)
+                                    for b in ("T132_000001_IW2", "T132_000002_IW2")]) for sc in scenes]
+
+    def read_mosaic(bursts, bbox, pols=("VV", "VH"), token=None):
+        assert token == SECRET and len(bursts.scenes) == 2
+        day = bursts.start.date()
+        calls["mosaic"].append(day)
+        i = S_DAYS.index(day)
+        fake.s1.stats.update(bytes=9_000_000, dates=1)
+        return image(100 + i, S_SHAPE, pols, "VH", i >= S_CHANGE, S_RECT), S_TRANSFORM, S_EPSG
+
+    monkeypatch.setattr(s1, "pick_bursts", pick_bursts)
+    monkeypatch.setattr(s1, "read_mosaic", read_mosaic)
+    site = pipeline.SITES["muhos"]
+    monkeypatch.setattr(site, "skip_dates", ())
+    monkeypatch.setattr(site, "s1", pipeline.S1Settings(start=date(2026, 1, 1), mosaic=True, track=132))
+    assert pipeline.main(["muhos", "--no-nisar", *fake.args]) == 0
+
+    assert calls["track"] == [132] and sorted(calls["mosaic"]) == S_DAYS and fake.s1.reads == []
+    assert "fetched this run: 10 dates, 90.0 MB" in capsys.readouterr().out
+    clearing = [f["properties"] for f in features(fake.data, "muhos") if f["properties"]["type"] == "clearing"]
+    assert len(clearing) == 1 and clearing[0]["sensor"] == "Sentinel-1 C-band"
+    assert validate(fake.data) == []
