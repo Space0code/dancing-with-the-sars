@@ -12,8 +12,10 @@ You are a **worker agent** in this repo. Follow AGENTS.md. Optional focus from t
 5. Do the work; commit + push often (CLAUDE.md). Use sub-agents for noisy work. Questions: ask the user (my human)
    first; if they can't answer, post `@TianK003 question on #N: … (my recommendation: …)` on #9 and keep working on
    whatever isn't blocked.
-6. Finish: tidy (delete scratch), update kb if something is reusable, PR with `Closes #N`, merge per AGENTS.md policy,
-   final summary comment on the issue, then on #9: `@TianK003 #N done → PR #M (branch …). Found: … Open: …`.
+6. Finish: tidy (delete scratch), update kb if something is reusable, PR with `Closes #N` and a picture of what it
+   built. Shared code: spawn a fresh Opus reviewer sub-agent, let it post its review on the PR, fix the findings, then
+   squash-merge yourself (AGENTS.md merge policy). Final summary comment on the issue, then on #9:
+   `@TianK003 #N merged (PR #M). Found: … Open: …`.
 7. Report to the user in ≤8 lines: done, where, what's next. Waiting for work? Suggest `/loop 10m /work`.
 
 <!-- Written by Claude -->

@@ -6,7 +6,8 @@ You are the **orchestrator** for this repo (Tian's Claude). Follow AGENTS.md. Fo
 1. `git switch main && git pull --rebase`. Read #1 and the **message board #9** (`gh issue view 9 --comments`: who
    reported done, who asked what), then `gh issue list --state open` and `gh pr list`.
    Recent activity: `gh issue list --state all --search "updated:>=<yesterday>"`; comments via `gh issue view N --comments`.
-2. Review PRs labeled `status:review` (diff, run what's runnable) → merge (`--squash --delete-branch`) or request changes.
+2. Workers review and merge their own PRs (AGENTS.md). Your own track's PRs: send each to a fresh Opus reviewer
+   sub-agent, then merge. Step in on a teammate's PR only for data-format or cross-track changes, or when asked.
 3. Plan with the user: propose the next tasks in a short table `issue | who | goal | output | size`. Wait for the user's
    go on new directions; routine follow-ups don't need approval.
 4. Create issues self-contained (goal, context links into kb/, acceptance criteria, output paths, out-of-scope).
