@@ -385,7 +385,7 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .row-sub { display: block; margin-top: 2px; font-size: var(--t-small); color: var(--muted); }
 
 /* ---------- timeline ---------- */
-.timeline { background: var(--raised); border-top: 1px solid var(--line); padding: var(--s-2) var(--s-4) var(--s-3); }
+.timeline { background: var(--raised); border-top: 1px solid var(--line); padding: var(--s-3) var(--s-4); }
 .timeline-top {
   display: flex; justify-content: space-between; gap: var(--s-1) var(--s-3); flex-wrap: wrap; align-items: baseline;
   margin-bottom: var(--s-2); /* the red bars reach above the track: keep them off the text */
@@ -452,6 +452,7 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
     position: relative; z-index: 5; box-shadow: 0 -6px 20px rgb(10 10 10 / .16);
   }
   .tabs { margin: var(--s-3) var(--s-3) 0; }
+  .tabs button { height: 40px; } /* thumb-sized in the sheet */
   .view { padding: var(--s-3) var(--s-3) var(--s-4); }
   .inbox-list { margin: 0 calc(-1 * var(--s-3)); }
   .row { padding: var(--s-3); }
@@ -459,7 +460,7 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
   .maplibregl-ctrl-top-right { display: none; } /* pinch to zoom; the buttons would crowd the picture */
   /* the view box: switch, compare and marked areas on one row; the picture's date and the "?" under them */
   .viewbox {
-    left: var(--s-2); right: var(--s-2); top: var(--s-2); max-width: none; padding: var(--s-2);
+    left: var(--s-3); right: var(--s-3); top: var(--s-3); max-width: none; padding: var(--s-2);
     grid-template-columns: auto auto 1fr auto; row-gap: 6px; column-gap: 6px;
   }
   .switch button { padding: 0 10px; }
@@ -473,7 +474,7 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
   }
   .view-caption { grid-row: 3; display: none; margin: 0; font-size: var(--t-small); }
   .view-caption.open { display: block; }
-  .legend { left: var(--s-2); bottom: calc(var(--r-lg) + 26px); padding: 0; }
+  .legend { left: var(--s-3); bottom: calc(var(--r-lg) + 26px); padding: 0; }
   .legend-btn {
     display: block; height: 32px; padding: 0 var(--s-3); border: 0; background: none; font-size: var(--t-small); font-weight: 600; color: var(--ink);
   }
@@ -483,7 +484,7 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
   .legend ul { display: grid; grid-template-columns: auto auto; gap: 0 var(--s-3); padding: 0 var(--s-3); font-size: var(--t-label); }
   .swatch { width: 12px; height: 12px; }
   .maplibregl-ctrl-bottom-right { bottom: var(--r-lg); }
-  .timeline { padding: var(--s-2) var(--s-3) calc(var(--s-2) + env(safe-area-inset-bottom)); }
+  .timeline { padding: var(--s-3) var(--s-3) calc(var(--s-2) + env(safe-area-inset-bottom)); }
   .date-label { font-size: 16px; }
   .total { margin-left: 0; font-size: var(--t-small); }
   .explainer { padding: var(--s-4) var(--s-4) var(--s-5); }
