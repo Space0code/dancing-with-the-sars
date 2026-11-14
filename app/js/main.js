@@ -116,7 +116,9 @@ async function main() {
   const map = createChangeMap($("map"), { onSelect: select, bounds: overview });
   await map.ready;
 
-  const picture = createPicture(map, document.querySelector(".map-wrap"));
+  // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
+  const syncStops = () => timeline.setStops(picture.view === "radar" ? null : picture.stops());
+  const picture = createPicture(map, document.querySelector(".map-wrap"), { onView: syncStops });
 
   const refreshTotal = () => {
     const { count, ha } = inbox.stats(); // follows the date and the inbox filters
@@ -142,7 +144,6 @@ async function main() {
       lastDate = iso;
       writeHash();
     },
-    onPlay: () => picture.setView("radar"), // the time-lapse always runs on the radar pictures
   });
 
   const tour = createTour(tourData.steps ?? [], sites, {
@@ -208,6 +209,7 @@ async function main() {
       map.showSite(site, current.changes, current.stages);
       picture.setSite(current);
       timeline.setRange(site, current.changes.features, current.story?.events);
+      syncStops(); // a site with photos only starts in Satellite
     } finally {
       loading = false;
     }

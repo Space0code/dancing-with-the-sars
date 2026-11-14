@@ -11,7 +11,7 @@ const NO_FRAME = {
 };
 
 /** `map`: from map.js. `mapWrap`: the element around the map (the swipe line goes there). */
-export function createPicture(map, mapWrap) {
+export function createPicture(map, mapWrap, { onView } = {}) {
   const $ = (id) => document.getElementById(id);
   const box = $("viewbox");
   const buttons = { radar: $("view-radar"), photo: $("view-photo") };
@@ -154,6 +154,14 @@ export function createPicture(map, mapWrap) {
       if (box.hidden || next === view || (next === "radar" && !sets.radar)) return;
       view = next;
       update();
+      onView?.(view);
+    },
+    /** The open view's pictures as timeline stops [{date, sensor}], or null when the site has no pictures in that view. */
+    stops() {
+      return sets[view]?.frames.map(({ date, sensor }) => ({ date, sensor })) ?? null;
+    },
+    get view() {
+      return view;
     },
     setDate(iso) {
       date = iso;

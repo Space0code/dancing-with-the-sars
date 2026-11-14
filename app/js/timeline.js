@@ -16,12 +16,13 @@ function snapshotsOf(site, features) {
   return [...dates].filter((d) => d >= site.time_range[0] && d <= site.time_range[1]).sort().map((date) => ({ date, sensor: "" }));
 }
 
-/** `onDate(iso)`: the slider moved to a snapshot. `onPlay()`: playing starts (before the first step). */
-export function createTimeline({ onDate, onPlay }) {
+/** `onDate(iso)`: the slider moved to a snapshot. */
+export function createTimeline({ onDate }) {
   const $ = (id) => document.getElementById(id);
   const slider = $("slider");
   const playBtn = $("play");
-  let stops = []; // [{date, sensor}], oldest first
+  let stops = []; // [{date, sensor}], oldest first: the open view's pictures
+  let own = null; // {site, features, events, stops}: the open site; `own.stops` = its snapshots (the radar view)
   let playing = false;
   let timer = 0;
   let stopAt = 0; // slider value where playing stops
@@ -43,7 +44,7 @@ export function createTimeline({ onDate, onPlay }) {
     // Just stepped past a long gap in the snapshots (winter, left out on purpose): say so instead of silently jumping.
     const prev = stops[index() - 1];
     const gap = prev && toDay(stop.date) - toDay(prev.date) > GAP_DAYS;
-    $("gap-note").textContent = gap ? `Winter: no usable pictures between ${formatDate(prev.date)} and ${formatDate(stop.date)} (snow)` : "";
+    $("gap-note").textContent = gap ? `No pictures between ${formatDate(prev.date)} and ${formatDate(stop.date)}` : "";
     onDate(stop.date);
   }
 
@@ -68,7 +69,6 @@ export function createTimeline({ onDate, onPlay }) {
     if (index() >= until) slider.value = playFrom;
     stopAt = until;
     playing = true;
-    onPlay?.();
     playBtn.textContent = "❚❚";
     playBtn.setAttribute("aria-label", "Pause timeline");
     emit();
@@ -111,6 +111,40 @@ export function createTimeline({ onDate, onPlay }) {
     $("ticks").replaceChildren(...nodes);
   }
 
+  /** Index of the stop closest in time to `iso`. */
+  function nearest(iso) {
+    if (!iso) return 0;
+    let best = 0;
+    for (let i = 1; i < stops.length; i++) {
+      if (Math.abs(toDay(stops[i].date) - toDay(iso)) < Math.abs(toDay(stops[best].date) - toDay(iso))) best = i;
+    }
+    return best;
+  }
+
+  /** Draw the track for the current stops: slider range, end dates, red bars and (if any) event flags. */
+  function build() {
+    const { site, features, events } = own;
+    slider.max = stops.length - 1;
+    $("range-start").textContent = formatDate(stops[0].date);
+    $("range-end").textContent = formatDate(stops[stops.length - 1].date);
+    $("event-note").textContent = "";
+    drawTicks(features);
+    $("events").replaceChildren(
+      ...events
+        .filter((e) => e.date >= stops[0].date && e.date <= site.time_range[1])
+        .map((e) =>
+          h("button", {
+            class: "event-marker", type: "button", style: `left:${pct(snap(e.date))}%`,
+            title: `${formatDate(e.date)}: ${e.label}`, "aria-label": `Event on ${formatDate(e.date)}: ${e.label}`,
+            onclick: () => {
+              goToIndex(snap(e.date));
+              $("event-note").textContent = `${formatDate(e.date)}: ${e.label}`;
+            },
+          }, "⚑")
+        )
+    );
+  }
+
   playBtn.addEventListener("click", () => (playing ? stop() : play()));
   slider.addEventListener("input", () => {
     stop();
@@ -130,38 +164,35 @@ export function createTimeline({ onDate, onPlay }) {
     setRange(site, features = [], events = []) {
       stop();
       stops = snapshotsOf(site, features);
+      own = { site, features, events, stops };
       slider.disabled = playBtn.disabled = false;
-      slider.max = stops.length - 1;
       slider.value = stops.length - 1;
-      $("range-start").textContent = formatDate(stops[0].date);
-      $("range-end").textContent = formatDate(stops[stops.length - 1].date);
-      $("event-note").textContent = "";
-      drawTicks(features);
-      $("events").replaceChildren(
-        ...events
-          .filter((e) => e.date >= stops[0].date && e.date <= site.time_range[1])
-          .map((e) =>
-            h("button", {
-              class: "event-marker", type: "button", style: `left:${pct(snap(e.date))}%`,
-              title: `${formatDate(e.date)}: ${e.label}`, "aria-label": `Event on ${formatDate(e.date)}: ${e.label}`,
-              onclick: () => {
-                goToIndex(snap(e.date));
-                $("event-note").textContent = `${formatDate(e.date)}: ${e.label}`;
-              },
-            }, "⚑")
-          )
-      );
+      build();
+      emit();
+    },
+    /**
+     * Step through another list of pictures (the Satellite view's photos) instead of the site's snapshots; null = back to
+     * the snapshots. The slider keeps the nearest date and a running play carries on in the new list.
+     */
+    setStops(list) {
+      if (!own) return;
+      const iso = stops[index()]?.date;
+      stops = list?.length ? list : own.stops;
+      slider.value = nearest(iso);
+      build();
+      if (playing && index() >= stops.length - 1) stop();
       emit();
     },
     /** No site open: the timeline is inactive and says so. */
     clear() {
       stop();
+      own = null;
       stops = [];
       slider.disabled = playBtn.disabled = true;
       for (const id of ["range-start", "range-end", "event-note", "gap-note", "total"]) $(id).textContent = "";
       $("events").replaceChildren();
       $("ticks").replaceChildren();
-      $("date-label").textContent = "Choose a site to see its changes over time";
+      $("date-label").textContent = "Choose a site";
     },
     /** Jump to a date (used by the guided tour and links): the snapshot on or before it; the note explains why we are there. */
     goTo(iso, note = "") {
