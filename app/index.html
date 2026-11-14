@@ -28,6 +28,7 @@
     </div>
     <div class="actions">
       <button id="changes-btn" type="button" hidden>Changes</button>
+      <button id="export-btn" type="button" hidden>Export</button>
       <button id="tour-btn" type="button" class="primary">Tour</button>
     </div>
   </header>
@@ -64,6 +65,8 @@
           <button id="tab-overview" type="button" role="tab" aria-selected="false" aria-controls="overview-view">Overview</button>
           <button id="tab-inbox" type="button" role="tab" aria-selected="true" aria-controls="inbox">Changes <span id="inbox-count" class="n"></span></button>
         </div>
+        <div id="tools-filter"></div>
+        <p id="filter-line" class="filter-line" hidden><span id="filter-text"></span><button id="filter-clear" type="button">Clear</button></p>
         <div id="overview-view" class="view" role="tabpanel" hidden><div id="overview" class="overview"></div></div>
         <section id="inbox" class="view inbox" role="tabpanel" aria-label="Changes at this site"></section>
         <div id="card-view" class="view" hidden><div id="card" aria-live="polite"></div></div>
@@ -88,6 +91,7 @@
   </footer>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
