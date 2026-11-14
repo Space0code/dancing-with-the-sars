@@ -1,0 +1,505 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       1.836966,
+       41.449664
+      ],
+      [
+       1.846554,
+       41.449036
+      ],
+      [
+       1.848232,
+       41.452539
+      ],
+      [
+       1.844996,
+       41.454964
+      ],
+      [
+       1.838405,
+       41.454515
+      ],
+      [
+       1.835768,
+       41.452359
+      ],
+      [
+       1.836966,
+       41.449664
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "id": "fixture-0001",
+    "site": "fixture",
+    "type": "earthworks",
+    "first_date": "2025-03-15",
+    "last_date": "2026-09-15",
+    "area_ha": 52.1,
+    "sensor": "Sentinel-1 C-band",
+    "signal": {
+     "metric": "VH_dB",
+     "before": -14.0,
+     "after": -17.0,
+     "delta": -3.0
+    },
+    "confidence": "high",
+    "verdict": "review",
+    "reasons": [
+     {
+      "code": "zoning_non_buildable",
+      "text": "The land is zoned as non-buildable.",
+      "source": "Urban-planning map (fake example)",
+      "url": null,
+      "effect": "raises"
+     },
+     {
+      "code": "no_record_found",
+      "text": "No building, permit or planned project is on record here.",
+      "source": "Land registry (fake example)",
+      "url": "https://www.sedecatastro.gob.es/",
+      "effect": "raises"
+     }
+    ],
+    "explain": "The surface here kept changing between satellite passes, the pattern of moving earth.",
+    "evidence": {
+     "before": "evidence/fixture-0001_before.png",
+     "after": "evidence/fixture-0001_after.png",
+     "series": "series/fixture-0001.json"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       1.866921,
+       41.440281
+      ],
+      [
+       1.869198,
+       41.440192
+      ],
+      [
+       1.869318,
+       41.441629
+      ],
+      [
+       1.867041,
+       41.441808
+      ],
+      [
+       1.866921,
+       41.440281
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "id": "fixture-0002",
+    "site": "fixture",
+    "type": "structure",
+    "first_date": "2026-07-17",
+    "last_date": "2026-07-29",
+    "area_ha": 3.1,
+    "sensor": "NISAR L-band",
+    "signal": {
+     "metric": "HH_dB",
+     "before": -8.0,
+     "after": 0.0,
+     "delta": 8.0
+    },
+    "confidence": "high",
+    "verdict": "expected",
+    "reasons": [
+     {
+      "code": "planned_sector",
+      "text": "Inside a planned development sector.",
+      "source": "Urban-planning map (fake example)",
+      "url": null,
+      "effect": "lowers"
+     },
+     {
+      "code": "cadastre_building_found",
+      "text": "A new building is registered here.",
+      "source": "Land registry (fake example)",
+      "url": "https://www.sedecatastro.gob.es/",
+      "effect": "lowers"
+     }
+    ],
+    "explain": "Radar saw a strong new echo here (+8 dB), the pattern of walls or metal structures.",
+    "evidence": {
+     "before": "evidence/fixture-0002_before.png",
+     "after": "evidence/fixture-0002_after.png",
+     "series": "series/fixture-0002.json"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       1.819363,
+       41.466653
+      ],
+      [
+       1.823918,
+       41.466203
+      ],
+      [
+       1.825116,
+       41.468359
+      ],
+      [
+       1.823079,
+       41.469976
+      ],
+      [
+       1.819124,
+       41.469168
+      ],
+      [
+       1.819363,
+       41.466653
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "id": "fixture-0003",
+    "site": "fixture",
+    "type": "clearing",
+    "first_date": "2026-08-10",
+    "last_date": "2026-09-03",
+    "area_ha": 15.5,
+    "sensor": "NISAR L-band",
+    "signal": {
+     "metric": "HV_dB",
+     "before": -14.0,
+     "after": -20.0,
+     "delta": -6.0
+    },
+    "confidence": "high",
+    "verdict": "high_concern",
+    "reasons": [
+     {
+      "code": "protected_area",
+      "text": "Inside a protected natural area.",
+      "source": "PEIN / Natura 2000 (fake example)",
+      "url": null,
+      "effect": "raises"
+     },
+     {
+      "code": "no_record_found",
+      "text": "No building, permit or planned project is on record here.",
+      "source": "Land registry (fake example)",
+      "url": "https://www.sedecatastro.gob.es/",
+      "effect": "raises"
+     }
+    ],
+    "explain": "Radar saw the tree signal drop by -6 dB here, the pattern left when forest is cut.",
+    "evidence": {
+     "before": "evidence/fixture-0003_before.png",
+     "after": "evidence/fixture-0003_after.png",
+     "series": "series/fixture-0003.json"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       1.884281,
+       41.462551
+      ],
+      [
+       1.885659,
+       41.462461
+      ],
+      [
+       1.885839,
+       41.463404
+      ],
+      [
+       1.884401,
+       41.463494
+      ],
+      [
+       1.884281,
+       41.462551
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "id": "fixture-0004",
+    "site": "fixture",
+    "type": "clearing",
+    "first_date": "2026-06-23",
+    "last_date": "2026-06-23",
+    "area_ha": 1.2,
+    "sensor": "NISAR L-band",
+    "signal": {
+     "metric": "HV_dB",
+     "before": -14.0,
+     "after": -20.0,
+     "delta": -6.0
+    },
+    "confidence": "low",
+    "verdict": "review",
+    "reasons": [
+     {
+      "code": "zoning_non_buildable",
+      "text": "The land is zoned as non-buildable.",
+      "source": "Urban-planning map (fake example)",
+      "url": null,
+      "effect": "raises"
+     },
+     {
+      "code": "small_area",
+      "text": "The change is small and the signal is weak.",
+      "source": "Radar measurement (fake example)",
+      "url": null,
+      "effect": "neutral"
+     }
+    ],
+    "explain": "Radar saw the tree signal drop by -6 dB here, the pattern left when forest is cut.",
+    "evidence": {
+     "before": "evidence/fixture-0004_before.png",
+     "after": "evidence/fixture-0004_after.png",
+     "series": "series/fixture-0004.json"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       1.809607,
+       41.429305
+      ],
+      [
+       1.818595,
+       41.428586
+      ],
+      [
+       1.821232,
+       41.431641
+      ],
+      [
+       1.819554,
+       41.434964
+      ],
+      [
+       1.813202,
+       41.435593
+      ],
+      [
+       1.808768,
+       41.433078
+      ],
+      [
+       1.809607,
+       41.429305
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "id": "fixture-0005",
+    "site": "fixture",
+    "type": "fire",
+    "first_date": "2025-07-15",
+    "last_date": "2025-07-15",
+    "area_ha": 61.7,
+    "sensor": "Sentinel-1 C-band",
+    "signal": {
+     "metric": "VH_dB",
+     "before": -14.0,
+     "after": -18.0,
+     "delta": -4.0
+    },
+    "confidence": "medium",
+    "verdict": "expected",
+    "reasons": [
+     {
+      "code": "fire_recorded",
+      "text": "A wildfire was recorded here on the same dates.",
+      "source": "NASA FIRMS (fake example)",
+      "url": "https://firms.modaps.eosdis.nasa.gov/",
+      "effect": "lowers"
+     }
+    ],
+    "explain": "Radar saw the tree signal drop by -4 dB here, matching a recorded wildfire.",
+    "evidence": {
+     "before": "evidence/fixture-0005_before.png",
+     "after": "evidence/fixture-0005_after.png",
+     "series": "series/fixture-0005.json"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       1.856202,
+       41.471012
+      ],
+      [
+       1.859678,
+       41.470832
+      ],
+      [
+       1.860037,
+       41.472808
+      ],
+      [
+       1.85776,
+       41.473347
+      ],
+      [
+       1.855963,
+       41.472539
+      ],
+      [
+       1.856202,
+       41.471012
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "id": "fixture-0006",
+    "site": "fixture",
+    "type": "earthworks",
+    "first_date": "2026-10-09",
+    "last_date": "2026-11-02",
+    "area_ha": 7.4,
+    "sensor": "NISAR L-band",
+    "signal": {
+     "metric": "HV_dB",
+     "before": -14.0,
+     "after": -17.0,
+     "delta": -3.0
+    },
+    "confidence": "medium",
+    "verdict": "review",
+    "reasons": [
+     {
+      "code": "zoning_non_buildable",
+      "text": "The land is zoned as non-buildable.",
+      "source": "Urban-planning map (fake example)",
+      "url": null,
+      "effect": "raises"
+     },
+     {
+      "code": "no_record_found",
+      "text": "No building, permit or planned project is on record here.",
+      "source": "Land registry (fake example)",
+      "url": "https://www.sedecatastro.gob.es/",
+      "effect": "raises"
+     }
+    ],
+    "explain": "The surface here kept changing between satellite passes, the pattern of moving earth.",
+    "evidence": {
+     "before": "evidence/fixture-0006_before.png",
+     "after": "evidence/fixture-0006_after.png",
+     "series": "series/fixture-0006.json"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       1.877161,
+       41.427371
+      ],
+      [
+       1.878959,
+       41.427326
+      ],
+      [
+       1.879019,
+       41.428584
+      ],
+      [
+       1.877221,
+       41.428629
+      ],
+      [
+       1.877161,
+       41.427371
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "id": "fixture-0007",
+    "site": "fixture",
+    "type": "structure",
+    "first_date": "2024-05-15",
+    "last_date": "2024-08-15",
+    "area_ha": 2.1,
+    "sensor": "Sentinel-1 C-band",
+    "signal": {
+     "metric": "VV_dB",
+     "before": -8.0,
+     "after": 0.0,
+     "delta": 8.0
+    },
+    "confidence": "medium",
+    "verdict": "expected",
+    "reasons": [
+     {
+      "code": "planned_sector",
+      "text": "Inside a planned development sector.",
+      "source": "Urban-planning map (fake example)",
+      "url": null,
+      "effect": "lowers"
+     },
+     {
+      "code": "cadastre_building_found",
+      "text": "A new building is registered here.",
+      "source": "Land registry (fake example)",
+      "url": "https://www.sedecatastro.gob.es/",
+      "effect": "lowers"
+     }
+    ],
+    "explain": "Radar saw a strong new echo here (+8 dB), the pattern of walls or metal structures.",
+    "evidence": {
+     "before": "evidence/fixture-0007_before.png",
+     "after": "evidence/fixture-0007_after.png",
+     "series": "series/fixture-0007.json"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "sarwatch",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "postCreateCommand": "pip install -e '.[radar,verdict,dev]'",
+  "secrets": {
+    "EARTHDATA_TOKEN": {
+      "description": "NASA Earthdata Login user token (urs.earthdata.nasa.gov > Generate Token). Needed to read NISAR and OPERA data."
+    }
+  }
+}

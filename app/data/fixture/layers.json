@@ -1,0 +1,54 @@
+{
+ "layers": [
+  {
+   "id": "radar_before",
+   "title": "Radar picture before",
+   "date": "2024-01-15",
+   "url": "layers/radar_before.png",
+   "coordinates": [
+    [
+     1.8,
+     41.48
+    ],
+    [
+     1.9,
+     41.48
+    ],
+    [
+     1.9,
+     41.42
+    ],
+    [
+     1.8,
+     41.42
+    ]
+   ],
+   "caption": "Fake radar picture. Red = surface echo (HH), green = vegetation echo (HV)."
+  },
+  {
+   "id": "radar_after",
+   "title": "Radar picture after",
+   "date": "2026-11-02",
+   "url": "layers/radar_after.png",
+   "coordinates": [
+    [
+     1.8,
+     41.48
+    ],
+    [
+     1.9,
+     41.48
+    ],
+    [
+     1.9,
+     41.42
+    ],
+    [
+     1.8,
+     41.42
+    ]
+   ],
+   "caption": "Fake radar picture after the changes."
+  }
+ ]
+}
