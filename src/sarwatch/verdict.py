@@ -432,7 +432,20 @@ def apply_file(
         )
     if not dry_run:
         path.write_text(json.dumps(doc, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        _refresh_stages(path.parent / "stages.geojson", doc)
     return before, after, failed
+
+
+def _refresh_stages(path: Path, changes: dict) -> None:
+    """Give every stage of a growing outline (stages.geojson, if the site has one) the strongest verdict of its members."""
+    if not path.is_file():
+        return
+    rank = {None: 0, "expected": 1, "review": 2, "high_concern": 3}
+    verdicts = {f["properties"]["id"]: f["properties"].get("verdict") for f in changes["features"]}
+    stages = json.loads(path.read_text(encoding="utf-8"))
+    for stage in stages["features"]:
+        stage["properties"]["verdict"] = max((verdicts.get(i) for i in stage["properties"]["members"]), key=rank.get)
+    path.write_text(json.dumps(stages, separators=(",", ":")) + "\n", encoding="utf-8")
 
 
 def main(argv=None) -> int:

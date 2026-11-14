@@ -213,6 +213,53 @@ def _check_change_sources(sources, where: str, errors: list[str]) -> None:
             errors.append(f"{w}: note must be a string")
 
 
+def _check_stages(site_dir: Path, change_ids: set, errors: list[str]) -> None:
+    """stages.geojson (optional): the growing outline of a group of changes."""
+    path = site_dir / "stages.geojson"
+    if not path.is_file():
+        return
+    doc = _load(path, errors)
+    if doc is None:
+        return
+    features = doc.get("features")
+    if doc.get("type") != "FeatureCollection" or not isinstance(features, list):
+        errors.append(f"{path}: must be a FeatureCollection")
+        return
+    last: dict = {}  # per group: (date, area_ha)
+    for i, f in enumerate(features):
+        where = f"{path}: features[{i}]"
+        p = f.get("properties") if isinstance(f, dict) else None
+        if not isinstance(p, dict):
+            errors.append(f"{where}: needs properties")
+            continue
+        _check_geometry(f.get("geometry"), where, errors)
+        for key in ("group", "title"):
+            if not isinstance(p.get(key), str) or not p[key]:
+                errors.append(f"{where}: {key} must be a non-empty string")
+        ok = _is_date(p.get("date")) and _is_num(p.get("area_ha"))
+        if not _is_date(p.get("date")):
+            errors.append(f"{where}: date must be YYYY-MM-DD")
+        if not _is_num(p.get("area_ha")) or p["area_ha"] <= 0:
+            errors.append(f"{where}: area_ha must be a positive number")
+        if p.get("verdict") is not None and p["verdict"] not in VERDICTS:
+            errors.append(f"{where}: verdict must be null or one of {sorted(VERDICTS)}")
+        members = p.get("members")
+        if not (isinstance(members, list) and members and all(isinstance(m, str) for m in members)):
+            errors.append(f"{where}: members must be a non-empty list of change ids")
+        else:
+            unknown = sorted(set(members) - change_ids)
+            if unknown:
+                errors.append(f"{where}: members {unknown} are not in changes.geojson")
+        group = p.get("group")
+        if ok and group in last:
+            if p["date"] <= last[group][0]:
+                errors.append(f"{where}: dates must be strictly increasing within group {group}")
+            if p["area_ha"] < last[group][1]:
+                errors.append(f"{where}: area_ha must not decrease within group {group}")
+        if ok:
+            last[group] = (p["date"], p["area_ha"])
+
+
 def _check_story(site_dir: Path, errors: list[str]) -> None:
     path = site_dir / "story.json"
     story = _load(path, errors)
@@ -461,6 +508,7 @@ def validate(data_dir) -> list[str]:
         seen: set = set()
         for j, feature in enumerate(features):
             _check_change(feature, sid, site_dir, seen, f"{sid}/changes.geojson: features[{j}]", errors)
+        _check_stages(site_dir, {f.get("properties", {}).get("id") for f in features if isinstance(f, dict)}, errors)
     return errors
 
 
