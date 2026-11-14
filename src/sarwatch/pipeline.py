@@ -759,6 +759,58 @@ def smooth_parts(geoms: list) -> list:
     return out
 
 
+STAGE_RANK = {None: 0, "expected": 1, "review": 2, "high_concern": 3}  # which verdict is the strongest
+
+
+def clearing_stages(features: list, scope, group: str = "clearing", title: str = "Cleared area") -> list:
+    """The primary scope's changes (the same membership rule as the monthly parts: PRIMARY_INSIDE of the outline lies
+    inside `scope`) as one area that grows: one GeoJSON feature per date on which a part was added, whose geometry is
+    the union of all parts up to that date (holes under 1 ha filled, outline smoothed). `features` are the loaded
+    changes.geojson features; `scope` is a shapely geometry."""
+    from shapely.geometry import mapping, shape
+    from shapely.ops import unary_union
+
+    from . import merge
+
+    parts = [(f["properties"], shape(f["geometry"])) for f in features]
+    parts = [(p, g) for p, g in parts if g.intersection(scope).area >= PRIMARY_INSIDE * g.area]
+    days = sorted({p["first_date"] for p, _ in parts})
+    if not days:
+        return []
+    unions = [unary_union([g for p, g in parts if p["first_date"] <= day]) for day in days]
+    smooth = [smooth_parts([u])[0] for u in unions]  # one call each: a call hands every ground point to one geometry
+    out = []
+    for day, geom in zip(days, smooth):
+        members = sorted(p["id"] for p, _ in parts if p["first_date"] <= day)
+        verdicts = [p.get("verdict") for p, _ in parts if p["first_date"] <= day]
+        strongest = max(verdicts, key=lambda v: STAGE_RANK.get(v, 0))
+        out.append({"type": "Feature", "geometry": mapping(geom), "properties": {
+            "group": group, "title": title, "date": day, "area_ha": round(merge.area_ha(geom), 2),
+            "verdict": strongest, "members": members}})
+    return out
+
+
+def write_stages(site_dir, site: Site) -> int:
+    """Write <site_dir>/stages.geojson from the site's changes.geojson (sites with a primary scope only). Returns the
+    number of stages written. Run again after the verdict step: the outline takes the strongest verdict."""
+    if not site.primary_scope:
+        return 0
+    site_dir = Path(site_dir)
+    scope = shape_of(REPO_ROOT / site.primary_scope)
+    changes = json.loads((site_dir / "changes.geojson").read_text(encoding="utf-8"))
+    stages = clearing_stages(changes["features"], scope)
+    if stages:
+        doc = {"type": "FeatureCollection", "features": stages}
+        (site_dir / "stages.geojson").write_text(json.dumps(doc, separators=(",", ":")) + "\n", encoding="utf-8")
+    return len(stages)
+
+
+def shape_of(path):
+    from shapely.geometry import shape
+
+    return shape(json.loads(Path(path).read_text(encoding="utf-8"))["geometry"])
+
+
 def _part_signal(run, outline: dict) -> dict | None:
     """{metric, before, after, delta} of the run's cross-pol mean under the outline: median of the baseline passes
     (as the run's pictures: first 3) and of the last 3 passes."""
@@ -1176,6 +1228,8 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         log.info("merged: %d changes from %s", len(merged), ", ".join(SHORT.get(r.sensor, r.sensor) for r in runs)
                  + (" and the optical alerts" if optical else ""))
     written = write_site(site_dir, site_id, runs, merged=merged)
+    if merged and write_stages(site_dir, site):
+        log.info("wrote %s", site_dir / "stages.geojson")
     (first, last), bbox = written["time_range"], written["bbox"]  # first to last pass used; around all changes
     stops = snapshot_list(runs)
     if optical_days:  # the optical states that date a change are stops too

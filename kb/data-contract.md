@@ -66,6 +66,17 @@ frames are north-up and the same size. Each set (`radar`, `photo`) is one pictur
 frame at or before the slider date. Written by `python -m sarwatch.frames <site>` (radar: VH dB, one fixed grey
 stretch, pixels that lost echo since summer 2025 tinted magenta-pink; photo: HLS true colour, cloud-free days). A site without `frames.json` is valid.
 
+## `stages.geojson` (optional): one outline that grows
+For sites whose parts of one clearing interleave on the ground (Muhos). A FeatureCollection with one feature per date on
+which a part was added. Properties: `group` (text id, e.g. `clearing`), `title` (plain words, e.g. "Cleared area"),
+`date` (`YYYY-MM-DD`, the `first_date` of the part added), `area_ha` (geodesic area of the union so far), `verdict` (the
+strongest verdict among the members so far, or null), `members` (ids in `changes.geojson` included so far). Geometry:
+the union of all members up to that date (holes under 1 ha filled, outline smoothed), Polygon or MultiPolygon.
+Members are the changes whose outline lies at least half inside the site's `primary_scope`. The app draws, for the
+slider date, the latest stage at or before it with one bold outline in its verdict colour; members of a group lose their
+own outlines but stay clickable. The validator checks per group: dates strictly increasing, `area_ha` never decreasing,
+members exist. Written by the pipeline (`pipeline.write_stages`); the verdict step refreshes `verdict`. A site without the file is valid.
+
 ## `series/<change id>.json`
 `{"series": [{name, unit, sensor, dates[], values[]}], "events": [{date, label}]}`. Each series has its own dates
 (NISAR and Sentinel-1 pass on different days); `values` are numbers or null, the same length as `dates`. `name` is
