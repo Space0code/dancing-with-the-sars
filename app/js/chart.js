@@ -141,7 +141,7 @@ export function buildChart(data, change) {
     h("p", { class: "note" }, HINTS[change.type] ?? GENERIC_HINT));
 }
 
-/** A site story's curve (story.chart): y from 0, series names as the legend, `note` as the caption, a slider line. */
+/** A site story's curve (story.chart): y from 0, series names as the legend, each series' `note` as a line under it, the chart's `note` as the caption, a slider line. */
 export function buildStoryChart(data, chart) {
   const series = usable(data);
   if (!series.some((s) => s.values?.some((v) => v != null))) return null; // nothing to draw: no chart at all
@@ -149,6 +149,7 @@ export function buildStoryChart(data, chart) {
   const node = h("figure", { class: "story-chart" },
     chart.title ? h("figcaption", { class: "story-chart-title" }, chart.title) : null,
     svg, legendFor(lines, events, (s) => s.name),
+    ...series.filter((s) => s.note).map((s) => h("p", { class: "note" }, s.note)),
     chart.note ? h("p", { class: "note" }, chart.note) : null);
   return { node, setDate: setCursor };
 }
