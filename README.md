@@ -1,8 +1,11 @@
 # Dancing with the SARs
 
 NASA Space Apps Challenge 2026 (Barcelona, 14–15 Nov). Challenge: build an interactive app that uses **NISAR** radar
-data to track surface change on Earth. Our angle: the footprint of the recent **datacenter buildout**
-(land conversion, construction, surrounding infrastructure).
+data to track surface change on Earth. Our app watches a region with radar (NISAR + Sentinel-1: works through clouds,
+day and night), finds where the land changed (**forest clearing, new buildings, earthworks, ground sinking**) and tells
+regulators in plain language **which changes look expected and which need a look**, with the evidence and a timeline.
+Pilot: **Catalonia**. Inspired by the 2026 Finland case, where Google's subsidiary cleared forest before its
+environmental review was finished. Details: [kb/product.md](kb/product.md).
 
 **Team:** Tian (`TianK003`), Tomi (`Space0code`), Andrea (`molte38`).
 
