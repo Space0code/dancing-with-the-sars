@@ -49,6 +49,56 @@
     ]
    ],
    "caption": "Radar picture from NISAR: the typical echo of 3 passes, 9 Oct to 2 Nov 2026. Red = surface echo (HH), strong from bare ground and buildings. Green = vegetation echo (HV), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
+  },
+  {
+   "id": "sentinel_1_c_band_before",
+   "title": "Sentinel-1 radar, before (29 Jun to 9 Sep 2016)",
+   "date": "2016-08-04",
+   "url": "layers/sentinel_1_c_band_before.png",
+   "coordinates": [
+    [
+     1.788279,
+     41.490066
+    ],
+    [
+     1.910087,
+     41.491285
+    ],
+    [
+     1.911448,
+     41.409962
+    ],
+    [
+     1.789791,
+     41.408746
+    ]
+   ],
+   "caption": "Radar picture from Sentinel-1: the typical echo of 3 passes, 29 Jun to 9 Sep 2016. Red = surface echo (VV), strong from bare ground and buildings. Green = vegetation echo (VH), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
+  },
+  {
+   "id": "sentinel_1_c_band_after",
+   "title": "Sentinel-1 radar, after (20 Jul to 18 Sep 2026)",
+   "date": "2026-08-19",
+   "url": "layers/sentinel_1_c_band_after.png",
+   "coordinates": [
+    [
+     1.788279,
+     41.490066
+    ],
+    [
+     1.910087,
+     41.491285
+    ],
+    [
+     1.911448,
+     41.409962
+    ],
+    [
+     1.789791,
+     41.408746
+    ]
+   ],
+   "caption": "Radar picture from Sentinel-1: the typical echo of 3 passes, 20 Jul to 18 Sep 2026. Red = surface echo (VV), strong from bare ground and buildings. Green = vegetation echo (VH), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
   }
  ]
 }

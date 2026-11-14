@@ -6,7 +6,7 @@
    "time_range": ["2026-03-01", "2026-11-04"]},
   {"id": "agroparc", "name": "Agroparc Penedès, Catalonia", "country": "ES", "ready": true,
    "center": [1.85, 41.45], "zoom": 13, "bbox": [1.79, 41.41, 1.91, 41.49],
-   "time_range": ["2026-06-23", "2026-11-02"]},
+   "time_range": ["2016-06-29", "2026-11-02"]},
   {"id": "catalonia", "name": "Catalonia overview", "country": "ES", "ready": false,
    "center": [1.6, 41.8], "zoom": 7.5, "bbox": [0.16, 40.52, 3.33, 42.86],
    "time_range": ["2023-01-01", "2026-11-05"]},
