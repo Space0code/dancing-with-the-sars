@@ -1,7 +1,7 @@
 # Data sources
 
 Which datasets help **detect** a land change or **judge** it (allowed? expected?), for Catalonia + the Finland test case.
-Last updated 2026-11-14 (web research + live catalog checks). EDL = free NASA Earthdata Login. Effort L/M/H.
+Last updated 2026-11-14 (web research + live catalog checks + live service queries for #14). EDL = free NASA Earthdata Login. Effort L/M/H.
 
 ## Coverage checks we ran (ASF search API, 14 Nov 2026)
 - NISAR GCOV over Catalonia since 2026-06-17: **147 granules, ~185 GB, 13 track/frame footprints**, median 1.5 GB each,
@@ -47,11 +47,32 @@ Not useful here: GLAD alerts (tropics only), SEDAC (frozen 2025), ECOSTRESS, EMI
 | ICGC LiDAR (PNOA fallback) | ≥8 pts/m², flown 2021–23 | download only | cut/fill elevation differences | M–H |
 | SIOSE AR | land use 2017 | WFS | baseline | M |
 | **PEIN + Natura 2000** | protected areas (Natura 2000 boundaries from 2019) | ✓ ArcGIS REST, all Catalonia: `gissrv.diba.cat/arcgis/rest/services/SITXELL/PEIN_XN2000_ENPE/MapServer` | change inside → escalate | L |
-| **Urban-planning map (MUC)** | urban / buildable / non-buildable land | shapefile + WMS; REST query only for Barcelona province; development sectors on open-data API `6wpu-9y2e` | change on non-buildable land → flag | M |
+| **Urban-planning map (MUC)** | urban / buildable / non-buildable land | ✓ **WFS, all Catalonia** (see below); REST copy for Barcelona province only; development sectors on open-data API `6wpu-9y2e` | change on non-buildable land → flag | L |
 | Solar PV plants (open data `ggx8-jkp4`) | status, ha, environmental-assessment procedure; municipality only | ✓ Socrata API, no login | explains many clearings | L |
 | Planning register (RPUC), environmental assessments, forest-cutting permits, ICGC InSAR | PDFs / county aggregates / not public | ✗ | manual check only | H |
 
 Open-data portal: `analisi.transparenciacatalunya.cat` (Socrata API).
+
+### How we query them (verified live 14 Nov 2026; code: `src/sarwatch/context/`)
+All Catalan / Spanish services answer in **EPSG:25831** (ETRS89 / UTM 31N, metres, x = easting). No login anywhere.
+- **PEIN / Natura 2000** (`protected.py`): `…/PEIN_XN2000_ENPE/MapServer/{0,1,3}/query`, POST, polygon as esriJSON in
+  EPSG:25831, `returnGeometry=false`. Layers: 0 PEIN (`NOM_PEIN`, `CODI_PEIN`) · 1 Natura 2000 (`NOM_XN2`, `CODI_XN2`,
+  `LIC_ZEC`/`ZEPA` = `S`/`No` for SAC/SPA, `FND_ZEC` = EEA site-sheet link) · 3 ENPE (`NOM_ESPAI`, `CODI_ESPAI`:
+  pnac/pnat/pnin/rni/rnp/rnfs + buffer zones zpnac/zpnat/zrnp). Covers all Catalonia (Delta de l'Ebre answers).
+  `outFields` naming a field the layer lacks → HTTP 200 with `{"error":…}`. Occasional random 400s → retry.
+- **Cadastre** (`cadastre.py`): `ovc.catastro.meh.es/INSPIRE/wfsBU.aspx?service=WFS&version=2.0.0&request=GetFeature&
+  typeNames=BU:Building&srsName=EPSG::25831&bbox=x0,y0,x1,y1`. A 9 km² box → `Area of extension out of limits`; we
+  tile at 1.9 km. GML 3.2, ISO-8859-1. Construction date `dateOfConstruction/…/beginning` is **year precision** (1 Jan);
+  `beginLifespanVersion` is the record-edit date, not construction.
+- **MUC zoning** (`zoning.py`): GeoServer WFS `sig.gencat.cat/ows/PLANEJAMENT/wfs`, layer
+  `PLANEJAMENT:MUC_CLASSIFICACIONS`, `bbox=…,urn:ogc:def:crs:EPSG::25831`, `outputFormat=application/json`.
+  `CODI_CLAS_MUC` has 5 values across Catalonia: SUC / SNC (urban), SUD / SND (developable), SNU (non-buildable).
+  Polygons can be big (a municipality's whole SNU area: ~200 kB for a 500 m box). Same server: WMS
+  `…/PLANEJAMENT/wms` and other layers (qualifications, sectors, municipal boundaries).
+- **Solar list** (`solar.py`): `…/resource/ggx8-jkp4.json?$where=starts_with(codi_municipi,'08091')`. 379 rows (Nov 2026);
+  `estat`: En tramitació / Autoritzat / En servei / Aprovat / No autoritzat / Desistit. `codi_municipi` = 5-digit INE +
+  check digit; one row per plant per municipality. Point → municipality: WFS layer `PLANEJAMENT:MUC_AMBIT_MUNICIPAL`
+  (`CODI_INE`, `MUNICIPI`) + point-in-polygon.
 
 ## Ranked for the MVP (research view, not yet a team decision)
 1. OPERA DIST-ALERT-HLS: clearing alerts with zero processing
