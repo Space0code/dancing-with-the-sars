@@ -35,6 +35,17 @@ NODATA = -9999
 SCALE = 10000.0                  # reflectance = value / SCALE
 
 
+def _cloud(umm: dict) -> float:
+    """The catalogue's CLOUD_COVERAGE of the whole tile in per cent (100 when it is missing)."""
+    for attr in umm.get("AdditionalAttributes", []):
+        if attr.get("Name") == "CLOUD_COVERAGE":
+            try:
+                return float(attr["Values"][0])
+            except (KeyError, IndexError, ValueError):
+                break
+    return 100.0
+
+
 def granule_from_umm(item: dict) -> distalert.Granule:
     """One CMR umm_json item as a Granule: name HLS.<S30|L30>.T<tile>.<YYYYDDDThhmmss>.v2.0, urls by band name."""
     umm = item.get("umm", item)
@@ -52,7 +63,8 @@ def granule_from_umm(item: dict) -> distalert.Granule:
         name=name, tile=parts[2][1:] if len(parts) > 2 else "",
         start=datetime.fromisoformat(t.replace("Z", "+00:00")), sensor=parts[1] if len(parts) > 1 else "",
         urls=urls, footprint=distalert._footprint(umm),
-        extra={"produced": "", "platform": next((x.get("ShortName", "") for x in umm.get("Platforms", [])), "")})
+        extra={"produced": "", "platform": next((x.get("ShortName", "") for x in umm.get("Platforms", [])), ""),
+               "cloud": _cloud(umm)})
 
 
 def search(bbox, start, end, products=PRODUCTS, timeout: float = 120) -> list:

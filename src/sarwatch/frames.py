@@ -38,6 +38,7 @@ RADAR_RANGE_DB = (-21.0, -9.0)       # fixed grey stretch of VH (after the per-d
 PHOTO_RANGE = (0.0, 0.22)            # reflectance mapped to 0..1 before the gamma (same for every date)
 PHOTO_GAMMA = 1.0 / 1.8
 PHOTO_MIN_CLEAR = 0.9
+PHOTO_PRESELECT, PHOTO_PRESELECT_LAST = 3, 10  # yearly photos: passes per year whose mask is read, and in the last year
 PHOTO_MIN_GAP_DAYS = 3               # thin photo days closer together than this (keep the clearer one)
 TIME_MAX_GAP_DAYS = 15               # temporal average: neighbours further away in time (snow gap) are not used
 BASELINE_SPAN = (date(2025, 6, 1), date(2025, 9, 30))   # snow-free summer: per-pixel median = "unchanged" level
@@ -437,6 +438,23 @@ def tiles_over(granules, window, min_cover: float = 0.02) -> set:
     return {t for t, v in cover.items() if float(np.median(v)) >= min_cover}
 
 
+def preselect(groups: dict, main_tiles: set, per_year: int, last_year_n: int) -> dict:
+    """The groups worth reading the cloud mask of, chosen from the catalogue's tile cloud cover alone: those that have
+    every main tile, the per_year lowest-cover ones of each year (ties: nearest 15 July), last_year_n for the last year."""
+    def cloud(item):
+        (day, _), members = item
+        return (max(g.extra.get("cloud", 100.0) for g in members if g.tile in main_tiles),
+                abs((day - date(day.year, 7, 15)).days))
+
+    whole = [i for i in groups.items() if main_tiles <= {g.tile for g in i[1]}]
+    last = max((k[0].year for k, _ in whole), default=0)
+    keep = {}
+    for year in {k[0].year for k, _ in whole}:
+        ranked = sorted((i for i in whole if i[0][0].year == year), key=cloud)
+        keep.update(ranked[:last_year_n if year == last else per_year])
+    return keep
+
+
 def clear_groups(groups, window, token, min_clear: float, workers: int = 12, cache: Path | None = None) -> list:
     """[(day, clear fraction, granules)] of the groups (granules of one satellite pass on one day, one per tile)
     whose Fmasks, laid side by side, are at least min_clear clear over the window. Unreadable ones are dropped.
@@ -516,6 +534,9 @@ def photo_frames(site: FrameSite, out_dir: Path, cache_dir: Path, token=None) ->
             groups.setdefault((g.start.date(), g.sensor), []).append(g)
     log.info("photos: %d HLS granules on tiles %s, %d passes", sum(map(len, groups.values())), sorted(tiles),
              len(groups))
+    if site.photo_yearly >= 0:  # no mask reads for every candidate: the catalogue's cloud cover picks a few
+        groups = preselect(groups, tiles_over(granules, window, 0.1), PHOTO_PRESELECT, PHOTO_PRESELECT_LAST)
+        log.info("photos: %d passes preselected by catalogue cloud cover", len(groups))
     token = distalert._token(token) if any(s1._remote(u) for g in granules for u in g.urls.values()) else token
     clear = clear_groups(groups, window, token, PHOTO_MIN_CLEAR, cache=cache_dir / "clear.json")
     cands = [(day, f, members) for day, f, members in clear if day not in site.photo_exclude]
