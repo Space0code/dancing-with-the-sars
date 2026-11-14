@@ -335,3 +335,23 @@ def test_structure_db_turns_a_weak_copol_rise_into_other():
     assert detect_changes(stack, DATES, PIXEL_M).regions[0].type == "structure"
     strict = detect_changes(stack, DATES, PIXEL_M, ChangeParams(structure_db=6.0))
     assert strict.regions[0].type == "other"
+
+
+def test_noise_k_drops_a_busy_patch_and_keeps_a_steady_step():
+    """A quay where ships come and go: the co-pol swings by 6 dB from pass to pass, and the late passes happen to sit
+    4 dB higher. A building next to it: a steady +6 dB step. Only the step is a change once noise_k is on."""
+    stack = scene(10)
+    busy = (slice(80, 110), slice(20, 70))  # 15 ha
+    swings = [0, 6, 0, 6, 0, 8, 2, 10, 4, 4, 10, 4]  # dB per pass: baseline median 0, late median 4
+    for t, db in enumerate(swings):
+        stack["HH"][t][busy] *= gain(db)
+    stack["HH"][CHANGE_PASS:][(slice(None), *RECT)] *= gain(6)
+    rect, quay = truth_mask(RECT), truth_mask(busy)
+
+    plain = detect_changes(stack, DATES, PIXEL_M)
+    assert any((plain.labels == r.label)[quay].any() for r in plain.regions)  # the quay is a false alarm
+
+    guarded = detect_changes(stack, DATES, PIXEL_M, ChangeParams(noise_k=2.0))
+    assert len(guarded.regions) == 1
+    assert iou(guarded.labels == guarded.regions[0].label, rect) >= 0.7
+    assert guarded.regions[0].type == "structure"

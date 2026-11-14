@@ -508,6 +508,12 @@ def test_regions_dated_inside_the_baseline_are_dropped():
     assert out.first_change_idx[1, 1] == 5 and out.first_change_idx[0, 0] == -1
     assert pipeline._drop_baseline_dated(result, date(2025, 6, 1)) is result
 
+    result.regions[1].type = "other"  # keep_types: only the listed types stay, labels renumbered the same way
+    kept = pipeline._keep_types(result, ("structure", "clearing"))
+    assert [(r.label, r.first_date) for r in kept.regions] == [(1, date(2025, 6, 9)), (2, date(2025, 9, 25))]
+    assert kept.labels[0, 0] == 1 and kept.labels[2, 2] == 2 and kept.labels[1, 1] == 0
+    assert pipeline._keep_types(result, ("structure", "other")) is result
+
 
 def test_s1_months_that_leave_nothing_to_compare_are_an_error():
     for bad in ((), (0, 6), (13,), (6.5,)):

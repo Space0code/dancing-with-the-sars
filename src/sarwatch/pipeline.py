@@ -73,6 +73,8 @@ class NisarSettings:
     water_grow: int = 1            # pixels of shore masked around the water
     water_pol: str | None = None   # the polarization water_db applies to (None = co-pol)
     drop_baseline_dated: bool = False  # as S1Settings: a region dated inside the baseline passes is left out
+    keep_types: tuple | None = None    # keep only regions of these types (None = all), e.g. without "other" where
+                                       # the short NISAR record mostly sees the crop cycle on farm fields
 
 
 @dataclass
@@ -90,6 +92,7 @@ class S1Settings:
                                    # wind lifts the sea's VV to land levels, its VH stays near the noise floor
     drop_baseline_dated: bool = False  # drop regions dated inside the baseline passes: for a short baseline that
                                        # defines "before" (Muhos), such a date is an artefact, not a change
+    keep_types: tuple | None = None  # as NisarSettings
     mosaic: bool = False             # window larger than one burst: read the bursts of ONE track that cover it as one
                                      # mosaic per date (s1.pick_bursts / s1.read_mosaic) instead of one burst
     track: int | None = None         # with mosaic: fix the track instead of letting pick_bursts choose
@@ -190,11 +193,14 @@ SITES = {
     "barcelona": Site(
         id="barcelona", bbox=(1.85, 41.25, 2.45, 41.60),
         nisar=NisarSettings(start=date(2026, 6, 1), track=130, frame=22, direction="ASCENDING",
-                            params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True)),
+                            water_db=-23.0, water_pol="HV", water_grow=3,
+                            keep_types=("clearing", "structure", "earthworks"),
+                            params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True,
+                                                noise_k=2.0, structure_db=6.0)),
         s1=S1Settings(start=date(2016, 4, 1), min_gap_days=20, months=(6, 7, 8, 9), mosaic=True, track=132,
                       water_db=-24.0, water_pol="VH", water_grow=2,
-                      params=ChangeParams(boxcar=3, n_early=10, n_late=6, persist=99, threshold_db=3.0,
-                                          min_area_ha=1.0, normalize=True, hold=True)),
+                      params=ChangeParams(boxcar=3, n_early=5, n_late=6, persist=99, threshold_db=3.0,
+                                          min_area_ha=1.0, normalize=True, hold=True, noise_k=2.0)),
         sources=(
             ("Sentinel-1 C-band", "radar", "2016-06-05", None, 12, ("clearing", "structure", "earthworks", "other"),
              ()),
@@ -560,10 +566,25 @@ def _drop_baseline_dated(result, last_baseline):
     """Remove regions whose first_date lies in the baseline: a pass that defines "before" cannot be the date of a
     lasting change. Labels are renumbered so that regions[i].label == i + 1 still holds."""
     keep = [r for r in result.regions if r.first_date > last_baseline]
+    if len(keep) < len(result.regions):
+        log.info("dropped %d region(s) dated inside the baseline (up to %s)", len(result.regions) - len(keep),
+                 last_baseline)
+    return _keep_regions(result, keep)
+
+
+def _keep_types(result, types):
+    """Keep only regions of the given types (labels renumbered as _drop_baseline_dated)."""
+    keep = [r for r in result.regions if r.type in types]
+    if len(keep) < len(result.regions):
+        log.info("dropped %d region(s) of types other than %s", len(result.regions) - len(keep), ", ".join(types))
+    return _keep_regions(result, keep)
+
+
+def _keep_regions(result, keep: list):
+    """The result with only the regions in `keep` (a sublist of result.regions, in order), labels renumbered so that
+    regions[i].label == i + 1 still holds."""
     if len(keep) == len(result.regions):
         return result
-    log.info("dropped %d region(s) dated inside the baseline (up to %s)", len(result.regions) - len(keep),
-             last_baseline)
     remap = np.zeros(len(result.regions) + 1, dtype=result.labels.dtype)
     for i, r in enumerate(keep, 1):
         remap[r.label] = i
@@ -597,6 +618,8 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     result = detect_changes(stack, dates, pixel, params, valid=valid)
     if settings.drop_baseline_dated:
         result = _drop_baseline_dated(result, dates[n_early - 1])
+    if settings.keep_types is not None:
+        result = _keep_types(result, settings.keep_types)
     log.info("%s: %d dates, %d change regions (threshold %.1f dB, min %.2f ha)", sensor, len(dates),
              len(result.regions), params.threshold_db, params.min_area_ha)
     return Run(sensor=SENSOR_NAMES[sensor], result=result, dates=dates, stack=stack, transform=transform, epsg=epsg)

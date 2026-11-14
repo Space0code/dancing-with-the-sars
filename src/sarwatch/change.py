@@ -84,6 +84,10 @@ class ChangeParams:
     split_min_ha: float = 2.0  # a smaller part joins the neighbouring part it shares the longest edge with
     structure_db: float | None = None  # co-pol rise needed to call a region "structure" (None = threshold_db);
                                        # a weaker rise is "other". Raise it where no building is expected
+    noise_k: float | None = None  # busy surfaces, off by default: a pixel counts only if its change is at least
+                                  # noise_k x its own pass-to-pass spread, sqrt(sd_early^2 + sd_late^2) of the smoothed
+                                  # dB in the two windows. Stable ground (sd ~0.5 dB) keeps threshold_db; harbour quays
+                                  # with ships, container yards and farm fields (sd 2-4 dB) need a far larger step
 
 
 @dataclass
@@ -118,6 +122,14 @@ def _nanmedian(a: np.ndarray) -> np.ndarray:
     lo = np.take_along_axis(s, np.expand_dims(np.maximum(k - 1, 0) // 2, 0), axis=0)[0]
     hi = np.take_along_axis(s, np.expand_dims(k // 2, 0), axis=0)[0]
     return (lo + hi) / 2
+
+
+def _spread(db: np.ndarray) -> np.ndarray:
+    """Standard deviation over axis 0 of the usable passes (0 with fewer than two), float32."""
+    n = np.count_nonzero(np.isfinite(db), axis=0)
+    mean = np.nansum(db, axis=0) / np.maximum(n, 1)
+    var = np.nansum((db - mean) ** 2, axis=0) / np.maximum(n - 1, 1)
+    return np.sqrt(np.where(n >= 2, var, 0.0)).astype(np.float32)
 
 
 def _smooth_db(arr, valid: np.ndarray, size: int) -> np.ndarray:
@@ -292,6 +304,9 @@ def detect_changes(stack: dict, dates: list, pixel_size_m: tuple, params: Change
                 hit = (np.fmin.reduce(late, axis=0) >= thr) | (np.fmax.reduce(late, axis=0) <= -thr)
             else:
                 hit = np.abs(delta) >= thr  # NaN compares False, so unusable pixels never count as changed
+            if params.noise_k is not None:
+                spread = np.hypot(_spread(db[:n_early]), _spread(db[n_t - n_late:]))
+                hit &= np.abs(delta) >= params.noise_k * spread
         idx = _date_pixels(db[:, hit], early[hit], np.sign(delta[hit]), thr * DATING_FRACTION,
                            max(1, params.persist), n_t - n_late)
         seen = first[hit]
