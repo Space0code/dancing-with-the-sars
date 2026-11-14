@@ -46,7 +46,7 @@ search and `curl` header checks on 14 Nov 2026. Anything not checked against tho
 - **Projection:** UTM north/south (EPSG 32601-32660 / 32701-32760), NSIDC polar stereographic north (EPSG 3413) or
   Antarctic polar stereographic (3031). The ASF projections page says "north of 60°N → 3413"; spec Appendix B says
   3413 is for "Greenland and Northern Hemisphere sea ice" and UTM for "Northern Hemisphere land except Greenland".
-  So Muhos (64.8°N) is either 32635 or 3413 (unverified); the reader takes the EPSG from the file and handles both.
+  **Measured: Muhos (64.8°N) is 3413.** The reader takes the EPSG from the file and handles both.
   Appendix B prints `+lon_0=45` for 3413; the real EPSG:3413 uses `-45` (we use -45, pyproj agrees).
 - Each frame has a fixed projection for the whole mission (spec App. B), so one track + frame should give the same
   lattice on every date (unverified until the first stack read; `read_stack` checks it and raises if not).
@@ -117,9 +117,18 @@ NaN where the mask is 0 or 255, the value is NaN (fill) or ≤ 0 (no dB), or the
 - BETA products: valid-data mask misaligned with the data (BETA known issues); for PROVISIONAL (unverified).
 - Polarimetric phase calibration is off by 59° in PROVISIONAL; affects complex cross terms only, not `HHHH` / `HVHV`.
 
-## Measured cost
-To be measured by the orchestrator from the Codespace (live read test below): MB and seconds per crop, number of
-requests, EPSG and pixel spacing at Muhos, whether a whole-stack read stays on one grid.
+## Measured cost (first real read, 14 Nov 2026)
+One crop over Muhos with `read_crop`, bearer token, from a laptop on mobile data:
+- Granule `NISAR_L2_PR_GCOV_034_157_A_035_2005_DHDH_A_20261104T020320…` (track 157 / frame 35, 4 Nov 2026).
+- bbox (26.034, 64.838, 26.054, 64.848), about 1 × 1 km → 65 × 71 px at 20 m.
+- **23.07 MB in 22.4 s**, HH + HV + mask, 100% valid. Median HH −5.5 dB, HV −13.1 dB (plausible for boreal forest).
+- **The Muhos grid is EPSG:3413** (polar stereographic), transform (20, 0, 2617240, 0, −20, −898540): not UTM, and
+  not north-aligned on a map. Pixel area there is about 3.7% larger on paper than on the ground (scale factor
+  ≈1.018 at 64.8°N), so compute hectares from the lon/lat polygon, not from the pixel count.
+- Most of the 23 MB is fixed overhead (file metadata + whole 512 × 512 chunks), so a 10 × 10 km crop should cost only
+  a little more per date (not yet measured). Estimate for a site: 11 dates × 25–50 MB ≈ 0.3–0.6 GB.
+- Token note: the archive accepted the bearer token and redirected to a signed URL as the reader expects.
+- Still open: whether all dates of one track share one grid (`read_stack` raises if not).
 
 ## Code
 `src/sarwatch/nisar.py`: `search(bbox, start, end)` → `pick_track(granules, min_maturity)` → `read_crop(url, bbox)`
