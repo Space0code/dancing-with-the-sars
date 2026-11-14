@@ -25,7 +25,7 @@ rough ground and buildings), green = cross-pol (HV / VH, the "vegetation echo": 
 canopies), blue = co-pol minus cross-pol (high where there is little vegetation). Each channel maps
 a fixed dB range (COLOUR_DB, per radar band) to 0..255, so pictures of different dates and sites
 compare directly: woodland comes out green-yellow, bare or farmed ground purple-blue, buildings
-light pink to white, water dark blue. A run with one polarization gives a grey picture.
+light pink to white, calm water dark (near the noise floor). One polarization gives a grey picture.
 """
 from __future__ import annotations
 
@@ -338,7 +338,7 @@ def _layer_text(run: Run, pics: _Pictures, when: str) -> tuple:
     head = f"{passes}, {_span(used[0], used[-1], ' to ')}."
     co, cross = _co_cross(run.stack)
     if co is not None and cross is not None:
-        body = " Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark blue = water."
+        body = " Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
     else:
         pol = co or cross or next(iter(run.stack))
         source = "trees and bushes" if pol.upper() in CROSSPOL else "bare ground and buildings"
