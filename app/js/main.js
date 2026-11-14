@@ -25,6 +25,14 @@ function renderLegend() {
   );
 }
 
+// Phones: the legend and the picture's caption fold behind small buttons so most of the map stays visible.
+function wireFolds() {
+  const fold = (btn, box) =>
+    btn.addEventListener("click", () => btn.setAttribute("aria-expanded", String(box.classList.toggle("open"))));
+  fold($("legend-btn"), $("legend-box"));
+  fold($("caption-btn"), $("view-caption"));
+}
+
 function fillSiteSelect(sites) {
   $("site").replaceChildren(h("option", { value: "" }, "Choose a site…"), ...sites.map((s) => h("option", { value: s.id }, s.name)));
 }
@@ -65,6 +73,7 @@ async function main() {
   $("app-pitch").textContent = APP.pitch;
   setVerdictColors();
   renderLegend();
+  wireFolds();
   setupExplainer();
   if (!window.maplibregl) return showError("The map library could not be loaded. Check your internet connection and reload.");
 

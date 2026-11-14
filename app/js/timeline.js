@@ -1,10 +1,11 @@
 // Written by Claude. Timeline slider: one step = one satellite snapshot. Red bars mark where changes first show; story events get a flag.
-import { formatDate, sensorLabel, h } from "./format.js";
+import { formatDate, toDay, h } from "./format.js";
 
 const PLAY_SECONDS = 12; // time to play through all snapshots (each step lasts between MIN_STEP_MS and MAX_STEP_MS)
 const MIN_STEP_MS = 250;
 const MAX_STEP_MS = 900;
 const MAX_TICKS = 80; // with more snapshots the plain ticks would merge into a solid block, so only the red bars stay
+const GAP_DAYS = 60; // a longer pause between two snapshots is a gap worth a note
 const LEAD_IN = 4; // play from the end starts this many snapshots before the first change, not at the (often quiet) first one
 
 /** The site's snapshots, or (older data) the distinct change dates plus both ends of its time range. */
@@ -14,10 +15,6 @@ function snapshotsOf(site, features) {
   for (const f of features) dates.add(f.properties.first_date);
   return [...dates].filter((d) => d >= site.time_range[0] && d <= site.time_range[1]).sort().map((date) => ({ date, sensor: "" }));
 }
-
-/** "NISAR L-band + Sentinel-1 C-band" -> "NISAR radar + Sentinel-1 radar". */
-const satelliteNames = (sensor) =>
-  sensor ? sensor.split(" + ").map((s) => sensorLabel(s).replace(/ satellite$/, "")).join(" + ") : "";
 
 /** `onDate(iso)`: the slider moved to a snapshot. `onPlay()`: playing starts (before the first step). */
 export function createTimeline({ onDate, onPlay }) {
@@ -42,12 +39,11 @@ export function createTimeline({ onDate, onPlay }) {
 
   function emit() {
     const stop = stops[index()];
-    const who = satelliteNames(stop.sensor);
-    $("date-label").replaceChildren(
-      formatDate(stop.date),
-      ...(who ? [h("span", { class: "date-sub" }, ` · ${who}`)] : []),
-      h("span", { class: "date-sub" }, ` · image ${index() + 1} of ${stops.length}`)
-    );
+    $("date-label").replaceChildren(formatDate(stop.date), h("span", { class: "date-sub" }, ` · image ${index() + 1} of ${stops.length}`));
+    // Just stepped past a long gap in the snapshots (winter, left out on purpose): say so instead of silently jumping.
+    const prev = stops[index() - 1];
+    const gap = prev && toDay(stop.date) - toDay(prev.date) > GAP_DAYS;
+    $("gap-note").textContent = gap ? `Winter: no usable pictures between ${formatDate(prev.date)} and ${formatDate(stop.date)} (snow)` : "";
     onDate(stop.date);
   }
 
@@ -162,7 +158,7 @@ export function createTimeline({ onDate, onPlay }) {
       stop();
       stops = [];
       slider.disabled = playBtn.disabled = true;
-      for (const id of ["range-start", "range-end", "event-note", "total"]) $(id).textContent = "";
+      for (const id of ["range-start", "range-end", "event-note", "gap-note", "total"]) $(id).textContent = "";
       $("events").replaceChildren();
       $("ticks").replaceChildren();
       $("date-label").textContent = "Choose a site to see its changes over time";

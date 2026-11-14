@@ -104,7 +104,18 @@ export function createChangeMap(container, { onSelect, bounds }) {
       this.select(null);
       stopFlash();
       applyDateFilter();
-      this.view(site);
+      this.fitChanges(site, collection);
+    },
+    /** Open on the outlined area with a little margin (the site window is much wider); without outlines, the site view. */
+    fitChanges(site, collection) {
+      const pts = collection.features.flatMap((f) => f.geometry.coordinates.flat(f.geometry.type === "MultiPolygon" ? 2 : 1));
+      if (!pts.length) return this.view(site);
+      const lons = pts.map((p) => p[0]);
+      const lats = pts.map((p) => p[1]);
+      const narrow = container.clientWidth < 640; // the switch box covers the top of a phone map
+      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], {
+        padding: { top: narrow ? 56 : 110, bottom: narrow ? 30 : 60, left: narrow ? 20 : 60, right: narrow ? 20 : 60 }, maxZoom: 16, essential: true,
+      });
     },
     /** Fly to the site; `bottom` px at the bottom stay free (for the tour box). Padding is always set, as MapLibre keeps it. */
     view(site, bottom = 0) {

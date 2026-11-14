@@ -10,7 +10,8 @@ export function createSwipe(container, { onMove }) {
     class: "swipe-handle", tabindex: "0", role: "slider", "aria-label": "Move the line between before and after",
     "aria-valuemin": "0", "aria-valuemax": "100",
   }, h("span", { "aria-hidden": "true" }, "◂▸"));
-  const line = h("div", { class: "swipe-line", hidden: true }, h("div", { class: "swipe-grip" }), handle, left, right);
+  const hint = h("span", { class: "swipe-hint", "aria-hidden": "true" }, "drag");
+  const line = h("div", { class: "swipe-line", hidden: true }, h("div", { class: "swipe-grip" }), handle, hint, left, right);
   container.append(line);
 
   let frac = 0.5; // position as a fraction of the map width, so a resize keeps it in place
@@ -30,7 +31,8 @@ export function createSwipe(container, { onMove }) {
     left.style.transform = `translateX(${Math.max(0, left.offsetWidth + 12 - x)}px)`;
     right.style.transform = `translateX(${-Math.max(0, right.offsetWidth + 12 - (width() - x))}px)`;
   }
-  const fromEvent = (e) => set((e.clientX - container.getBoundingClientRect().left) / width());
+  const moved = () => line.classList.add("moved"); // the "drag" hint goes away once the viewer has moved the line
+  const fromEvent = (e) => (moved(), set((e.clientX - container.getBoundingClientRect().left) / width()));
 
   line.addEventListener("pointerdown", (e) => {
     if (!e.target.closest(".swipe-grip, .swipe-handle")) return;
@@ -46,6 +48,7 @@ export function createSwipe(container, { onMove }) {
     else if (e.key === "Home") set(0);
     else if (e.key === "End") set(1);
     else return;
+    moved();
     e.preventDefault();
     e.stopPropagation(); // the timeline also listens to arrow keys
   });

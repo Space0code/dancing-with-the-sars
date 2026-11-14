@@ -36,11 +36,13 @@
             <button id="view-photo" type="button" role="radio" aria-checked="false">Satellite</button>
           </div>
           <button id="compare-btn" type="button" class="compare" aria-pressed="false"><span class="wide-only">Compare before and after</span><span class="narrow-only">Compare</span></button>
+          <button id="caption-btn" type="button" class="help narrow-only" aria-expanded="false" aria-controls="view-caption" aria-label="What am I looking at?">?</button>
         </div>
         <p id="view-caption" class="view-caption"></p>
         <p id="frame-label" class="frame-label" aria-live="polite"></p>
       </section>
-      <div class="legend" aria-label="Legend">
+      <div class="legend" id="legend-box" aria-label="Legend">
+        <button id="legend-btn" type="button" class="legend-btn narrow-only" aria-expanded="false">Legend</button>
         <p class="legend-title">Marked changes</p>
         <ul id="legend"></ul>
       </div>
@@ -64,6 +66,7 @@
   <footer class="timeline" aria-label="Timeline">
     <div class="timeline-top">
       <output id="date-label" class="date-label"></output>
+      <span id="gap-note" class="gap-note" aria-live="polite"></span>
       <span id="total" class="total"></span>
     </div>
     <div class="timeline-row">
