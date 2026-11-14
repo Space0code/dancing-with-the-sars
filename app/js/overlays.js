@@ -1,6 +1,8 @@
 // Written by Claude. Layer control for the site's radar pictures: on/off and opacity per picture, with its caption.
 import { h, formatDate } from "./format.js";
 
+const LONG_CAPTION = 100; // characters
+
 export function renderLayerControl(layers, map) {
   const items = layers.length
     ? layers.map((l) => {
@@ -9,10 +11,12 @@ export function renderLayerControl(layers, map) {
           type: "range", min: "0", max: "100", value: "70", "aria-label": `Opacity of ${l.title}`,
           oninput: (e) => map.setOverlayOpacity(l.id, e.target.value / 100),
         });
+        const shown = l.date && !l.title.includes(formatDate(l.date)); // some titles already carry the date
+        const long = l.caption && l.caption.length > LONG_CAPTION; // real captions explain the colors: keep them one click away
         return h("div", { class: "layer-item" },
-          h("label", {}, check, l.date ? `${l.title} · ${formatDate(l.date)}` : l.title),
+          h("label", {}, check, shown ? `${l.title} · ${formatDate(l.date)}` : l.title),
           opacity,
-          l.caption ? h("p", {}, l.caption) : null
+          !l.caption ? null : long ? h("details", { class: "layer-info" }, h("summary", {}, "What am I looking at?"), h("p", {}, l.caption)) : h("p", {}, l.caption)
         );
       })
     : [h("p", { class: "layer-item" }, "This site has no radar pictures yet.")];
