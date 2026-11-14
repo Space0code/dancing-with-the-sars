@@ -1,0 +1,30 @@
+{
+ "version": 1,
+ "site": "muhos",
+ "default": {
+  "official": {
+   "source": "Helsingin Sanomat via Kaleva; Yle News",
+   "url": "https://www.kaleva.fi/hs-google-yritti-saada-poikkeusluvan-muhoksen-hakk/13686840",
+   "assessment_required": true,
+   "assessment_completed": false,
+   "assessment_note": "Tuike Finland learned in May 2026 that an environmental impact assessment was required; the clearing (March to August 2026) took place without a completed assessment, and Yle reports the assessments were still incomplete in October 2026.",
+   "actions": [
+    {
+     "kind": "stop_order",
+     "date": "2026-10-06",
+     "text": "The permit and supervisory agency (LVV) called on Tuike Finland to suspend the work immediately, and at the latest by 23 October 2026.",
+     "source": "Lupa- ja valvontavirasto press release",
+     "url": "https://www.sttinfo.fi/tiedote/72390663/lupa-ja-valvontavirasto-kehottaa-tuike-finland-oyta-keskeyttamaan-muhoksen-ja-kajaanin-datakeskushankkeiden-valmistelutoimet"
+    },
+    {
+     "kind": "investigation",
+     "date": "2026-10-29",
+     "text": "Oulu police opened a preliminary investigation on suspicion of environmental damage.",
+     "source": "Yle News",
+     "url": "https://yle.fi/a/74-20254086"
+    }
+   ]
+  }
+ },
+ "changes": {}
+}
