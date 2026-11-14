@@ -109,6 +109,13 @@ def test_arcgis_rings_with_a_hole_become_a_polygon_with_a_hole():
     assert protected._shape({"rings": []}) is None and protected._shape(None) is None
 
 
+def test_a_self_crossing_outline_keeps_both_lobes():
+    """``buffer(0)`` can drop the smaller lobe of a bowtie and underestimate the share; ``make_valid`` keeps both."""
+    bowtie = [[0, 0], [100, 100], [100, 0], [0, 50], [0, 0]]  # lobes of 3,333 and 833 m², crossing at (33, 33)
+    g = protected._shape({"rings": [bowtie]})
+    assert g.is_valid and g.area == pytest.approx(4166.67, abs=0.5)
+
+
 def test_fire_returns_a_known_2023_wildfire():
     r = fire.lookup(COLERA)
     assert r["checked"] and r["recorded"] is True and "error" not in r

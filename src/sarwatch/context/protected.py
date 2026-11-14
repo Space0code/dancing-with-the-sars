@@ -11,6 +11,7 @@ import json
 from shapely.geometry import LinearRing, MultiPolygon, Polygon
 from shapely.geometry.polygon import orient
 from shapely.ops import unary_union
+from shapely.validation import make_valid
 
 from ._common import UTM, fetch, safe, to_utm
 
@@ -43,7 +44,7 @@ def _shape(geom: dict | None):
     outers, holes = [], []
     for ring in (geom or {}).get("rings", []):
         if len(ring) >= 4:
-            (holes if LinearRing(ring).is_ccw else outers).append(Polygon(ring))
+            (holes if LinearRing(ring).is_ccw else outers).append(make_valid(Polygon(ring)))
     if not outers:
         return None
     g = unary_union(outers)
@@ -72,7 +73,7 @@ def lookup(geometry: dict, **options) -> dict:
 
     def add(attrs, shp, name, kind, code):
         shapes.append(shp)
-        share = None if shp is None else round(shp.buffer(0).intersection(g).area / g.area, 4)
+        share = None if shp is None else round(make_valid(shp).intersection(g).area / g.area, 4)
         areas.append({"name": attrs[name], "kind": kind, "code": attrs[code], "overlap_share": share})
 
     for a, shp in _query(0, esri):
@@ -85,7 +86,7 @@ def lookup(geometry: dict, **options) -> dict:
             out["url"] = a["FND_ZEC"].strip()  # official Natura 2000 site sheet: a page a human can open
     for a, shp in _query(3, esri):
         add(a, shp, "NOM_ESPAI", ENPE_KINDS.get(a["CODI_ESPAI"], a["CODI_ESPAI"]), "CODI_ESPAI")
-    known = [s.buffer(0) for s in shapes if s is not None]
+    known = [make_valid(s) for s in shapes if s is not None]  # not buffer(0): that can drop a lobe of a bowtie
     overall = None
     if areas and len(known) == len(shapes):
         overall = round(unary_union(known).intersection(g).area / g.area, 4)
