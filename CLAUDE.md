@@ -5,6 +5,8 @@
 - **Commit small and often, push after every commit** to your issue branch (`git push -u origin <N>-<slug>` once, then
   `git push`). Each working step = one commit, so teammates see progress and nothing is lost on a crash. Never `main`.
 - Use sub-agents for noisy work (big file inspection, log/grep sweeps); keep only conclusions in the main context.
+- **The orchestrator model (Fable) only orchestrates:** plans, specs, issues, reviews, merges. All implementation goes
+  to the workers or to sub-agents on **Opus or Sonnet** (`model: "opus"` / `"sonnet"`), never to a Fable agent.
 - Orchestrator: write issues self-contained (goal, context links, acceptance criteria, output paths, size estimate) so a
   cheaper model can do them without the chat history. Say which model/effort fits if it matters.
 
