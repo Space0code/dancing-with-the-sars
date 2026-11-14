@@ -48,8 +48,8 @@ carries most of the score.
 
 ## 2. Name, summary, description
 
-**Name options** (one-line taglines; the Python package is already called `sarwatch`):
-1. **SARwatch**: "Radar finds where the land changed. Public records say which changes need a second look."
+**Name:** **Parallax** (decided by Tian on 14 Nov 2026; the Python package keeps its old name `sarwatch`). Earlier options, for reference:
+1. **SARwatch (old working title)**: "Radar finds where the land changed. Public records say which changes need a second look."
 2. **Second Look**: "Every change on the ground, sorted by how much it deserves a regulator's attention."
 3. **Through the Clouds**: "Satellite radar keeps watch over forests in any weather, and explains what it saw."
 
@@ -131,11 +131,11 @@ suspend" (not "ordered"), "as reported" for the 330 ha, no "nobody was looking".
 
 | # | Time | Screen (1080p screen recording of the app, Muhos) | Narration (own voice, ~65 words) |
 |---|---|---|---|
-| 1 | 0–4 s | Muhos opens on "Satellite photo", slider at early March, forest intact. Corner label for the whole video: "SARwatch · <team> · NASA Space Apps 2026" | "Northern Finland, spring 2026. A forest is being cleared for a data centre." |
+| 1 | 0–4 s | Muhos opens on "Satellite photo", slider at early March, forest intact. Corner label for the whole video: "Parallax · <team> · NASA Space Apps 2026" | "Northern Finland, spring 2026. A forest is being cleared for a data centre." |
 | 2 | 4–10 s | Switch to "Radar", press play: frames advance, the marked block appears in early April and grows; "ha so far" counter visible; red flag "May: assessment required" passes | "Radar satellites date it pass by pass, through cloud." |
 | 3 | 10–16 s | Play continues into July–August on NISAR frames; the block's edge still moving after the May flag | "NASA's NISAR shows it still growing in July and August, after an assessment was required." |
 | 4 | 16–21 s | "Compare before and after": drag the full-map swipe from March to August | "Before. After." |
-| 5 | 21–27 s | Click the block: card with label, the top two reasons with sources, "between … and …", the satellites listed | "SARwatch checks each change against the public record and says, in plain words, why it needs a second look." |
+| 5 | 21–27 s | Click the block: card with label, the top two reasons with sources, "between … and …", the satellites listed | "Parallax checks each change against the public record and says, in plain words, why it needs a second look." |
 | 6 | 27–30 s | End card: name, tagline "Know where to look first", link | "Next: Catalonia. Know where to look first." |
 
 Recording notes: script the slider (tour or keyboard) so every take is identical; captions burned in; no music with
@@ -187,7 +187,7 @@ and a mention).
 
 ## 7. Open questions for the humans
 1. Team name on the Space Apps site: is it "[team name]"? (Needed for the title card and slides.)
-2. Which project name: SARwatch, Second Look, or Through the Clouds? (Recommendation: SARwatch; it matches the code.)
+2. ~~Which project name~~ Decided: Parallax (Tian, 14 Nov 2026).
 3. Demo as a 30-second video? (Recommendation: yes; the timeline replay is the strongest moment and needs motion.)
 4. Narrate with our own voices (no AI voice), so no watermark is needed? (Recommendation: yes.)
 5. "Link to Final Project" = the GitHub Pages app, with the repo linked from its README? (Recommendation: yes.)

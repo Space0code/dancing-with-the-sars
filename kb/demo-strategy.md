@@ -17,7 +17,7 @@ The claim, the 30-second video, the 3-minute live pitch, the project page and wh
   | Presentation | three sites in 30 s is a blur | one story (Muhos), one card, one wide shot |
 
 ## 2. The claim
-**One sentence:** *SARwatch turns what radar satellites see into a short, explained list of land changes a regulator should look at first.* Tagline: **"Know where to look first."**
+**One sentence:** *Parallax turns what radar satellites see into a short, explained list of land changes a regulator should look at first.* Tagline: **"Know where to look first."**
 
 **The proof, one sentence:** at Muhos three satellites show the cleared block still growing in July and August 2026, after the May notice that an assessment was required and weeks before the regulator called for a halt on 6 Oct. (In writing: by at least 70 ha after the end of May; 359 ha in total by 23 Oct against about 330 ha reported. Source: `evidence-check.md` rows 1–5.)
 
@@ -28,11 +28,11 @@ The claim, the 30-second video, the 3-minute live pitch, the project page and wh
 ## 3. The 30-second video (Muhos only, about 65 spoken words, on the new main view)
 | Time | On screen | Narration |
 |---|---|---|
-| 0–4 s | "Satellite photo" view, the photo of 23 Jul 2025: forest intact, badge "Before · summer 2025". Corner label throughout: "SARwatch · <team> · NASA Space Apps 2026" | "Northern Finland. In 2026 a forest was cleared here for a data centre." |
+| 0–4 s | "Satellite photo" view, the photo of 23 Jul 2025: forest intact, badge "Before · summer 2025". Corner label throughout: "Parallax · <team> · NASA Space Apps 2026" | "Northern Finland. In 2026 a forest was cleared here for a data centre." |
 | 4–12 s | Switch to "Radar", play April → October: the orange marked area grows month by month, "Marked so far: N ha" counts up, the flag "May: assessment required" passes | "Radar satellites watched it through the clouds. In May the builders were told an assessment was required." |
 | 12–17 s | The cleared-area curve with its three lines, the July–August rise highlighted; inset: NISAR picture pair 7 Jul / 12 Aug | "Three satellites, among them NASA's new NISAR, show it still growing in July and August." |
 | 17–21 s | "Compare before and after" in Satellite view: swipe 23 Jul 2025 against 30 Jul 2026 | "Before. After." |
-| 21–27 s | Click the block: the card with its label, top two reasons, "between … and …", the satellites listed | "SARwatch checks each change against the public record and says, in plain words, why it needs a second look." |
+| 21–27 s | Click the block: the card with its label, top two reasons, "between … and …", the satellites listed | "Parallax checks each change against the public record and says, in plain words, why it needs a second look." |
 | 27–30 s | End card: name, tagline, link | "Know where to look first." |
 
 Differences from the shot list in `submission.md` §3, to fix there: no photo exists for March (open on summer 2025); nothing appears "in late March" (first sighting is April); there are no NISAR frames in the time-lapse (name NISAR over the curve, not over Sentinel-1 pictures); swipe summer against summer. Own voices, English captions burned in, no AI imagery; cut to 29 s.

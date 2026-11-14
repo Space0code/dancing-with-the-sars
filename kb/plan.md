@@ -108,7 +108,7 @@ workflow, repo public #48 · thinking tasks: several sensors → one change #60,
    address from now on?
 3. **Everyone, at the checkpoint:** open the app (Pages link, or `git pull` and `python -m http.server 8000 -d app`),
    look, answer the questions on #9.
-4. **Anyone:** yes/no on #9: a 30 s narrated video as the demo, the name SARwatch · send the questions in #7 to the
+4. **Anyone:** yes/no on #9: a 30 s narrated video as the demo, the name Parallax · send the questions in #7 to the
    specialist · confirm the **local pitch time** (if pitches are Sunday afternoon, the freeze moves earlier).
 
 ## Milestones (local time)
