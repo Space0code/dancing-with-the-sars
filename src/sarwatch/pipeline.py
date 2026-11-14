@@ -101,13 +101,14 @@ SITES = {
     # Agroparc Penedes; farmland and vineyards all round, so both sensors run with the seasonal guards (#36).
     # NISAR: Jun -> Nov 2026, the late passes include October rain: normalize + hold.
     # Sentinel-1: about one scene a month since 2016, compared summer (Jun-Sep) against summer: the first two
-    # summers are the baseline, the 2026 summer the end state, a change is dated where it holds for a whole summer.
+    # summers are the baseline (2016: 3 passes, 2017: 4), the 2026 summer (4) the end state; a change is dated where
+    # it holds for a whole summer (4 passes).
     "agroparc": Site(
         id="agroparc", bbox=(1.79, 41.41, 1.91, 41.49),
         nisar=NisarSettings(start=date(2026, 6, 1), track=130, frame=22, direction="ASCENDING",
                             params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True)),
         s1=S1Settings(start=date(2016, 4, 1), min_gap_days=28, months=(6, 7, 8, 9),
-                      params=ChangeParams(boxcar=3, n_early=8, n_late=4, persist=4, threshold_db=3.0,
+                      params=ChangeParams(boxcar=3, n_early=7, n_late=4, persist=4, threshold_db=3.0,
                                           min_area_ha=1.0, normalize=True, hold=True)),
     ),
 }
