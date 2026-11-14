@@ -455,3 +455,22 @@ def test_bad_skip_dates_fail_before_any_fetch(fake, monkeypatch, capsys):
     monkeypatch.setattr(pipeline.SITES["muhos"], "params", {"treshold_db": 2.0})
     assert pipeline.main(["muhos", "--no-s1", "--skip-dates", "", *fake.args]) == 2
     assert "treshold_db" in capsys.readouterr().err and fake.nisar.reads == []
+
+
+def test_regions_dated_inside_the_baseline_are_dropped():
+    from sarwatch.change import ChangeResult, Region
+
+    def region(label, first):
+        return Region(label=label, type="structure", area_ha=3.0 - label, first_date=first, last_date=first,
+                      signal={}, confidence="low", series={}, bbox=(0, 0, 1, 1))
+
+    labels = np.zeros((4, 4), dtype=np.int32)
+    labels[0, 0], labels[1, 1], labels[2, 2] = 1, 2, 3
+    result = ChangeResult(delta_db={}, first_change_idx=np.full((4, 4), 5, dtype=np.int16), labels=labels,
+                          regions=[region(1, date(2025, 6, 9)), region(2, date(2026, 3, 30)),
+                                   region(3, date(2025, 9, 25))])
+    out = pipeline._drop_baseline_dated(result, date(2025, 9, 25))  # the last baseline pass itself is baseline
+    assert [(r.label, r.first_date) for r in out.regions] == [(1, date(2026, 3, 30))]
+    assert out.labels[1, 1] == 1 and out.labels[0, 0] == 0 and out.labels[2, 2] == 0 and out.labels.max() == 1
+    assert out.first_change_idx[1, 1] == 5 and out.first_change_idx[0, 0] == -1
+    assert pipeline._drop_baseline_dated(result, date(2025, 6, 1)) is result

@@ -451,6 +451,23 @@ def collect(sensor: str, site: Site, cache_root, *, offline=False, max_new=None,
 # ---------------------------------------------------------------- detect, export, index
 
 
+def _drop_baseline_dated(result, last_baseline):
+    """Remove regions whose first_date lies in the baseline: a pass that defines "before" cannot be the date of a
+    lasting change. Labels are renumbered so that regions[i].label == i + 1 still holds."""
+    keep = [r for r in result.regions if r.first_date > last_baseline]
+    if len(keep) == len(result.regions):
+        return result
+    log.info("dropped %d region(s) dated inside the baseline (up to %s)", len(result.regions) - len(keep),
+             last_baseline)
+    remap = np.zeros(len(result.regions) + 1, dtype=result.labels.dtype)
+    for i, r in enumerate(keep, 1):
+        remap[r.label] = i
+    labels = remap[result.labels]
+    first = np.where(labels > 0, result.first_change_idx, -1).astype(result.first_change_idx.dtype)
+    regions = [dataclasses.replace(r, label=i) for i, r in enumerate(keep, 1)]
+    return dataclasses.replace(result, labels=labels, first_change_idx=first, regions=regions)
+
+
 def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams):
     """Run the change core on the cached stack; an export Run, or None with fewer than two dates."""
     from .export import Run
@@ -471,6 +488,8 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     log.info("%s: baseline %s .. %s (%d passes), end state %s .. %s (%d passes)", sensor, dates[0],
              dates[n_early - 1], n_early, dates[-n_late], dates[-1], n_late)
     result = detect_changes(stack, dates, pixel, params, valid=valid)
+    if sensor == S1:
+        result = _drop_baseline_dated(result, dates[n_early - 1])
     log.info("%s: %d dates, %d change regions (threshold %.1f dB, min %.2f ha)", sensor, len(dates),
              len(result.regions), params.threshold_db, params.min_area_ha)
     return Run(sensor=SENSOR_NAMES[sensor], result=result, dates=dates, stack=stack, transform=transform, epsg=epsg)
