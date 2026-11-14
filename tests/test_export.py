@@ -374,3 +374,42 @@ def test_evidence_pictures_are_north_up_on_a_rotated_grid(site):
     drop = before[..., 1] - g
     assert drop[ndimage.binary_erosion(inside, iterations=3)].mean() > 40
     assert abs(drop[around].mean()) < 15
+
+
+def test_merged_changes_carry_sources_and_a_change_without_radar_region_is_sampled(runs, site):
+    data, site_dir = site
+    nisar = runs[0]
+    region = next(r for r in nisar.result.regions if r.type == "clearing")
+    outline = export._outlines(nisar)[region.label]
+    source = {"sensor": "NISAR L-band", "kind": "radar", "role": "detected", "first_date": str(region.first_date),
+              "last_date": str(region.last_date), "not_before": str(DATES[CLEAR_PASS - 1]), "confidence": "high",
+              "area_ha": 80.0, "share": 1.0, "note": "NISAR radar saw it."}
+    merged = [
+        export.Merged(geometry=outline, type="clearing", first_date=region.first_date, last_date=region.last_date,
+                      not_before=DATES[CLEAR_PASS - 1], confidence="high", sensor="NISAR L-band",
+                      explain="NISAR radar saw it.", sources=[source], run=0, region=region),
+        export.Merged(geometry=outline, type="clearing", first_date=date(2026, 9, 30), last_date=date(2026, 9, 30),
+                      not_before=None, confidence="medium", sensor="OPERA DIST-ALERT",
+                      explain="An optical alert found vegetation loss here on or before 30 Sep 2026.",
+                      sources=[{**source, "sensor": "OPERA DIST-ALERT", "kind": "optical", "not_before": None}],
+                      run=0, region=None, signal={"metric": "HV_dB", "before": -17.0, "after": -23.0, "delta": -6.0}),
+    ]
+    summary = write_site(site_dir, SITE, list(runs), merged=merged)
+
+    assert validate(data) == []
+    feats = [f["properties"] for f in load(site_dir, "changes.geojson")["features"]]
+    assert summary["changes"] == len(feats) == 2
+    radar, optical = feats
+    assert radar["not_before"] == str(DATES[CLEAR_PASS - 1]) and radar["sources"] == [source]
+    assert radar["signal"]["metric"] == "HV_dB" and radar["explain"] == "NISAR radar saw it."
+    assert optical["not_before"] is None and optical["signal"]["delta"] == -6.0
+    series = load(site_dir, optical["evidence"]["series"])["series"]
+    assert {s["sensor"] for s in series} == {"NISAR L-band", "Sentinel-1 C-band"}  # every run, under the outline
+    assert (site_dir / optical["evidence"]["before"]).is_file()
+
+
+def test_without_merged_changes_no_multi_sensor_fields_are_written(runs, site):
+    _, site_dir = site
+    write_site(site_dir, SITE, list(runs))
+    for f in load(site_dir, "changes.geojson")["features"]:
+        assert "sources" not in f["properties"] and "not_before" not in f["properties"]
