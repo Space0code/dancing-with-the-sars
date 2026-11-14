@@ -213,7 +213,7 @@ def days_to_dates(days) -> np.ndarray:
     """VEG-DIST-DATE day numbers -> datetime64[D]; NaT where <= 0 (no alert, -1 no data)."""
     days = np.asarray(days)
     out = EPOCH + np.where(days > 0, days, 0).astype("timedelta64[D]")
-    return np.where(days > 0, out, np.datetime64("NaT"))
+    return np.where(days > 0, out, np.datetime64("NaT", "D"))
 
 
 def _token(token):
@@ -300,7 +300,7 @@ def combine(snapshots) -> Alerts:
             raise ValueError(f"grid mismatch: {a.granule} vs {newest.granule}")
     status = newest.status.copy()
     first = newest.first_date.copy()
-    best = np.full(status.shape, np.datetime64("NaT"), dtype="datetime64[D]")
+    best = np.full(status.shape, np.datetime64("NaT", "D"), dtype="datetime64[D]")
     best_status = np.zeros(status.shape, dtype=status.dtype)
     for a in snaps:
         conf = np.isin(a.status, CONFIRMED) & ~np.isnat(a.first_date)
