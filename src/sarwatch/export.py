@@ -9,7 +9,7 @@ georeferencing and the ChangeResult from sarwatch.change. Output, under the site
 - series/<id>.json                 the region's signal over time, plus other sensors' signal over
                                    the same ground (a NISAR change can show its Sentinel-1 history)
 
-story.json (written by the verdict track) and anything else in the folder are never touched.
+Anything else in the folder (records.json, context/, frames) is never touched.
 
 Geometry: the grid can be in any projected CRS (UTM, polar stereographic EPSG:3413, ...) and need not
 be north-aligned; every conversion goes through pyproj. Site pictures stay in grid orientation: their
@@ -566,7 +566,7 @@ def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: i
     area descending. With `merged` (a list of Merged), those are the changes instead, with their `not_before`
     and `sources`. A site picture above `layer_bytes` (default MAX_PNG_BYTES) is saved with a 256-colour palette. Files left in layers/,
     evidence/ and series/ by an earlier export are removed;
-    story.json and anything else in site_dir are left alone. Returns {"changes", "area_ha", "by_type",
+    anything else in site_dir is left alone. Returns {"changes", "area_ha", "by_type",
     "bbox", "time_range"}, the last two for sites.json: the bbox holds every change and site picture, the
     time range runs from the first to the last pass of all runs.
     """

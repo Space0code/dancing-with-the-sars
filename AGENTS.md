@@ -2,8 +2,8 @@
 
 **Project:** NASA Space Apps 2026, "Dancing with the SARs". Interactive app that uses radar (NISAR + Sentinel-1) to
 **detect land-surface changes** (forest clearing, new buildings, earthworks, ground motion) and **flag which look
-expected vs. need a regulator's review**, in plain language with clear visuals. Pilot: **Catalonia** (+ Google's Finland
-clear-cut as test case). Deadline: submission by end of **15 Nov 2026**. What we build: `kb/product.md` · how: `kb/plan.md` · background:
+expected vs. need a regulator's review**, in plain language with clear visuals. A tool for any place; example sites: a forest area in Finland and the Barcelona region.
+Deadline: submission by end of **15 Nov 2026**. What we build: `kb/product.md` · how: `kb/plan.md` · background:
 `kb/project-context.md`.
 
 ## Team

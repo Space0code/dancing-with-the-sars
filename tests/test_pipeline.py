@@ -18,7 +18,7 @@ import pytest
 
 import sarwatch
 from sarwatch import nisar, pipeline
-from sarwatch.contract import _check_story, validate
+from sarwatch.contract import validate
 
 SECRET = "tok-DO-NOT-PRINT-8f3a91c2"
 REPO = Path(__file__).resolve().parents[1]
@@ -164,8 +164,8 @@ def test_run_builds_a_valid_site_and_a_rerun_fetches_nothing(fake, capsys):
     layer_lons = [pt[0] for layer in json.loads((fake.data / "muhos" / "layers.json").read_text(encoding="utf-8"))[
         "layers"] for pt in layer["coordinates"]]
     assert entry["bbox"][0] < min(layer_lons) and entry["bbox"][2] > max(layer_lons)  # the rotated picture fits
-    story = json.loads((fake.data / "muhos" / "story.json").read_text(encoding="utf-8"))
-    assert story["headline"] == "Muhos, Finland"
+    assert entry["notes"] == list(pipeline.SITES["muhos"].notes)
+    assert not (fake.data / "muhos" / "story.json").exists()
     assert validate(fake.data) == []
     out = capsys.readouterr().out
     assert "contract: OK" in out and "clearing 1" in out and "fetched this run: 8 dates, 200.0 MB" in out
@@ -257,7 +257,7 @@ def test_token_from_dotenv_is_used_and_never_printed(fake, monkeypatch, capsys, 
     assert SECRET not in captured.out + captured.err + caplog.text
 
 
-# ---------------------------------------------------------------- site index and story
+# ---------------------------------------------------------------- site index
 
 
 def test_sites_json_update_keeps_other_sites_untouched(tmp_path):
@@ -356,27 +356,23 @@ def test_unknown_site_in_index_fails_before_fetching(fake, capsys):
     assert "not in" in capsys.readouterr().err and fake.nisar.searches == 0
 
 
-def test_placeholder_story_is_written_once_and_never_overwritten(tmp_path):
-    site = tmp_path / "muhos"
-    assert pipeline.ensure_story(site, "Muhos, Finland") is True
-    errors = []
-    _check_story(site, errors)
-    assert errors == []
+def test_site_notes_are_written_to_sites_json(tmp_path):
+    path = tmp_path / "sites.json"
+    path.write_bytes((REPO / "app" / "data" / "sites.json").read_bytes())
+    notes = ["Open water is masked out.", "Sentinel-1 is compared summer against summer."]
 
-    mine = '{"headline": "Written by the verdict track", "story": ["Real text."]}'
-    (site / "story.json").write_text(mine, encoding="utf-8")
-    assert pipeline.ensure_story(site, "Muhos, Finland") is False
-    assert (site / "story.json").read_text(encoding="utf-8") == mine
+    pipeline.update_sites_index(path, "barcelona", ("2016-06-05", "2026-11-02"), notes=notes)
+    pipeline.update_sites_index(path, "barcelona", ("2016-06-05", "2026-11-02"), notes=notes[:1])
+
+    assert site_entry(tmp_path, "barcelona")["notes"] == notes[:1]
 
 
-def test_a_run_keeps_an_existing_story(fake):
-    site = fake.data / "muhos"
-    site.mkdir()
-    mine = json.dumps({"headline": "Clear-cut at Muhos", "story": ["Sourced text."], "events": [], "sources": []})
-    (site / "story.json").write_text(mine, encoding="utf-8")
-
-    assert pipeline.main(["muhos", "--no-s1", *fake.args]) == 0
-    assert (site / "story.json").read_text(encoding="utf-8") == mine
+def test_the_notes_in_sites_json_are_what_the_pipeline_writes():
+    index = json.loads((REPO / "app" / "data" / "sites.json").read_text(encoding="utf-8"))
+    for site in index["sites"]:
+        configured = pipeline.SITES.get(site["id"])
+        if configured and configured.notes:
+            assert site["notes"] == list(configured.notes)
 
 
 # ---------------------------------------------------------------- cache and grids

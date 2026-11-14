@@ -91,8 +91,6 @@ def site(tmp_path):
         "id": SITE, "name": "Synthetic test site", "country": "ES", "ready": True, "center": [1.85, 41.45],
         "zoom": 13, "bbox": [1.82, 41.43, 1.88, 41.47], "time_range": ["2026-05-01", "2026-11-01"]}]}
     (data / "sites.json").write_text(json.dumps(sites), encoding="utf-8")
-    story = {"headline": "Synthetic", "story": ["Test data."], "events": [], "sources": []}
-    (site_dir / "story.json").write_text(json.dumps(story), encoding="utf-8")
     return data, site_dir
 
 
@@ -245,7 +243,6 @@ def test_site_bbox_and_time_range_cover_all_data(runs, site):
 def test_rerun_with_fewer_changes_leaves_no_stale_files(runs, site):
     data, site_dir = site
     write_site(site_dir, SITE, list(runs))
-    story = (site_dir / "story.json").read_bytes()
     (site_dir / "notes.txt").write_text("not the exporter's", encoding="utf-8")
 
     summary = write_site(site_dir, SITE, [runs[0]])
@@ -258,7 +255,6 @@ def test_rerun_with_fewer_changes_leaves_no_stale_files(runs, site):
     assert sorted(p.name for p in (site_dir / "series").iterdir()) == sorted(f"{i}.json" for i in ids)
     urls = sorted(l["url"] for l in load(site_dir, "layers.json")["layers"])
     assert sorted(f"layers/{p.name}" for p in (site_dir / "layers").iterdir()) == urls
-    assert (site_dir / "story.json").read_bytes() == story
     assert (site_dir / "notes.txt").read_text(encoding="utf-8") == "not the exporter's"
     for i in ids:
         assert {s["sensor"] for s in load(site_dir, f"series/{i}.json")["series"]} == {"NISAR L-band"}
