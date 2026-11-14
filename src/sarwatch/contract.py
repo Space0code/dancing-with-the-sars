@@ -300,6 +300,46 @@ def _check_series(site_dir: Path, rel: str, errors: list[str]) -> None:
         ):
             errors.append(f"{where}: values must be numbers (or null), same length as dates")
     _check_events(data.get("events", []), str(path), errors)
+    if "ndvi" in data:
+        _check_ndvi(data["ndvi"], str(path), errors)
+    if "surface" in data:
+        _check_surface(data["surface"], str(path), errors)
+
+
+def _share(value) -> bool:
+    return value is None or (_is_num(value) and 0 <= value <= 1)
+
+
+def _check_ndvi(block, path: str, errors: list[str]) -> None:
+    where = f"{path}: ndvi"
+    if not isinstance(block, dict):
+        errors.append(f"{where}: must be an object")
+        return
+    if not isinstance(block.get("sensor"), str):
+        errors.append(f"{where}: sensor must be a string")
+    dates, values = block.get("dates"), block.get("values")
+    if not (isinstance(dates, list) and all(_is_date(d) for d in dates)):
+        errors.append(f"{where}: dates must be a list of YYYY-MM-DD")
+    elif not (isinstance(values, list) and len(values) == len(dates)
+              and all(_is_num(v) and -1 <= v <= 1 for v in values)):
+        errors.append(f"{where}: values must be numbers within -1..1, same length as dates")
+    for key in ("before", "after"):
+        v = block.get(key)
+        if v is not None and not (_is_num(v) and -1 <= v <= 1):
+            errors.append(f"{where}: {key} must be a number within -1..1 or null")
+
+
+def _check_surface(block, path: str, errors: list[str]) -> None:
+    where = f"{path}: surface"
+    if not isinstance(block, dict):
+        errors.append(f"{where}: must be an object")
+        return
+    for key in ("snow_share", "water_share"):
+        if not _share(block.get(key)):
+            errors.append(f"{where}: {key} must be a number within 0..1 or null")
+    dates = block.get("dates_checked")
+    if not (isinstance(dates, list) and all(_is_date(d) for d in dates)):
+        errors.append(f"{where}: dates_checked must be a list of YYYY-MM-DD")
 
 
 def _check_layers(site_dir: Path, errors: list[str]) -> None:

@@ -194,6 +194,15 @@ Feb 2024), the [ATBD](https://lpdaac.usgs.gov/documents/1835/OPERA_DIST_ATBD__V1
   in parallel; Agroparc, 47 monthly states 2023→: 3.5 MB, 63 s. CMR search: 3–5 s (461 granules) to 12–17 s (3,686).
 - Tests: `python -m pytest tests/test_distalert.py`; live `SARWATCH_LIVE=1 python -m pytest tests/test_distalert.py -k live -s`.
 
+## HLS: NDVI, snow and water per change (`src/sarwatch/ndvi.py`)
+HLS (Harmonized Landsat Sentinel-2, 30 m, every 2-3 days) is a NASA product (LP DAAC) that corrects and aligns Landsat 8/9
+(NASA/USGS, product HLSL30) and Sentinel-2 (ESA, HLSS30) onto one grid. NDVI = (NIR - red) / (NIR + red) with red B04 in both
+and NIR B8A (S30) / B05 (L30). Quality layer Fmask (HLS User Guide v2.0): bit 1 cloud, 2 adjacent to cloud / shadow, 3 cloud
+shadow, 4 snow / ice, 5 water (255 = no data). We count a date only when >= 60 % of the polygon is cloud-free; snow pixels are
+left out of NDVI and give `snow_share`, water pixels give `water_share` (details in the module docstring). Both are caution
+flags only: Fmask confuses thin snow, wet fields and shadows. Read cost: 0.02 GB for Muhos (24 dates, 19 changes), 0.05 GB for
+Barcelona (2 areas, 20 dates each); run: `python -m sarwatch.ndvi <site> [--offline]`, cache in `data/hls/<site>/ndvi/`.
+
 ## Where processing runs
 The team is on mobile data: **never download NISAR to a laptop.** Radar processing runs in a GitHub Codespace
 (`.devcontainer/`, Earthdata token as a Codespaces secret); only small results enter the repo. A whole-file route
