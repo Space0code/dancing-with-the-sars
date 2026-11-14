@@ -12,6 +12,7 @@ What we know, written for engineers (CS / math / EE), not geologists. One line p
 | [data-nisar-gcov.md](data-nisar-gcov.md) | NISAR GCOV files: HDF5 layout, units, grid, masks, finding granules, reading a window over HTTPS, gotchas |
 | [sar-primer.md](sar-primer.md) | How radar imaging works: backscatter, polarization, speckle, InSAR, L vs C band, products |
 | [glossary.md](glossary.md) | Remote-sensing jargon → engineering meaning |
+| [submission.md](submission.md) | Space Apps submission: form checklist, demo rules (≤30 s / ≤7 slides), judging criteria, drafts of every field |
 | [decisions.md](decisions.md) | One line per team decision + why |
 
 <sub>Written by Claude; agents keep this index current.</sub>
