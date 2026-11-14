@@ -5,10 +5,12 @@ import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
 import { renderIntro, renderOverview, setOverviewDate, showCard } from "./panel.js";
 import { createDrawer } from "./drawer.js";
-import { createInbox } from "./inbox.js";
+import { createInbox, kindName } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
 import { createRecords } from "./records.js";
+import { filterChanges, getSelection, isActive, clearSelection, onSelectionChange, describeSelection } from "./selection.js";
+import { createExport } from "./export.js";
 import { createBasemap } from "./basemap.js";
 
 const $ = (id) => document.getElementById(id);
@@ -153,7 +155,28 @@ async function main() {
       map.setExtraFilter(inbox.mapFilter());
       refreshTotal();
     },
+    onExport: (button) => exporter.open(button),
   });
+  window.parallax = { snapshot: map.snapshot }; // console access (and the browser checks) to the map picture
+  const exporter = createExport({
+    buttons: [$("export-btn")],
+    getContext: () => current && { site: current.site, changes: inbox.rows(), selection: getSelection(), snapshot: map.snapshot, kindName },
+  });
+
+  /** Show the selection (selection.js) everywhere changes are shown or counted: map, total, overview, list. */
+  function applySelection() {
+    $("filter-line").hidden = !isActive();
+    $("filter-text").textContent = `Filtered: ${describeSelection()}`;
+    if (!current || loading) return;
+    const features = filterChanges(current.changes.features);
+    renderOverview(current.site, features);
+    map.setShownIds(isActive() ? new Set(features.map((f) => f.properties.id)) : null);
+    map.setAreaOutline(getSelection().area);
+    inbox.setPool(features);
+    if (selectedId && !features.some((f) => f.properties.id === selectedId)) select(null);
+  }
+  onSelectionChange(applySelection);
+  $("filter-clear").addEventListener("click", clearSelection);
   const timeline = createTimeline({
     onDate(iso) {
       map.setDate(iso);
@@ -200,7 +223,9 @@ async function main() {
     $("fake-badge").hidden = true;
     history.replaceState(null, "", location.pathname + location.search);
     drawer.close();
+    clearSelection();
     $("changes-btn").hidden = true;
+    $("export-btn").hidden = true;
     renderIntro(sites, { onPick: (id) => openSite(id).catch((err) => showError(err.message)), onTour: () => tour.start() });
     $("intro").hidden = false;
     inbox.setSite([]);
@@ -220,6 +245,7 @@ async function main() {
     $("fake-badge").hidden = !site.fixture;
     $("intro").hidden = true;
     $("changes-btn").hidden = false;
+    $("export-btn").hidden = false;
     drawer.close();
     history.replaceState(null, "", `#site=${site.id}`);
     clearTimeout(hashTimer); // a pending write still describes the old site: drop it, and write nothing while this one loads
@@ -227,6 +253,7 @@ async function main() {
     lastDate = null;
     loading = true;
     try {
+      clearSelection(); // a selection belongs to one site
       current = await loadSite(site);
       renderOverview(site, current.changes.features);
       inbox.setSite(current.changes.features);
