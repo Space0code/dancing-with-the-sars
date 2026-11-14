@@ -40,6 +40,17 @@ def test_bad_change_is_rejected(copy, props):
     assert validate(copy) != []
 
 
+@pytest.mark.parametrize("dates", [
+    {"before_date": "15 Jan 2024"},                             # not YYYY-MM-DD
+    {"before_date": "2026-12-01", "after_date": "2026-11-02"},  # later than after_date
+])
+def test_bad_evidence_before_date_is_rejected(copy, dates):
+    path = copy / "fixture" / "changes.geojson"
+    evidence = json.loads(path.read_text(encoding="utf-8"))["features"][0]["properties"]["evidence"]
+    _edit_first_change(copy, evidence={**evidence, **dates})
+    assert any("before_date" in e for e in validate(copy))
+
+
 def test_missing_story_is_rejected(copy):
     (copy / "fixture" / "story.json").unlink()
     assert any("story.json" in e for e in validate(copy))

@@ -1,6 +1,9 @@
 {
   "name": "sarwatch",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": { "version": "latest" }
+  },
   "postCreateCommand": "pip install -e '.[radar,verdict,dev]'",
   "secrets": {
     "EARTHDATA_TOKEN": {
