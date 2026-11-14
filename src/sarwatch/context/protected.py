@@ -8,14 +8,16 @@ from __future__ import annotations
 
 import json
 
-from shapely.geometry import MultiPolygon
+from shapely.geometry import LinearRing, MultiPolygon, Polygon
 from shapely.geometry.polygon import orient
+from shapely.ops import unary_union
 
 from ._common import UTM, fetch, safe, to_utm
 
 SOURCE = "PEIN + Natura 2000 (Generalitat de Catalunya, via Diputació de Barcelona)"
 SERVICE = "https://gissrv.diba.cat/arcgis/rest/services/SITXELL/PEIN_XN2000_ENPE/MapServer"
 VIEWER = "https://sig.gencat.cat/visors/hipermapa.html"
+SIMPLIFY_M = 5  # the service generalises the returned outlines to this many metres
 
 ENPE_KINDS = {
     "pnac": "national park", "zpnac": "national park buffer zone",
@@ -36,29 +38,57 @@ def _esri_polygon(g) -> str:
     return json.dumps({"rings": rings, "spatialReference": {"wkid": UTM}}, separators=(",", ":"))
 
 
-def _query(layer: int, esri_geom: str) -> list[dict]:
+def _shape(geom: dict | None):
+    """ArcGIS polygon (``rings``: outer rings clockwise, holes counter-clockwise) -> shapely geometry, or None."""
+    outers, holes = [], []
+    for ring in (geom or {}).get("rings", []):
+        if len(ring) >= 4:
+            (holes if LinearRing(ring).is_ccw else outers).append(Polygon(ring))
+    if not outers:
+        return None
+    g = unary_union(outers)
+    return g.difference(unary_union(holes)) if holes else g
+
+
+def _query(layer: int, esri_geom: str) -> list[tuple[dict, object]]:
+    """[(attributes, shapely geometry in EPSG:25831 or None)]. The service simplifies the outlines to ``SIMPLIFY_M``
+    metres, which keeps park outlines small and is far below the size of a detected change."""
     body = fetch("protected", f"{SERVICE}/{layer}/query", {
         "geometry": esri_geom, "geometryType": "esriGeometryPolygon", "inSR": UTM,
-        "spatialRel": "esriSpatialRelIntersects", "outFields": "*", "returnGeometry": "false", "f": "json",
+        "spatialRel": "esriSpatialRelIntersects", "outFields": "*", "returnGeometry": "true", "outSR": UTM,
+        "maxAllowableOffset": SIMPLIFY_M, "f": "json",
     }, method="POST")
-    return [f["attributes"] for f in json.loads(body)["features"]]
+    return [(f["attributes"], _shape(f.get("geometry"))) for f in json.loads(body)["features"]]
 
 
 @safe(SOURCE, VIEWER)
 def lookup(geometry: dict, **options) -> dict:
-    """``inside`` (bool: the polygon touches at least one protected area) and ``areas`` ([{name, kind, code}])."""
+    """``inside`` (bool: the polygon touches at least one protected area), ``areas`` ([{name, kind, code,
+    overlap_share}]) and ``overlap_share`` (share of the polygon inside any protected area, 0-1). A 1 m² edge touch has
+    a share near 0 and a real overlap near 1; ``None`` if the service sent no outline for some area."""
     g = to_utm(geometry).simplify(1.0)
     esri = _esri_polygon(g)
-    areas = []
-    for a in _query(0, esri):
-        areas.append({"name": a["NOM_PEIN"], "kind": "PEIN", "code": a["CODI_PEIN"]})
+    areas, shapes = [], []
+
+    def add(attrs, shp, name, kind, code):
+        shapes.append(shp)
+        share = None if shp is None else round(shp.buffer(0).intersection(g).area / g.area, 4)
+        areas.append({"name": attrs[name], "kind": kind, "code": attrs[code], "overlap_share": share})
+
+    for a, shp in _query(0, esri):
+        add(a, shp, "NOM_PEIN", "PEIN", "CODI_PEIN")
     out = {}
-    for a in _query(1, esri):
+    for a, shp in _query(1, esri):
         types = [t for t, flag in (("SAC", a["LIC_ZEC"]), ("SPA", a["ZEPA"])) if flag == "S"]
-        areas.append({"name": a["NOM_XN2"], "kind": "Natura 2000 " + "/".join(types or ["site"]), "code": a["CODI_XN2"]})
+        add(a, shp, "NOM_XN2", "Natura 2000 " + "/".join(types or ["site"]), "CODI_XN2")
         if a.get("FND_ZEC", "").strip().startswith("http"):
             out["url"] = a["FND_ZEC"].strip()  # official Natura 2000 site sheet: a page a human can open
-    for a in _query(3, esri):
-        areas.append({"name": a["NOM_ESPAI"], "kind": ENPE_KINDS.get(a["CODI_ESPAI"], a["CODI_ESPAI"]),
-                      "code": a["CODI_ESPAI"]})
-    return {**out, "inside": bool(areas), "areas": areas}
+    for a, shp in _query(3, esri):
+        add(a, shp, "NOM_ESPAI", ENPE_KINDS.get(a["CODI_ESPAI"], a["CODI_ESPAI"]), "CODI_ESPAI")
+    known = [s.buffer(0) for s in shapes if s is not None]
+    overall = None
+    if areas and len(known) == len(shapes):
+        overall = round(unary_union(known).intersection(g).area / g.area, 4)
+    elif not areas:
+        overall = 0.0
+    return {**out, "inside": bool(areas), "areas": areas, "overlap_share": overall}

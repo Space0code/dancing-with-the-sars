@@ -8,7 +8,7 @@ The app flags places for a human to look at. It never says "illegal" and never n
 `judge(change, records) -> (verdict, reasons, explain)`: a pure function, no network.
 - `change`: one feature's properties from `changes.geojson` (uses `type`, `area_ha`, `first_date`, `explain`).
 - `records`: lookup results by key, the shape the `sarwatch.context` clients (#14) return. Every record has `checked` (did the service answer).
-  - `protected`: `inside`, `areas` (`[{name, kind}]`), optional `overlap_share`. `inside` is true for any overlap.
+  - `protected`: `inside`, `areas` (`[{name, kind, overlap_share}]`), `overlap_share` (total). `inside` is true for any overlap; the share says how much.
   - `cadastre`: `built_since` = buildings whose construction **year** is ≥ the change's `first_date` year (the registry only has years; `1900-01-01` is a placeholder and never counts as recent).
   - `zoning`: `zone` (`urban` / `developable` / `non_buildable` / null) and `shares` (fraction of the polygon per zone). `zone: null` with `checked: true` means no zoning polygon there (e.g. the sea): unknown, not a failure.
   - `solar`: `plants` (`[{name, status, ha, ha_in_municipality}]`), by municipality only.
@@ -61,7 +61,7 @@ All other reasons that apply are listed after the deciding one: `zoning_urban`, 
 - **Small and unflagged → expected** (row 9). The proposal did not say what happens below 2 ha with no flag; we chose not to bother a regulator with it. `small_area` is shown so the card says why.
 - **Matching record on non-buildable land stays "needs review"** (row 5): a building record there is a reason to look, not to relax.
 - **Solar listing is weak evidence** (municipality-level, no location), so it counts only if authorised and at least half as large as the change. Open question for the specialist (#7): is even that enough to call a large change "expected"?
-- **Buffer zones and edge touches** of protected areas are "needs review", not "high concern". The lookup says "inside" for any overlap, so an edge touch is only recognised when it reports `overlap_share`; today it does not (open: ask #30 to return the overlap share).
+- **Buffer zones and edge touches** of protected areas are "needs review", not "high concern". `protected.lookup` says `inside` for any overlap, so an edge touch is recognised by `overlap_share` (share of the change polygon inside any protected area, 0-1; the lookup computes it from the service's outlines, simplified to 5 m). Below 1 % counts as an edge touch.
 - **Mixed zoning:** a quarter or more non-buildable counts as non-buildable (conservative: it brings a human look, not an accusation).
 - Caveat: cadastre dates are year-only and can lag the real construction by months, so a recent change can show "no record" for a while. That is why this is "needs review", not an accusation.
 

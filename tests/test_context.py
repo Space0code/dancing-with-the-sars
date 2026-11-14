@@ -11,7 +11,7 @@ import pytest
 from shapely.geometry import box
 
 from sarwatch import context
-from sarwatch.context import _common, cadastre
+from sarwatch.context import _common, cadastre, protected
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "context"
 LIVE = os.environ.get("SARWATCH_LIVE") == "1"
@@ -63,6 +63,45 @@ def test_protected(results):
     kinds = {a["kind"] for a in m["areas"]}
     assert {"PEIN", "Natura 2000 SAC", "natural park"} <= kinds
     assert m["url"].startswith("https://natura2000.eea.europa.eu/")
+
+
+def test_protected_overlap_share(results):
+    m = results["montseny"]["protected"]
+    assert m["overlap_share"] == 1.0 and all(a["overlap_share"] == 1.0 for a in m["areas"])
+    assert results["barcelona"]["protected"]["overlap_share"] == 0.0 and results["barcelona"]["protected"]["areas"] == []
+
+
+def _fake_area(monkeypatch, shape_or_none):
+    """Protected-areas service that returns one PEIN area with the given outline (EPSG:25831) and nothing else."""
+    def fake(layer, esri):
+        return [({"NOM_PEIN": "Edge Park", "CODI_PEIN": "EDG"}, shape_or_none)] if layer == 0 else []
+    monkeypatch.setattr(protected, "_query", fake)
+
+
+def test_protected_edge_touch_has_a_tiny_share(monkeypatch):
+    g = _common.to_utm(AGROPARC)
+    x0, y0, x1, y1 = g.bounds
+    strip = box(x0 - 100, y0 - 100, x0 + 8, y1 + 100)  # a thin strip on the western side (the polygon is rotated)
+    expected = round(strip.intersection(g).area / g.area, 4)
+    assert 0 < expected < 0.01  # a real edge touch
+    _fake_area(monkeypatch, strip)
+    r = protected.lookup(AGROPARC)
+    assert r["inside"] is True and r["overlap_share"] == pytest.approx(expected, abs=5e-4)
+    assert r["areas"][0]["overlap_share"] == r["overlap_share"]
+
+
+def test_protected_area_without_an_outline_has_no_share(monkeypatch):
+    _fake_area(monkeypatch, None)
+    r = protected.lookup(AGROPARC)
+    assert r["inside"] is True and r["overlap_share"] is None and r["areas"][0]["overlap_share"] is None
+
+
+def test_arcgis_rings_with_a_hole_become_a_polygon_with_a_hole():
+    outer = [[0, 0], [0, 100], [100, 100], [100, 0], [0, 0]]       # clockwise
+    hole = [[40, 40], [60, 40], [60, 60], [40, 60], [40, 40]]      # counter-clockwise
+    g = protected._shape({"rings": [outer, hole]})
+    assert g.area == 100 * 100 - 20 * 20
+    assert protected._shape({"rings": []}) is None and protected._shape(None) is None
 
 
 def test_cadastre(results):
