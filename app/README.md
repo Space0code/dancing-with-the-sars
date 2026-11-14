@@ -24,6 +24,10 @@ Missing series files show a message instead of a broken box.
 - **One growing outline** (optional `stages.geojson`, `map.js`): changes that are members of a stage group have no outline of
   their own; the map draws the latest stage at or before the slider date as one light fill with one bold outline (verdict
   colour, white casing). The member parts stay clickable; hover or select shows a thin outline of just that part.
+- **Shareable view** (`js/main.js`): the address bar follows the user: `#site=muhos&date=2026-07-31&change=muhos-0012`
+  (site, slider date, open change). Opening or pasting such a link restores that view; a bad date or id is ignored.
+- **Changes tab** (`js/inbox.js`): sort, filter by label / kind, a "Smallest change" slider (list, map and the running
+  total follow it) and **Download CSV** (`js/csv.js`: the filtered list in its current order; UTF-8 with BOM).
 - **Guided tour** (`tour.json`, run by `js/tour.js`): edit the steps without touching code; the field list is in its
   `about`. Steps whose site isn't ready are skipped; steps on the fake site run only while no real site is ready.
 
