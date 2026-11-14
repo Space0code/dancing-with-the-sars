@@ -84,7 +84,25 @@ async function main() {
   let current = null; // the open site's data, or null on the intro screen
   let lastDate = null; // the slider's previous date, to spot changes that just appeared
 
+  // --- shareable view: #site=…&date=…&change=… follows the user (replaceState: the back button is not flooded) ---
+  let selectedId = null;
+  let hashTimer = null;
+  function writeHash() {
+    clearTimeout(hashTimer);
+    hashTimer = setTimeout(() => { // debounced: the time-lapse changes the date many times a second
+      if (!current) return;
+      const params = new URLSearchParams({ site: current.site.id });
+      if (lastDate) params.set("date", lastDate);
+      if (selectedId) params.set("change", selectedId);
+      try {
+        history.replaceState(null, "", `${location.pathname}${location.search}#${params}`);
+      } catch {} // Safari refuses more than ~100 calls in 30 s: the link just stays at its last state
+    }, 250);
+  }
+
   function select(feature) {
+    selectedId = feature ? feature.properties.id : null;
+    writeHash();
     map.select(feature);
     inbox.setSelected(feature ? feature.properties.id : null);
     if (feature) {
@@ -126,6 +144,7 @@ async function main() {
       picture.setDate(iso);
       inbox.setDate(iso);
       refreshTotal();
+      writeHash();
       if (fresh.length) bump($("total"));
     },
     onPlay: () => picture.setView("radar"), // the time-lapse always runs on the radar pictures
@@ -159,6 +178,7 @@ async function main() {
   function showIntro() {
     current = null;
     lastDate = null;
+    selectedId = null;
     $("map-error").hidden = true;
     $("site").value = "";
     $("fake-badge").hidden = true;
@@ -182,6 +202,7 @@ async function main() {
     history.replaceState(null, "", `#site=${site.id}`);
     current = await loadSite(site);
     lastDate = null; // no flash for the changes already there when the site opens
+    selectedId = null;
     renderStory(current.story); // first: it changes the map's size on phones
     showHint();
     inbox.setSite(current.changes.features);
@@ -198,8 +219,29 @@ async function main() {
     openSite(id).catch((err) => showError(err.message));
   });
 
+  /** Open the view the URL hash describes (site, then date, then change). False when it names no ready site. */
+  async function applyHash() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const id = params.get("site");
+    if (!sites.some((s) => s.id === id)) return false;
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") ? params.get("date") : null; // anything else is ignored
+    if (current?.site.id !== id) {
+      tour.end();
+      await openSite(id);
+    }
+    if (date) timeline.goTo(date);
+    const feature = current.changes.features.find((f) => f.properties.id === params.get("change"));
+    if (feature) {
+      if (!date) timeline.goTo(feature.properties.last_date); // a hand-made link without a date: show the change as it stands
+      map.focus(feature, tourRoom());
+      select(feature);
+    } else if (selectedId) select(null);
+    return true;
+  }
+  window.addEventListener("hashchange", () => applyHash().catch((err) => showError(err.message))); // a link pasted into the same tab
+
   const wanted = new URLSearchParams(location.hash.slice(1)).get("site");
-  if (sites.some((s) => s.id === wanted)) return openSite(wanted);
+  if (await applyHash().catch((err) => showError(err.message))) return;
   showIntro();
   const asked = allSites.find((s) => s.id === wanted);
   if (asked) showError(`${asked.name} is not shown in this version. Pick another site or start the tour.`, true);
