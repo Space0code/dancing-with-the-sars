@@ -3,7 +3,7 @@
 **Project:** NASA Space Apps 2026, "Dancing with the SARs". Interactive app that uses radar (NISAR + Sentinel-1) to
 **detect land-surface changes** (forest clearing, new buildings, earthworks, ground motion) and **flag which look
 expected vs. need a regulator's review**, in plain language with clear visuals. Pilot: **Catalonia** (+ Google's Finland
-clear-cut as test case). Deadline: submission by end of **15 Nov 2026**. What we build: `kb/product.md` · background:
+clear-cut as test case). Deadline: submission by end of **15 Nov 2026**. What we build: `kb/product.md` · how: `kb/plan.md` · background:
 `kb/project-context.md`.
 
 ## Team
@@ -52,7 +52,9 @@ explain earth-science terms in engineering language (signals, noise, dB, phase, 
 | `kb/` | knowledge base: start at `kb/README.md` |
 | `data/` | gitignored except `data/README.md` + small manifests in `data/pilot/` |
 | `explore/<topic>/` | exploration scripts/notebooks, one folder per topic/issue |
-| `src/` · `app/` | shared library code · the final interactive app (later) |
+| `src/sarwatch/` · `tests/` | shared Python code (radar, verdict, contract check) · its tests (`python -m pytest`) |
+| `app/` · `app/data/` | the static web app · its data in the contract format (`kb/data-contract.md`; `fixture/` = fake site) |
+| `.devcontainer/` | the Codespace setup: radar files are processed there, never on laptops |
 | `.claude/commands/` | `/work` (worker loop) · `/orchestrate` (Tian) · `/kb` (tidy the knowledge base) |
 
 ## Data & secrets

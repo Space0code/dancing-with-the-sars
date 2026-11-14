@@ -69,7 +69,7 @@ Simple, robust analysis ideas: HV/HH ratio maps, backscatter difference/ratio be
 
 ## 6. Complementary / longer-record SAR (allowed: "other sensors")
 - **Sentinel-1** (ESA, C-band, 2014→, 6–12 days). Free via ASF / Copernicus.
-- **OPERA RTC-S1** — analysis-ready S1 backscatter, near-global, **since Jan 2022** (30 m). Easiest long-baseline backscatter.
+- **OPERA RTC-S1** — analysis-ready S1 backscatter, 30 m. **Back to 2016 at both demo sites** (ASF search, 14 Nov: Agroparc 85 scenes in 2016, earliest 17 Apr 2016; Muhos 87 in 2016). Easiest long-baseline backscatter; counts are per burst, so pick one track for a clean series.
 - **OPERA DIST-S1** — surface disturbance alerts from S1, near-global, from **Mar 2026**.
 - **OPERA DISP-S1** — InSAR displacement time series, **North America only, from 2016** (30 m) → subsidence at US datacenter sites.
 - Challenge partner data: CSA **RADARSAT Constellation (RCM)** & RADARSAT-1, CONAE **SAOCOM** (L-band, registration needed).

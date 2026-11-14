@@ -10,7 +10,9 @@ You are the **orchestrator** for this repo (Tian's Claude). Follow AGENTS.md. Fo
 3. Plan with the user: propose the next tasks in a short table `issue | who | goal | output | size`. Wait for the user's
    go on new directions; routine follow-ups don't need approval.
 4. Create issues self-contained (goal, context links into kb/, acceptance criteria, output paths, out-of-scope).
-   Assign Tomi (`Space0code`) / Andrea (`molte38`) / yourself; label `type:task,status:ready`. Split big asks into
+   Assign Tomi (`Space0code`) / Andrea (`molte38`) / yourself; label `type:task,status:ready`. **Every issue and every
+   assignment names the model to use** (Sonnet 5.5 when the task is well specified, Opus 5.5 for unknowns and judgment).
+   Your own tasks run in sub-agents on Opus or Sonnet; you never implement on the orchestrator model. Split big asks into
    sub-issues that touch disjoint files so workers don't conflict. Prefer 1–3 hour chunks given the deadline.
    Then **announce on #9** in one comment: `@molte38 #A on branch A-slug · @Space0code #B on branch B-slug · I take #C on
    C-slug. Tag me when done.` Keep everyone busy: when someone reports done, review + hand out the next task there.
