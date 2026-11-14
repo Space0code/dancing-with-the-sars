@@ -90,9 +90,9 @@ investigation on 29 Oct (suspected environmental damage). Verified 14 Nov for th
 Mar-Aug window come from the HS/Kaleva article (it does not say "Leppiniemi"). All sources: `app/data/muhos/story.json`.
 Otanmäki dates (unverified). Radar: Sentinel-1 + NISAR beta cover the whole clearing, calibrated NISAR only Jun–Aug.
 March cutting under snow (unverified: no source says so; keep it out of the story). **Measured** (details and limits:
-`evidence-check.md`): Sentinel-1 first shows the block in the 18–30 Mar 2026 passes (PR #55); NASA optical alerts show
-one block of 358 ha by October, 137 ha by end of May, about half first seen from July on (#44); NISAR shows its edge
-still moving in Jul–Aug (#55). Hectares from NISAR and optical disagree in June: never add them up. Sources: https://yle.fi/a/74-20254086 ·
+`evidence-check.md`): Sentinel-1 first shows the block on its 4 Apr 2026 pass (previous usable pass Sep 2025); NASA optical
+alerts confirm 109 ha by 29 Apr and one block of 359 ha by 23 Oct, about half first seen from July on; NISAR shows it
+still growing between 7 Jul and 12 Aug (final data, PR #95: `app/data/muhos/story_series.json`). Hectares from NISAR and optical disagree in June: never add them up. Sources: https://yle.fi/a/74-20254086 ·
 https://www.kaleva.fi/hs-google-yritti-saada-poikkeusluvan-muhoksen-hakk/13686840
 
 | Case (lat, lon) | Change · size | Official status | Label | Radar signal · visible? | Window | Source |

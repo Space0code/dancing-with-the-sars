@@ -57,7 +57,7 @@ carries most of the score.
 > We built a web app that turns what satellites see into a short, explained list of land changes a regulator should
 > look at first. Our worked example is Muhos, Finland, where about 330 hectares of forest were cleared for a data
 > centre in 2026, as reported, while an environmental assessment was required. The app puts three satellites on one
-> timeline: Sentinel-1 radar first shows the cleared block in late March, NASA's optical alerts date it month by
+> timeline: Sentinel-1 radar first shows the cleared block in early April, NASA's optical alerts date it month by
 > month, and NASA–ISRO's NISAR radar, seeing through cloud, shows it still growing in July and August, after the
 > company had learned an assessment was required. Each change is checked against the public record and labelled
 > Expected, Needs review or High concern, always with the reason and before-and-after pictures. The app never decides
@@ -99,10 +99,12 @@ look, with the evidence attached; the app never says a change is unlawful.
    with MapLibre GL JS, no server and no build step, published on GitHub Pages.
 
 *Results at Muhos* (details and limits: `evidence-check.md`):
-- Sentinel-1 first shows the cleared block in its passes of 18–30 March 2026.
-- NASA's optical alerts show one block of about 358 ha by October, close to the reported 330 ha: 137 ha first seen by
-  the end of May, about half of the block first seen from July on, two months after the assessment was required.
-- NISAR shows the block's edge still moving in July and August.
+- Sentinel-1 first shows the cleared block on its pass of 4 April 2026 (previous usable pass: September 2025).
+- NASA's optical alerts confirm about 109 ha by 29 April and one block of about 359 ha by late October, close to the
+  reported 330 ha: 137 ha first seen by the end of May, about half of the block first seen from July on, two months
+  after the assessment was required.
+- NISAR shows the block still growing between its passes of 7 July and 12 August.
+- The app's chart (`app/data/muhos/story_series.json`) draws the three sources as separate lines, never added up.
 - Labels on the final data: [TBD: counts per label after Tian posts "Muhos data final on main"].
 - Limits we state: a first-seen date is the first clear view, not the cutting day; the project boundary is not
   published; we processed the data in November, nothing was detected live.
@@ -126,7 +128,7 @@ suspend" (not "ordered"), "as reported" for the 330 ha, no "nobody was looking".
 | # | Time | Screen (1080p screen recording of the app, Muhos) | Narration (own voice, ~65 words) |
 |---|---|---|---|
 | 1 | 0–4 s | Muhos opens on "Satellite photo", slider at early March, forest intact. Corner label for the whole video: "SARwatch · <team> · NASA Space Apps 2026" | "Northern Finland, spring 2026. A forest is being cleared for a data centre." |
-| 2 | 4–10 s | Switch to "Radar", press play: frames advance, the marked block appears in late March and grows; "ha so far" counter visible; red flag "May: assessment required" passes | "Radar satellites date it pass by pass, through cloud." |
+| 2 | 4–10 s | Switch to "Radar", press play: frames advance, the marked block appears in early April and grows; "ha so far" counter visible; red flag "May: assessment required" passes | "Radar satellites date it pass by pass, through cloud." |
 | 3 | 10–16 s | Play continues into July–August on NISAR frames; the block's edge still moving after the May flag | "NASA's NISAR shows it still growing in July and August, after an assessment was required." |
 | 4 | 16–21 s | "Compare before and after": drag the full-map swipe from March to August | "Before. After." |
 | 5 | 21–27 s | Click the block: card with label, the top two reasons with sources, "between … and …", the satellites listed | "SARwatch checks each change against the public record and says, in plain words, why it needs a second look." |
