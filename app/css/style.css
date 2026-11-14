@@ -64,7 +64,9 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
 .legend li { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
 .swatch { width: 16px; height: 16px; border-radius: 3px; border: 2px solid #222; flex: none; }
 
-#panel { overflow: auto; background: var(--panel); border-left: 1px solid var(--line); padding: 12px 16px 20px; }
+#panel { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-left: 1px solid var(--line); }
+.view { flex: 1; min-height: 0; overflow: auto; padding: 12px 16px 20px; }
+.view[hidden] { display: none; }
 .story { margin-bottom: 12px; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; background: #fafbfc; }
 .story summary { cursor: pointer; font-weight: 700; }
 .story p { margin: 8px 0 0; }
@@ -152,13 +154,52 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
 .range-ends { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
 .event-note { flex: 1; text-align: center; color: #b3261e; font-weight: 600; }
 
+/* Inbox (#34): tabs + change list */
+.tabs { display: flex; border-bottom: 1px solid var(--line); flex: none; }
+.tabs button {
+  flex: 1; padding: 9px 8px; border: 0; border-bottom: 3px solid transparent; background: none; cursor: pointer;
+  font-weight: 700; color: var(--muted);
+}
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.n { font-weight: 400; color: var(--muted); font-size: 12px; }
+.inbox { display: flex; flex-direction: column; padding-bottom: 0; overflow: hidden; }
+.inbox[hidden] { display: none; }
+.inbox-controls { flex: none; }
+.inbox-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.inbox .sort { color: var(--muted); font-size: 13px; }
+.inbox .sort select { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 6px; }
+.chip {
+  flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--line);
+  border-radius: 999px; background: #fff; cursor: pointer; font-size: 13px; white-space: nowrap;
+}
+.chip[aria-pressed="true"] { background: #e3eef7; border-color: var(--accent); font-weight: 700; }
+.chip .swatch { width: 12px; height: 12px; }
+.clear-filters { border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 13px; }
+.inbox-summary { margin: 2px 0 6px; font-size: 13px; color: var(--muted); }
+.inbox-list { flex: 1; min-height: 0; overflow: auto; list-style: none; margin: 0; padding: 0 0 12px; border-top: 1px solid var(--line); }
+.inbox-list .empty { padding: 14px 4px; color: var(--muted); }
+.row {
+  display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 8px 6px; border: 0; border-bottom: 1px solid var(--line);
+  background: none; text-align: left; cursor: pointer; font: inherit; color: inherit;
+}
+.row:hover { background: #f1f5f8; }
+.row[aria-current="true"] { background: #e3eef7; box-shadow: inset 4px 0 0 var(--accent); }
+.row .swatch { margin-top: 3px; }
+.row-main { flex: 1; min-width: 0; display: block; }
+.row-title { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+.row-size { font-weight: 400; color: var(--muted); }
+.row-sub { display: block; font-size: 13px; color: var(--muted); }
+
 /* Phone: panel becomes a bottom sheet under the map */
 @media (max-width: 760px) {
   .topbar { padding: 6px 12px; gap: 6px 14px; }
   .topbar h1 { font-size: 16px; }
   .basemap { margin-left: 0; }
   main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-  #panel { max-height: 42vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 10px 12px 14px; }
+  #panel { max-height: 42vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; }
+  .view { padding: 10px 12px 14px; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; } /* one row each: the sheet is short */
   .map-left { left: 8px; top: 8px; }
   .map-error.notice { border-color: #b08900; background: #fff8dc; color: #4d3b00; }
 .legend { padding: 4px 8px; }

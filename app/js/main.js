@@ -5,6 +5,7 @@ import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
 import { renderStory, showCard, showHint } from "./panel.js";
 import { renderLayerControl } from "./overlays.js";
+import { createInbox } from "./inbox.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -41,17 +42,34 @@ async function main() {
   let current = null; // the open site's data
   function select(feature) {
     map.select(feature);
-    if (feature) showCard(feature, current, () => select(null));
-    else showHint();
+    inbox.setSelected(feature ? feature.properties.id : null);
+    if (feature) {
+      showCard(feature, current, () => select(null));
+      inbox.showTab("details");
+    } else showHint();
   }
   const map = createChangeMap($("map"), { onSelect: select });
   await map.ready;
 
+  const refreshTotal = () => {
+    const { count, ha } = inbox.stats(); // follows the date and the inbox filters
+    timeline.setTotal(runningTotal(count, ha));
+  };
+  const inbox = createInbox({
+    onOpen(feature) {
+      map.flyToFeature(feature);
+      select(feature);
+    },
+    onFilters() {
+      map.setExtraFilter(inbox.mapFilter());
+      refreshTotal();
+    },
+  });
   const timeline = createTimeline({
     onDate(iso) {
       map.setDate(iso);
-      const shown = (current?.changes.features ?? []).filter((f) => f.properties.first_date <= iso);
-      timeline.setTotal(runningTotal(shown.length, shown.reduce((sum, f) => sum + f.properties.area_ha, 0)));
+      inbox.setDate(iso);
+      refreshTotal();
     },
   });
 
@@ -65,6 +83,8 @@ async function main() {
     current = await loadSite(site);
     renderStory(current.story); // first: it changes the map's size on phones
     showHint();
+    inbox.setSite(current.changes.features);
+    map.setExtraFilter(null);
     map.showSite(site, current.changes);
     map.setOverlays(current.base, current.layers);
     renderLayerControl(current.layers, map);

@@ -71,8 +71,10 @@ export function createChangeMap(container, { onSelect }) {
     });
   });
 
+  let extraFilter = null; // the inbox's verdict / kind filters, as a MapLibre expression
   function applyDateFilter() {
-    const filter = ["<=", ["get", "first_date"], dateIso];
+    const byDate = ["<=", ["get", "first_date"], dateIso];
+    const filter = extraFilter ? ["all", byDate, extraFilter] : byDate;
     for (const id of DATE_LAYERS) map.setFilter(id, filter);
   }
 
@@ -113,6 +115,16 @@ export function createChangeMap(container, { onSelect }) {
     },
     select(feature) {
       map.setFilter("changes-selected", ["==", ["get", "id"], feature ? feature.properties.id : ""]);
+    },
+    setExtraFilter(expression) {
+      extraFilter = expression;
+      applyDateFilter();
+    },
+    flyToFeature(feature) {
+      let [w, s, e, n] = [180, 90, -180, -90];
+      const walk = (c) => (typeof c[0] === "number" ? ((w = Math.min(w, c[0])), (e = Math.max(e, c[0])), (s = Math.min(s, c[1])), (n = Math.max(n, c[1]))) : c.forEach(walk));
+      walk(feature.geometry.coordinates);
+      map.fitBounds([[w, s], [e, n]], { padding: 70, maxZoom: 15, essential: true });
     },
     setBasemap(name) {
       for (const [key, layerId] of Object.entries(BASEMAPS)) {
