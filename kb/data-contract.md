@@ -80,10 +80,10 @@ format stays version 1: data without them is valid, and the app shows it as befo
 ```json
 "sources": [
  {"sensor": "OPERA DIST-ALERT", "kind": "optical", "role": "detected", "first_date": "2025-07-15",
-  "last_date": "2025-07-15", "not_before": "2025-07-05", "confidence": "medium", "area_ha": 27.0, "share": 1.0,
+  "last_date": "2025-07-15", "not_before": "2025-07-05", "confidence": "medium", "area_ha": 61.7, "share": 1.0,
   "note": "An optical alert found vegetation loss here between 5 and 15 July 2025."},
  {"sensor": "NISAR L-band", "kind": "radar", "role": "late_start", "first_date": "2026-06-25",
-  "last_date": "2026-06-25", "not_before": null, "confidence": "medium", "area_ha": 25.0, "share": 0.95,
+  "last_date": "2026-06-25", "not_before": null, "confidence": "medium", "area_ha": 58.6, "share": 0.95,
   "note": "NISAR began watching on 25 Jun 2026 and shows the change already under way."}]
 ```
 Fixture: `fixture-0005` (three sources), `fixture-0007` (one source), `fixture-0004` (late start only).
