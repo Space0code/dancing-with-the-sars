@@ -80,11 +80,12 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
 .story .sources a { color: var(--accent); }
 .hint { color: var(--muted); margin: 4px 0; }
 
-/* Photo year label (bottom left of the map, above the attribution line) */
+/* Photo year label (under the legend) */
 .photo-label {
-  position: absolute; left: 10px; bottom: 10px; z-index: 2; margin: 0; padding: 3px 10px; border-radius: 999px;
+  margin: 0; padding: 3px 10px; border-radius: 999px;
   background: rgba(0, 0, 0, .68); color: #fff; font-size: 13px; font-weight: 600; pointer-events: none;
 }
+.narrow-only { display: none; }
 
 /* Guided tour box, floating over the map */
 .tour {
@@ -99,11 +100,11 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
 .tour-nav { display: flex; justify-content: flex-end; gap: 8px; }
 
 /* Intro screen (no site open yet) */
-.intro h2 { margin: 4px 0 8px; font-size: 21px; line-height: 1.25; }
-.intro p { margin: 0 0 12px; }
-.intro h3 { margin: 18px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.intro p { margin: 0 0 12px; font-size: 16px; }
+.intro .lead { font-weight: 600; }
+.phone-only { display: none; }
 button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16px; cursor: pointer; }
-.site-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.site-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
 .site-btn { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; }
 .site-btn .fake-badge { font-size: 10px; }
 .soon { margin-left: auto; font-size: 12px; color: var(--muted); }
@@ -209,12 +210,23 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
   .topbar { padding: 6px 12px; gap: 6px 14px; }
   .topbar h1 { font-size: 16px; }
   .pitch { display: none; } /* the intro screen carries the pitch on phones */
+  .intro .phone-only { display: block; }
+  .intro p { font-size: 15px; }
   .actions button { padding: 4px 10px; }
   .basemap { margin-left: 0; }
-  .tour { bottom: 30px; padding: 10px 12px; }
+  .wide-only { display: none; }
+  .narrow-only { display: inline; }
+  .topbar .actions { order: 3; }
+  .topbar .basemap { order: 4; margin-left: auto; }
+  /* on phones the tour sits at the top of the bottom sheet (js/main.js moves it), so the map stays visible */
+  #panel > .tour {
+    position: sticky; top: -10px; left: auto; bottom: auto; transform: none; width: auto;
+    margin: -10px -12px 10px; border-radius: 14px 14px 0 0; box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+  }
+  .tour { padding: 10px 12px; }
   .tour h2 { font-size: 15px; }
   .tour p { font-size: 14px; margin-bottom: 8px; }
-  .photo-label { font-size: 11px; bottom: 6px; left: 6px; }
+  .photo-label { font-size: 11px; padding: 2px 8px; }
   main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
   #panel { max-height: 42vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 10px 12px 14px; }
   .map-left { left: 8px; top: 8px; }

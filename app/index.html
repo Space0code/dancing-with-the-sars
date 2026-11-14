@@ -4,8 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Land-change monitor</title>
-  <meta name="description" content="Radar satellites find where land changed; this app shows which changes need a closer look.">
+  <title>SARwatch</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
   <link rel="stylesheet" href="css/style.css">
@@ -13,8 +12,8 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <h1>Land-change monitor</h1>
-      <p class="pitch">Radar satellites find where land changed. We show which changes need a closer look.</p>
+      <h1 id="app-name"></h1>
+      <p id="app-pitch" class="pitch"></p>
     </div>
     <div class="site-picker">
       <label for="site">Site</label>
@@ -22,8 +21,8 @@
       <span id="fake-badge" class="fake-badge" hidden>Fake data</span>
     </div>
     <div class="actions">
-      <button id="tour-btn" type="button" class="primary">Start tour</button>
-      <button id="explain-btn" type="button">How to read this</button>
+      <button id="tour-btn" type="button" class="primary"><span class="wide-only">Start tour</span><span class="narrow-only">Tour</span></button>
+      <button id="explain-btn" type="button">How to read<span class="wide-only"> this</span></button>
     </div>
     <div class="basemap" role="radiogroup" aria-label="Background map">
       <label><input type="radio" name="basemap" value="satellite" checked> Photo</label>
@@ -42,8 +41,8 @@
           <summary>Radar pictures</summary>
           <div id="layer-list"></div>
         </details>
+        <p id="photo-label" class="photo-label" aria-live="polite"></p>
       </div>
-      <p id="photo-label" class="photo-label" aria-live="polite"></p>
       <section id="tour" class="tour" aria-label="Guided tour" aria-live="polite" hidden></section>
       <p id="map-error" class="map-error" hidden></p>
     </div>
@@ -75,40 +74,43 @@
       <button class="close" type="button" aria-label="Close">Close</button>
     </div>
 
-    <h3>What finds the changes</h3>
-    <p>Radar satellites (NASA and India's NISAR, and Europe's Sentinel-1) send out their own signal and measure the echo
-      that comes back. So they see the ground through clouds and at night. When trees are cut, a building goes up or
-      earth is moved, the echo changes, and that is what the app looks for.</p>
+    <h3>What you're looking at</h3>
+    <p>Each coloured shape is a place where the ground changed between satellite passes. Drag the timeline to watch the
+      changes appear in the order they happened. In photo view the background is a photo from the slider's year, so you
+      can see the land itself.</p>
 
-    <h3>What the colors mean</h3>
+    <h3>How radar sees</h3>
+    <p>Radar sends its own signal and measures the echo, so it works at night and through clouds. Trees, bare soil and
+      buildings echo differently, so a change in the echo means a change on the ground.</p>
+
+    <h3>The three labels</h3>
     <ul class="explain-legend">
-      <li><span class="swatch" style="background:var(--c-expected)"></span><div><b>Expected.</b> The change matches
-        something on record, like a permitted building in a planned area, a recorded wildfire or routine farming.</div></li>
-      <li><span class="swatch" style="background:var(--c-review)"></span><div><b>Needs review.</b> Nothing on record
-        explains it, or it is on land where building is not allowed. Worth a look.</div></li>
-      <li><span class="swatch" style="background:var(--c-high_concern)"></span><div><b>High concern.</b> A large change
-        inside a protected area, or on land where building is not allowed with nothing on record. Look here first.</div></li>
-      <li><span class="swatch" style="background:var(--c-none)"></span><div><b>Not judged yet.</b> The radar found the
-        change, but it has not been checked against public records yet.</div></li>
+      <li><span class="swatch" style="background:var(--c-expected)"></span><div><b>Expected:</b> the change matches
+        public records (a planned project, a registered building, a recorded wildfire).</div></li>
+      <li><span class="swatch" style="background:var(--c-review)"></span><div><b>Needs review:</b> no record we could
+        check explains the change, or the land is not zoned for building.</div></li>
+      <li><span class="swatch" style="background:var(--c-high_concern)"></span><div><b>High concern:</b> the change is
+        inside a protected area, or it is large and no record explains it.</div></li>
+      <li><span class="swatch" style="background:var(--c-none)"></span><div><b>Not judged yet:</b> grey shapes have not
+        been checked against records yet.</div></li>
     </ul>
 
-    <h3>The change card</h3>
-    <p>Click a colored shape to open its card: what changed, when, how big, the color it got and every reason behind it
-      with its source. Below that are pictures from before and after, and a chart of the radar signal over time.</p>
+    <h3>What a card shows</h3>
+    <p>What changed, when and how big; the label and the reasons behind it, with their sources; radar pictures from
+      before and after; and the signal over time.</p>
 
-    <h3>The timeline and the photos</h3>
-    <p>The slider shows every change the radar had seen by that date. Press play to watch them pile up. In photo view the
-      background is a photo from that year (aerial photos in Catalonia, satellite photos elsewhere), so you can see the
-      land itself. The photos are there for context; the changes come from the radar.</p>
-
-    <h3>What it can't do</h3>
+    <h3>Limits</h3>
     <ul class="limits">
-      <li>The satellites take a new look every few days, not every day.</li>
-      <li>The app points out changes for a person to check. It does not decide whether anyone broke a rule, or who is
-        responsible.</li>
-      <li>False alarms happen: rain, snow, harvests and plowing also change the echo. Always look at the evidence.</li>
-      <li>Outlines are approximate, and very small changes can be missed.</li>
+      <li>A satellite passes every few days, not every day.</li>
+      <li>A label is a prompt for a person to check, not a legal judgment.</li>
+      <li>Rain, harvests, snow and fire can look like change, so each card says how sure the detection is.</li>
+      <li>Only public records that a computer can read are checked; permits kept as documents are not.</li>
     </ul>
+
+    <h3>Data</h3>
+    <p>NISAR radar (NASA and ISRO) and Sentinel-1 radar (through NASA's OPERA products); public records from the Catalan
+      and Spanish governments. Background photos: ICGC aerial photos (Catalonia) and Sentinel-2 cloudless by EOX
+      (elsewhere).</p>
   </dialog>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>

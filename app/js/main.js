@@ -1,5 +1,5 @@
 // Written by Claude. Wires the intro, site switcher, map, legend, basemap + year photos, timeline, side panel, explainer and tour.
-import { VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
+import { APP, VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
 import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
@@ -43,6 +43,14 @@ function allSitesBounds(sites) {
   ];
 }
 
+/** A tour step opens `change` (an id) or, before ids are known, the largest change with label `change_verdict`. */
+function findStepChange(features, step) {
+  if (step.change) return features.find((f) => f.properties.id === step.change) ?? null;
+  if (!step.change_verdict) return null;
+  const matching = features.filter((f) => f.properties.verdict === step.change_verdict);
+  return matching.sort((a, b) => b.properties.area_ha - a.properties.area_ha)[0] ?? null;
+}
+
 function setupExplainer() {
   const dialog = $("explainer");
   $("explain-btn").addEventListener("click", () => dialog.showModal());
@@ -51,6 +59,8 @@ function setupExplainer() {
 }
 
 async function main() {
+  document.title = $("app-name").textContent = APP.name;
+  $("app-pitch").textContent = APP.pitch;
   setVerdictColors();
   renderLegend();
   setupExplainer();
@@ -96,18 +106,27 @@ async function main() {
   const tour = createTour(tourData.steps ?? [], sites, {
     async runStep(step) {
       if (current?.site.id !== step.site) await openSite(step.site);
-      const feature = step.change && current.changes.features.find((f) => f.properties.id === step.change);
-      timeline.goTo(step.date ?? current.site.time_range[1], step.note ?? "");
+      const feature = findStepChange(current.changes.features, step);
+      const date = step.date ?? (feature ? feature.properties.last_date : current.site.time_range[1]);
+      if (step.play_to) timeline.playBetween(date, step.play_to, step.note ?? "");
+      else timeline.goTo(date, step.note ?? "");
       if (feature) {
         select(feature);
-        map.focus(feature);
+        map.focus(feature, tourRoom());
       } else {
         select(null);
-        map.view(current.site);
+        map.view(current.site, tourRoom());
       }
     },
   });
   $("tour-btn").addEventListener("click", () => tour.start());
+
+  // Phones: the tour docks at the top of the bottom sheet. Desktop: it floats over the map, and the camera leaves room for it.
+  const phone = matchMedia("(max-width: 760px)");
+  const placeTour = () => (phone.matches ? $("panel").prepend($("tour")) : document.querySelector(".map-wrap").append($("tour")));
+  placeTour();
+  phone.addEventListener("change", placeTour);
+  const tourRoom = () => (tour.active && !phone.matches ? $("tour").offsetHeight + 30 : 0);
 
   function showIntro() {
     current = null;

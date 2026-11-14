@@ -64,6 +64,8 @@ export function createChangeMap(container, { onSelect, bounds }) {
         id: "changes-selected", type: "line", source: "changes", filter: ["==", ["get", "id"], ""],
         paint: { "line-color": "#ffffff", "line-width": 3, "line-gap-width": 5, "line-opacity": 0.95 },
       });
+      // On narrow maps the attribution line starts folded behind its (i) button, so it doesn't cover the map.
+      if (container.clientWidth < 640) container.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
       map.on("mouseenter", "changes-fill", () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", "changes-fill", () => (map.getCanvas().style.cursor = ""));
       map.on("click", (e) => {
@@ -101,6 +103,7 @@ export function createChangeMap(container, { onSelect, bounds }) {
     ready,
     /** Zoom out to show every site (the intro view). */
     showOverview(bbox) {
+      map.resize(); // measure the container now, so the box fits the final size
       features = new Map();
       map.getSource("changes").setData(EMPTY);
       this.select(null);
@@ -114,8 +117,9 @@ export function createChangeMap(container, { onSelect, bounds }) {
       applyDateFilter();
       this.view(site);
     },
-    view(site) {
-      map.flyTo({ center: site.center, zoom: site.zoom, essential: true });
+    /** Fly to the site; `bottom` px at the bottom stay free (for the tour box). Padding is always set, as MapLibre keeps it. */
+    view(site, bottom = 0) {
+      map.flyTo({ center: site.center, zoom: site.zoom, padding: { top: 0, right: 0, left: 0, bottom }, essential: true });
     },
     /** Lay the site's radar pictures (layers.json) under the change polygons; all start switched off. */
     setOverlays(base, layers) {
@@ -143,12 +147,12 @@ export function createChangeMap(container, { onSelect, bounds }) {
       applyDateFilter();
     },
     /** Fly so one change fills the view, with room around it. */
-    focus(feature) {
+    focus(feature, bottom = 0) {
       const g = feature.geometry;
       const pts = g.coordinates.flat(g.type === "MultiPolygon" ? 2 : 1);
       const lons = pts.map((p) => p[0]);
       const lats = pts.map((p) => p[1]);
-      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 80, maxZoom: 15, essential: true });
+      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: { top: 60, right: 60, left: 60, bottom: 60 + bottom }, maxZoom: 15, essential: true });
     },
     /** Show a year photo from photos.js (or null for today's imagery) under the change shapes. */
     setPhoto(next) {

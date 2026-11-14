@@ -1,60 +1,56 @@
 {
- "about": "Guided tour steps. Each step: site (id in data/sites.json), title, text, date (slider position, YYYY-MM-DD), optional change (a change id to open) and note (shown on the timeline). Steps whose site is not ready are skipped. Steps on a fake site (fixture: true) are stand-ins: they run only while no real site in this list is ready.",
+ "about": "Guided tour. Each step: site (id in data/sites.json), title, text, optional date (slider position, YYYY-MM-DD), play_to (play the slider from date to this date), note (shown on the timeline), and change (a change id to open) or change_verdict (opens the largest change with that label). Steps whose site is not ready are skipped. Steps on a fake site (fixture: true) are stand-ins: they run only while no real site in this list is ready. Real-site dates and change ids get filled in when the data lands.",
  "steps": [
   {
    "site": "muhos",
-   "title": "Finland: forest cleared before the check was done",
-   "text": "Between March and August 2026, about 330 hectares of forest were cleared here at Muhos for a planned Google datacenter, before the required environmental assessment was finished. Radar sees through clouds and at night, even under snow, so the clearing shows up pass after pass.",
-   "date": "2026-08-31",
-   "note": "Clearing ran from March to August 2026"
+   "title": "Muhos, Finland",
+   "text": "Between March and August 2026, about 330 hectares of forest were cleared for a planned data centre, before the required environmental assessment was finished.",
+   "date": "2026-03-01"
   },
   {
    "site": "muhos",
-   "title": "The stop order came months later",
-   "text": "The permit authority ordered the work stopped on 6 October 2026, and police opened a preliminary investigation on 29 October. By then the forest was gone. This app is built to flag a change like this while it is still happening, so a person can check it in time.",
-   "date": "2026-10-06",
-   "note": "6 Oct 2026: work ordered stopped"
+   "title": "The clearing continued",
+   "text": "In May the company was told an assessment was required. The clearing continued. Radar recorded each stage, in any weather.",
+   "date": "2026-05-01",
+   "play_to": "2026-08-31",
+   "note": "May to August 2026"
   },
   {
    "site": "agroparc",
-   "title": "Catalonia: earth moved on a large scale",
-   "text": "At Agroparc Penedès, a 258-hectare project is moving over 700,000 cubic meters of earth. A court partly halted the works in July 2025 because of protected eagles in the area, and the works have continued since. A change this big is exactly what a planner wants to check against its permits.",
+   "title": "Agroparc Penedès, Catalonia",
+   "text": "Earthworks for a 258-hectare project. A court partly halted the works in July 2025; they continue today.",
    "date": "2025-07-01",
    "note": "July 2025: court partly halts the works"
   },
   {
    "site": "catalonia",
-   "title": "All of Catalonia at a glance",
-   "text": "Each colored shape is a change the radar found. Blue looks expected, yellow needs review and orange is a high concern. Press play to watch the changes pile up over the years, then click any shape to see why it got its color.",
-   "date": "2026-11-05"
+   "title": "All of Catalonia",
+   "text": "The same method across Catalonia: every change, sorted by how much it deserves a second look."
+  },
+  {
+   "site": "catalonia",
+   "title": "The evidence behind a label",
+   "text": "Open any change to see the evidence and the records behind its label.",
+   "change_verdict": "high_concern"
   },
 
   {
    "site": "fixture",
-   "title": "A practice site with fake data",
-   "text": "The real sites are still being prepared, so this tour runs on a made-up site. Each colored shape is a change the radar found, colored by how urgently a person should look at it.",
-   "date": "2026-11-02"
+   "title": "A practice site",
+   "text": "Until the real places are ready, this tour runs on a made-up site. Each coloured shape is a place where the ground changed between satellite passes."
   },
   {
    "site": "fixture",
-   "title": "Watch the changes pile up",
-   "text": "The timeline is back at early 2024. Press play to move forward: each shape appears on the date the radar first saw it, and the background switches to the aerial photo of that year, so you can see the land itself change.",
+   "title": "Changes in the order they happened",
+   "text": "Watch the changes appear as the timeline moves. The background switches to the photo of each year, so you can see the land itself.",
    "date": "2024-01-15",
-   "note": "Press play to move forward in time"
+   "play_to": "2026-11-02"
   },
   {
    "site": "fixture",
-   "title": "A change that needs a look first",
-   "text": "Forest was cut here in August 2026. The card shows why it is a high concern, with each reason and its source, the pictures from before and after, and the radar signal over time.",
-   "date": "2026-09-03",
-   "change": "fixture-0003"
-  },
-  {
-   "site": "fixture",
-   "title": "Not every change is a problem",
-   "text": "To the radar, this burned area looks like cut forest. It is marked Expected because it matches a recorded wildfire. The app always shows its reasons, so a person can judge for themselves.",
-   "date": "2025-07-15",
-   "change": "fixture-0005"
+   "title": "The evidence behind a label",
+   "text": "Open any change to see the evidence and the records behind its label.",
+   "change_verdict": "high_concern"
   }
  ]
 }

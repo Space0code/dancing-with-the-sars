@@ -2,7 +2,7 @@
 import { buildChart } from "./chart.js";
 import { buildSwipe } from "./swipe.js";
 import { loadJson } from "./data.js";
-import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, sensorLabel, formatDate, formatArea, safeUrl } from "./format.js";
+import { h, APP, VERDICTS, verdictKey, changeLabel, confidenceLabel, sensorLabel, formatDate, formatArea, safeUrl } from "./format.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -68,12 +68,10 @@ export function renderIntro(sites, { onPick, onTour }) {
     );
   $("card").replaceChildren(
     h("section", { class: "intro" },
-      h("h2", {}, "Which land changes need a closer look?"),
-      h("p", {}, "Radar satellites pass over every few days, day and night, even through clouds. This app finds where the land changed: forest cut, buildings put up, earth moved, ground sinking. Then it checks each change against public records, so you know where to look first."),
-      h("button", { type: "button", class: "primary big", onclick: onTour }, "Start the two-minute tour"),
-      h("h3", {}, "Or open a site"),
+      h("p", { class: "lead phone-only" }, APP.pitch), // on desktop the top bar already shows the pitch
+      h("p", {}, "Every few days, radar satellites pass overhead and record the ground, whatever the weather. We compare the passes, mark where the land changed (trees removed, buildings added, earth moved), and check each change against public records. Pick a place to start."),
       h("ul", { class: "site-list" }, sites.map(siteButton)),
-      h("p", { class: "note" }, "The app points out changes for a person to check. It does not decide whether anyone broke a rule.")
+      h("button", { type: "button", class: "primary big", onclick: onTour }, "Or take the two-minute tour")
     )
   );
 }
