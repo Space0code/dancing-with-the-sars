@@ -1,5 +1,5 @@
 // Written by Claude. MapLibre map: satellite background (no API key), the big picture of the slider date (a canvas
-// drawn by picture.js), verdict-colored change polygons with a date filter, a brief flash on new ones, selection.
+// drawn by picture.js), verdict-colored change polygons with a date filter, selection, and a switch that hides them all.
 // A site with stages.geojson draws its grouped changes as ONE area with one bold outline that grows with the date.
 import { VERDICTS } from "./format.js";
 
@@ -27,9 +27,10 @@ const verdictColor = [
 
 const EMPTY = { type: "FeatureCollection", features: [] };
 const DATE_LAYERS = ["changes-fill", "changes-casing", "changes-line"];
+// everything drawn over the picture for the changes: the grown area, each change, the hover / selection outlines
+const OVERLAY_LAYERS = ["stage-fill", "stage-casing", "stage-line", ...DATE_LAYERS, "part-casing", "part-line", "changes-selected"];
 const OWN_OUTLINE = ["!", ["get", "grouped"]]; // changes in a group have no outline of their own (the stage has one)
 const PART = ["==", ["get", "id"], ""]; // the part under the pointer or selected: a thin outline
-const FLASH_MS = 1600; // how long a newly appeared outline glows
 const NONE = ["==", ["get", "id"], ""];
 // Thin outlines at the site overview (detailed shapes with holes would hide the picture), full width from zoom 15.
 const byZoom = (atSite, close) => ["interpolate", ["linear"], ["zoom"], 12, atSite, 15, close];
@@ -50,7 +51,7 @@ export function createChangeMap(container, { onSelect, bounds }) {
   let hoverId = "";
   let selectedId = "";
   let dateIso = "9999-12-31";
-  let flashRaf = 0;
+  let overlayOn = true; // the marked areas drawn over the picture; off shows the bare picture
 
   const ready = new Promise((resolve, reject) => {
     map.on("error", (e) => e.error && /style|webgl/i.test(e.error.message) && reject(e.error));
@@ -67,10 +68,6 @@ export function createChangeMap(container, { onSelect, bounds }) {
       map.addLayer({ id: "changes-line", type: "line", source: "changes", filter: OWN_OUTLINE, paint: { "line-color": verdictColor, "line-width": byZoom(1.4, 2.5) } });
       map.addLayer({ id: "part-casing", type: "line", source: "changes", filter: PART, paint: { "line-color": "#1b1b1b", "line-width": 4 } });
       map.addLayer({ id: "part-line", type: "line", source: "changes", filter: PART, paint: { "line-color": "#ffffff", "line-width": 1.8 } });
-      map.addLayer({
-        id: "changes-flash", type: "line", source: "changes", filter: NONE,
-        paint: { "line-color": "#ffffff", "line-width": 4, "line-blur": 2, "line-opacity": 0 },
-      });
       map.addLayer({
         id: "changes-selected", type: "line", source: "changes", filter: NONE,
         paint: { "line-color": "#ffffff", "line-width": 3, "line-gap-width": 5, "line-opacity": 0.95 },
@@ -116,9 +113,8 @@ export function createChangeMap(container, { onSelect, bounds }) {
     showPart();
   }
 
-  function stopFlash() {
-    cancelAnimationFrame(flashRaf);
-    map.setFilter("changes-flash", NONE);
+  function applyOverlay() {
+    for (const id of OVERLAY_LAYERS) map.setLayoutProperty(id, "visibility", overlayOn ? "visible" : "none");
   }
 
   return {
@@ -131,7 +127,6 @@ export function createChangeMap(container, { onSelect, bounds }) {
       stages = [];
       applyStage();
       this.select(null);
-      stopFlash();
       map.fitBounds(bbox, { padding: 40, essential: true });
     },
     showSite(site, collection, stageCollection = null) {
@@ -143,7 +138,6 @@ export function createChangeMap(container, { onSelect, bounds }) {
       const drawn = { ...collection, features: collection.features.map((f) => ({ ...f, properties: { ...f.properties, grouped: grouped.has(f.properties.id) } })) };
       map.getSource("changes").setData(drawn);
       this.select(null);
-      stopFlash();
       applyDateFilter();
       applyStage();
       this.fitChanges(site, collection);
@@ -202,20 +196,10 @@ export function createChangeMap(container, { onSelect, bounds }) {
       applyDateFilter();
       applyStage();
     },
-    /** Let the outlines of these change ids glow for a moment (they just appeared on the timeline). */
-    flash(ids) {
-      stopFlash();
-      if (!ids.length) return;
-      map.setFilter("changes-flash", withExtra(["in", ["get", "id"], ["literal", ids]]));
-      const start = performance.now();
-      const step = (now) => {
-        const k = Math.min(1, (now - start) / FLASH_MS);
-        map.setPaintProperty("changes-flash", "line-opacity", 1 - k * k);
-        map.setPaintProperty("changes-flash", "line-width", 14 - 10 * k);
-        if (k < 1) flashRaf = requestAnimationFrame(step);
-        else map.setFilter("changes-flash", NONE);
-      };
-      flashRaf = requestAnimationFrame(step);
+    /** Show (true) or hide (false) every marked area over the picture; it stays that way across dates and sites. */
+    setOverlay(on) {
+      overlayOn = on;
+      applyOverlay();
     },
     /** Fly so one change fills the view, with room around it. */
     focus(feature, bottom = 0) {

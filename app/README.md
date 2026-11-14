@@ -19,8 +19,10 @@ Missing series files show a message instead of a broken box.
   Frames are drawn on one canvas (a MapLibre `canvas` source over the four `coordinates`), neighbours preloaded.
   **Compare before and after** (`js/swipe.js`): a full-height line on the map; left = the set's first frame, right = the
   frame of the slider date. A site without `frames.json` keeps the Esri background and the Radar button is disabled.
-- **New changes**: when the slider moves forward, outlines whose `first_date` was just passed glow briefly and the running
-  total flashes.
+- **New changes** simply appear, with their normal look, at the step where they are first seen (no glow, no flash).
+- **Marked areas** (`#overlay-btn`, on by default): off hides every shape drawn over the picture (the grown area, each
+  change, hover and selection outlines; `map.setOverlay`). It stays off across dates, play, compare and site switches;
+  opening a change from the list or the tour turns it back on. Timeline bars, total and side panel are not affected.
 - **One growing outline** (optional `stages.geojson`, `map.js`): changes that are members of a stage group have no outline of
   their own; the map draws the latest stage at or before the slider date as one light fill with one bold outline (verdict
   colour, white casing). The member parts stay clickable; hover or select shows a thin outline of just that part.

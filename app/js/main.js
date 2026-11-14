@@ -54,13 +54,6 @@ function findStepChange(features, step) {
   return matching.sort((a, b) => b.properties.area_ha - a.properties.area_ha)[0] ?? null;
 }
 
-/** Replay a short highlight on an element (the running total, when new changes appear). */
-function bump(el) {
-  el.classList.remove("bump");
-  void el.offsetWidth; // restart the animation
-  el.classList.add("bump");
-}
-
 function setupExplainer() {
   const dialog = $("explainer");
   $("explain-btn").addEventListener("click", () => dialog.showModal());
@@ -82,9 +75,17 @@ async function main() {
   fillSiteSelect(sites);
   const overview = allSitesBounds(sites);
   let current = null; // the open site's data, or null on the intro screen
-  let lastDate = null; // the slider's previous date, to spot changes that just appeared
+
+  // "Marked areas": hides every shape over the picture. Opening a change turns them back on, so the click shows something.
+  const overlayBtn = $("overlay-btn");
+  function setOverlay(on) {
+    overlayBtn.setAttribute("aria-pressed", String(on));
+    map.setOverlay(on);
+  }
+  overlayBtn.addEventListener("click", () => setOverlay(overlayBtn.getAttribute("aria-pressed") !== "true"));
 
   function select(feature) {
+    if (feature) setOverlay(true);
     map.select(feature);
     inbox.setSelected(feature ? feature.properties.id : null);
     if (feature) {
@@ -96,12 +97,6 @@ async function main() {
   await map.ready;
 
   const picture = createPicture(map, document.querySelector(".map-wrap"));
-
-  /** Changes that first show after the previous slider date, up to this one (only when moving forward). */
-  function justAppeared(iso) {
-    if (!current || !lastDate || iso <= lastDate) return [];
-    return current.changes.features.filter((f) => f.properties.first_date > lastDate && f.properties.first_date <= iso).map((f) => f.properties.id);
-  }
 
   const refreshTotal = () => {
     const { count, ha } = inbox.stats(); // follows the date and the inbox filters
@@ -119,14 +114,10 @@ async function main() {
   });
   const timeline = createTimeline({
     onDate(iso) {
-      const fresh = justAppeared(iso);
-      lastDate = iso;
       map.setDate(iso);
-      map.flash(fresh);
       picture.setDate(iso);
       inbox.setDate(iso);
       refreshTotal();
-      if (fresh.length) bump($("total"));
     },
     onPlay: () => picture.setView("radar"), // the time-lapse always runs on the radar pictures
   });
@@ -158,7 +149,6 @@ async function main() {
 
   function showIntro() {
     current = null;
-    lastDate = null;
     $("map-error").hidden = true;
     $("site").value = "";
     $("fake-badge").hidden = true;
@@ -181,7 +171,6 @@ async function main() {
     $("panel-tabs").hidden = false;
     history.replaceState(null, "", `#site=${site.id}`);
     current = await loadSite(site);
-    lastDate = null; // no flash for the changes already there when the site opens
     renderStory(current.story); // first: it changes the map's size on phones
     showHint();
     inbox.setSite(current.changes.features);

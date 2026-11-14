@@ -193,8 +193,6 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
 .timeline-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
 .date-label { font-weight: 700; font-size: 17px; }
 .total { color: var(--ink); font-weight: 600; border-radius: 6px; padding: 0 4px; }
-.total.bump { animation: bump 1.2s ease-out; }
-@keyframes bump { from { background: #ffe066; } to { background: transparent; } }
 .timeline-row { display: flex; align-items: center; gap: 12px; }
 .play {
   width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1px solid var(--accent);
