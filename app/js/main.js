@@ -9,6 +9,7 @@ import { createInbox } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
 import { createRecords } from "./records.js";
+import { createBasemap } from "./basemap.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -85,6 +86,7 @@ async function main() {
       if (lastDate) params.set("date", lastDate);
       if (picture.view !== "radar" && picture.stops()) params.set("view", "satellite"); // a site without photos stays in Radar
       if (selectedId) params.set("change", selectedId);
+      if (basemap.value !== "satellite") params.set("base", basemap.value);
       try {
         history.replaceState(null, "", `${location.pathname}${location.search}#${params}`);
       } catch {} // Safari refuses more than ~100 calls in 30 s: the link just stays at its last state
@@ -128,6 +130,7 @@ async function main() {
   $("changes-btn").addEventListener("click", () => (drawer.mode && drawer.mode !== "card" ? drawer.close() : (select(null), showSiteDrawer())));
   await map.ready;
   const records = createRecords(map.maplibre, $("records-box"));
+  const basemap = createBasemap(map, $("basemap-box"), { onChange: () => writeHash() });
 
   // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
   const syncStops = () => {
@@ -255,6 +258,7 @@ async function main() {
       tour.end();
       await openSite(id);
     }
+    basemap.set(params.get("base")); // anything but "light" is the default satellite map
     const view = params.get("view");
     if (view === "radar" || view === "satellite") picture.setView(view === "satellite" ? "photo" : "radar"); // anything else is ignored; before the date, so the slider has the view's stops
     if (date) timeline.goTo(date);
