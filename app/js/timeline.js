@@ -10,6 +10,7 @@ export function createTimeline({ onDate }) {
   let startDay = 0;
   let playing = false;
   let position = 0; // fractional day while playing
+  let stopAt = 0; // slider value where playing stops
   let lastFrame = 0;
 
   function emit() {
@@ -27,18 +28,19 @@ export function createTimeline({ onDate }) {
   function frame(now) {
     if (!playing) return;
     const max = Number(slider.max);
-    position = Math.min(max, position + ((now - lastFrame) / 1000) * (max / PLAY_SECONDS));
+    position = Math.min(stopAt, position + ((now - lastFrame) / 1000) * (max / PLAY_SECONDS));
     lastFrame = now;
     if (Math.floor(position) !== Number(slider.value)) {
       slider.value = Math.floor(position);
       emit();
     }
-    if (position >= max) stop();
+    if (position >= stopAt) stop();
     else requestAnimationFrame(frame);
   }
 
-  function play() {
-    if (Number(slider.value) >= Number(slider.max)) slider.value = 0;
+  function play(until = Number(slider.max)) {
+    if (Number(slider.value) >= until) slider.value = 0;
+    stopAt = until;
     position = Number(slider.value);
     playing = true;
     playBtn.textContent = "❚❚";
@@ -50,9 +52,11 @@ export function createTimeline({ onDate }) {
 
   function goTo(iso) {
     stop();
-    slider.value = Math.min(Math.max(toDay(iso) - startDay, 0), Number(slider.max));
+    slider.value = clampDay(iso);
     emit();
   }
+
+  const clampDay = (iso) => Math.min(Math.max(toDay(iso) - startDay, 0), Number(slider.max));
 
   playBtn.addEventListener("click", () => (playing ? stop() : play()));
   slider.addEventListener("input", () => {
@@ -65,6 +69,7 @@ export function createTimeline({ onDate }) {
     /** Set the site's date range and its story events; the slider starts at the end so everything is visible. */
     setRange([start, end], events = []) {
       stop();
+      slider.disabled = playBtn.disabled = false;
       startDay = toDay(start);
       const days = toDay(end) - startDay;
       slider.max = days;
@@ -87,6 +92,24 @@ export function createTimeline({ onDate }) {
           )
       );
       emit();
+    },
+    /** No site open: the timeline is inactive and says so. */
+    clear() {
+      stop();
+      slider.disabled = playBtn.disabled = true;
+      for (const id of ["range-start", "range-end", "event-note", "total"]) $(id).textContent = "";
+      $("events").replaceChildren();
+      $("date-label").textContent = "Choose a site to see its changes over time";
+    },
+    /** Jump to a date (used by the guided tour); the note explains why we are there. */
+    goTo(iso, note = "") {
+      goTo(iso);
+      $("event-note").textContent = note;
+    },
+    /** Jump to `from`, then play forward to `to` (the tour's "watch it happen" steps). */
+    playBetween(from, to, note = "") {
+      this.goTo(from, note);
+      if (clampDay(to) > Number(slider.value)) play(clampDay(to));
     },
     setTotal(text) {
       $("total").textContent = text;
