@@ -605,6 +605,74 @@ def test_primary_parts_keep_the_optical_dates_and_attach_the_radar():
     assert second.confidence == "medium" and second.signal["metric"] == "VH_dB"
 
 
+def _three_sources():
+    return pipeline._site_sources(pipeline.Site(id="t", bbox=(0, 0, 1, 1), nisar=None, sources=(
+        ("OPERA DIST-ALERT", "optical", "2023-01-01", None, 3, ("clearing",), ()),
+        ("Sentinel-1 C-band", "radar", "2025-06-02", None, 6, ("clearing", "other"), ()),
+        ("NISAR L-band", "radar", "2026-06-25", None, 12, ("clearing", "other"), ()))))
+
+
+def test_part_window_opens_where_the_radar_saw_the_whole_part_earlier():
+    from sarwatch.merge import Detection
+
+    run, params = _s1_run()  # the whole rectangle drops on S_DAYS[5], unchanged on S_DAYS[4]
+    late = Detection(source=pipeline.OPTICAL, kind="optical", polygon=_lonlat_box(*S_RECT), type="clearing",
+                     first_date=S_DAYS[9], last_date=S_DAYS[9], confidence="medium", not_before=S_DAYS[7])
+    (part,) = pipeline._primary_parts([late], [run], {run.sensor: 3}, {run.sensor: params}, _three_sources())
+    assert part.first_date == S_DAYS[9]        # the optical confirmation date stays
+    assert part.not_before == S_DAYS[4]        # the last date known unchanged: radar's, not the optical look
+    first = part.explain.split(". ")[0]
+    assert "happened between" in first and "radar saw its vegetation echo drop earlier" in first
+    optical = next(s for s in part.sources if s["kind"] == "optical")
+    assert optical["not_before"] == S_DAYS[7].isoformat()  # the optical source keeps its own window
+    nisar = next(s for s in part.sources if s["sensor"] == "NISAR L-band")
+    assert nisar["role"] == "not_watching" and "began watching on 25 Jun 2026, after this had happened" in nisar["note"]
+    assert "did not flag" not in nisar["note"]
+
+
+def test_radar_after_the_optical_date_reads_also_saw_not_through_clouds():
+    from sarwatch.merge import Detection
+
+    run, params = _s1_run(change_pass=8)  # the drop (S_DAYS[8]) comes after the optical alert (S_DAYS[7])
+    early = Detection(source=pipeline.OPTICAL, kind="optical", polygon=_lonlat_box(*S_RECT), type="clearing",
+                      first_date=S_DAYS[7], last_date=S_DAYS[7], confidence="medium", not_before=S_DAYS[4])
+    (part,) = pipeline._primary_parts([early], [run], {run.sensor: 3}, {run.sensor: params}, _three_sources())
+    assert "Sentinel-1 radar also saw its vegetation echo drop, by " in part.explain
+    assert "through clouds" not in part.explain and part.not_before == S_DAYS[4]
+
+
+def test_undated_radar_share_gets_a_role_that_agrees_with_its_note():
+    from sarwatch.merge import Detection
+
+    run, params = _s1_run()
+    box = _lonlat_box(slice(10, 30), slice(10, 60))  # the rectangle plus unchanged ground: ~60 % flagged
+    wide = Detection(source=pipeline.OPTICAL, kind="optical", polygon=box, type="clearing", first_date=S_DAYS[9],
+                     last_date=S_DAYS[9], confidence="medium", not_before=S_DAYS[7])
+    (part,) = pipeline._primary_parts([wide], [run], {run.sensor: 3}, {run.sensor: params}, _three_sources())
+    s1 = next(s for s in part.sources if s["sensor"] == "Sentinel-1 C-band")
+    if s1["first_date"] is None:  # flagged but no part-wide drop to date
+        assert (s1["role"] == "detected") == (s1["share"] >= 0.3)
+        assert s1["role"] == "detected" or "flagged only" in s1["note"]
+
+
+def test_smooth_parts_keep_area_close_the_gaps_and_do_not_overlap():
+    from shapely.geometry import box
+    from shapely.ops import transform
+    from pyproj import Transformer
+
+    from sarwatch.merge import area_ha
+
+    to_ll = Transformer.from_crs(3067, 4326, always_xy=True).transform
+    a = box(400000, 7200000, 400600, 7200600).difference(box(400200, 7200200, 400250, 7200250))  # a 0.25 ha hole
+    b = box(400600, 7200000, 401000, 7200600)  # the neighbour, sharing an edge
+    ga, gb = (transform(to_ll, g) for g in (a, b))
+    sa, sb = pipeline.smooth_parts([ga, gb])
+    assert not sa.interiors if sa.geom_type == "Polygon" else all(not p.interiors for p in sa.geoms)  # hole filled
+    for old, new in ((ga, sa), (gb, sb)):
+        assert abs(area_ha(new) / area_ha(old) - 1) < 0.03
+    assert area_ha(sa.intersection(sb)) < 0.05 * area_ha(sa)
+
+
 def test_part_drop_needs_a_lasting_drop_of_the_threshold():
     run, params = _s1_run(change_pass=5)
     part = np.zeros(S_SHAPE, bool)

@@ -672,13 +672,91 @@ def _sentence(group: list, change, best, sites: dict) -> str:
         elif ds[0].kind == "optical":
             tails.append(f"an optical alert confirmed vegetation loss here by {day}")
         else:
-            through = " through clouds" if first_kind == "optical" else ""
-            tails.append(f"{SHORT.get(name, name)} radar confirmed it{through} on {day}")
+            if first_kind == "optical" and ds[0].not_before is not None:  # its own window is a range
+                tails.append(f"{SHORT.get(name, name)} radar also saw its vegetation echo drop, by {day}")
+            else:
+                through = " through clouds" if first_kind == "optical" else ""
+                tails.append(f"{SHORT.get(name, name)} radar confirmed it{through} on {day}")
     return "; ".join([head] + tails) + "."
 
 
 PRIMARY_INSIDE = 0.5  # a detection belongs to the primary scope when this share of its area lies inside it
 ATTACH_MIN = 0.10     # an attached source covering less of a part than this did not flag it
+DETECTED_SHARE = 0.30  # an attached source that flagged at least this share of a part "detected" it (merge.SHARE_AGREES)
+WHOLE_PART = 0.75     # a radar whose flagged share and part-wide echo drop cover this much of a part saw the whole part
+
+
+SMOOTH_RES_M = 5.0     # raster step of the smoothing
+SMOOTH_HOLE_HA = 1.0   # holes smaller than this are filled
+SMOOTH_CLOSE_M = 16.0  # closes gaps up to one 30 m pixel wide
+SMOOTH_ROUND_M = 7.5   # Gaussian width that rounds the pixel staircase
+SMOOTH_SIMPLIFY_M = 12.0
+
+
+def smooth_parts(geoms: list) -> list:
+    """Pixel-edged part outlines (lon/lat, disjoint) made readable on a map, in a local metric grid (EPSG:3067):
+    the union gets gaps up to one pixel closed and holes under 1 ha filled; every ground point of it goes to the
+    nearest original part (so a part never swallows its neighbour's ground and parts do not overlap); each part is
+    rounded (Gaussian on its mask), vectorised and simplified to 12 m. Returns one geometry per input."""
+    import shapely
+    from pyproj import Transformer
+    from rasterio import features
+    from rasterio.transform import from_origin
+    from scipy import ndimage
+    from shapely.geometry import shape as to_shape
+
+    fwd = Transformer.from_crs(4326, 3067, always_xy=True)
+    inv = Transformer.from_crs(3067, 4326, always_xy=True)
+
+    def apply(g, tr):
+        return shapely.transform(g, lambda xy: np.column_stack(tr.transform(xy[:, 0], xy[:, 1])))
+
+    metric = [apply(g, fwd) for g in geoms]
+    x0, y0, x1, y1 = shapely.union_all(metric).bounds
+    r, pad = SMOOTH_RES_M, 60.0
+    x0, y1 = x0 - pad, y1 + pad
+    shape_ = (int(np.ceil((y1 - (y0 - pad)) / r)), int(np.ceil((x1 + pad - x0) / r)))
+    tf = from_origin(x0, y1, r, r)
+    masks = [features.rasterize([g], out_shape=shape_, transform=tf, dtype="uint8") > 0 for g in metric]
+    union = np.any(masks, axis=0)
+    k = int(round(SMOOTH_CLOSE_M / r))
+    disk = ndimage.generate_binary_structure(2, 1)
+    union = ndimage.binary_closing(np.pad(union, k + 1), ndimage.iterate_structure(disk, k))[k + 1:-k - 1, k + 1:-k - 1]
+    holes, n = ndimage.label(~union)
+    for h in range(1, n + 1):  # a hole not connected to the outside and under 1 ha
+        sel = holes == h
+        if not (sel[0].any() or sel[-1].any() or sel[:, 0].any() or sel[:, -1].any()) and sel.sum() * r * r < SMOOTH_HOLE_HA * 1e4:
+            union |= sel
+    dist = np.stack([ndimage.distance_transform_edt(~m) for m in masks])
+    owner = dist.argmin(axis=0)
+    sigma = SMOOTH_ROUND_M / r
+    soft = np.stack([ndimage.gaussian_filter(((owner == i) & union).astype(float), sigma) for i in range(len(geoms))])
+    # the rounding level of each part is chosen so its area stays that of its pixels (closing and hole filling
+    # add ground, rounding at 0.5 keeps it): a higher level eats into the added ground
+    level = np.full(len(geoms), 0.5)
+    for i in range(len(geoms)):
+        levels = np.linspace(0.4, 0.8, 41)
+        level[i] = levels[np.argmin([abs((soft[i] > lv).sum() - masks[i].sum()) for lv in levels])]
+    keep = soft > level[:, None, None]
+    owner = np.where(keep.any(axis=0), np.where(keep, soft, -1).argmax(axis=0), -1)
+    union = owner >= 0
+    out = []
+    for i in range(len(geoms)):
+        polys = [to_shape(g) for g, v in features.shapes(((owner == i) & union).astype("uint8"), transform=tf) if v]
+        polys = [q for q in polys if q.area >= 400]  # drop slivers under 0.04 ha
+        g = shapely.union_all(polys)
+        flat = g.simplify(SMOOTH_SIMPLIFY_M)  # simplifying cuts convex corners: grow it back to the rounded area
+        base = g
+        for _ in range(8):
+            if abs(flat.area - base.area) <= 0.005 * base.area:
+                break
+            flat = flat.buffer((base.area - flat.area) / max(flat.length, 1.0), join_style="round")
+            flat = flat.simplify(SMOOTH_SIMPLIFY_M / 4)
+        g = flat
+        if g.geom_type not in ("Polygon", "MultiPolygon"):
+            raise PipelineError(f"smoothing part {i} left {g.geom_type} ({len(polys)} pieces)")
+        out.append(apply(g, inv))
+    return out
 
 
 def _part_signal(run, outline: dict) -> dict | None:
@@ -757,65 +835,98 @@ def _primary_parts(dets: list, runs: list, n_early: dict, params: dict, site_lis
     for d in optical:
         by_day.setdefault(d.first_date, []).append(d)
     out = []
-    for day, ds in sorted(by_day.items()):
-        geom = unary_union([d.polygon for d in ds])
+    days = sorted(by_day)
+    smooth = smooth_parts([unary_union([d.polygon for d in by_day[day]]) for day in days])
+    for day, geom in zip(days, smooth):
+        ds = by_day[day]
         total = merge.area_ha(geom)
-        not_before = ds[0].not_before
-        entries = [dict(sensor=OPTICAL, kind="optical", role="detected", first_date=day.isoformat(),
-                        last_date=day.isoformat(), not_before=None if not_before is None else not_before.isoformat(),
-                        confidence="medium", area_ha=round(total, 2), share=1.0,
-                        note=f"An optical alert found vegetation loss here {merge._when(day, not_before)}.")]
+        optical_nb = not_before = ds[0].not_before
         gj = to_geojson(geom)
-        clauses, agree, best = [], False, None
+        # each radar's look at the part: (run index, share flagged, (first pass, last unchanged pass) or None)
+        looks = {}
         for s in site_list:
             i = next((k for k, r in enumerate(runs) if r.sensor == s.name), None)
+            if s.kind == "radar" and i is not None:
+                part = _part_mask(runs[i], gj)
+                share = (part & (runs[i].result.labels > 0)).sum() / max(part.sum(), 1)
+                looks[s.name] = (i, part, float(share),
+                                 _part_drop(runs[i], part, n_early[runs[i].sensor], params[runs[i].sensor])
+                                 if share >= ATTACH_MIN else None)
+        # a radar that shows (nearly) the whole part already changed before the optical window opens moves the
+        # window's start back to that radar's last unchanged pass (not_before = the last date known unchanged)
+        earlier = None
+        for name, (i, _, share, found) in looks.items():
+            if found is None or share < WHOLE_PART or optical_nb is None or found[1] is None:
+                continue
+            if runs[i].dates[found[0]] <= optical_nb and runs[i].dates[found[1]] < optical_nb:
+                if earlier is None or runs[i].dates[found[1]] < earlier[1]:
+                    earlier = (name, runs[i].dates[found[1]], runs[i].dates[found[0]])
+        if earlier is not None:
+            not_before = earlier[1]
+        entries = [dict(sensor=OPTICAL, kind="optical", role="detected", first_date=day.isoformat(),
+                        last_date=day.isoformat(), not_before=None if optical_nb is None else optical_nb.isoformat(),
+                        confidence="medium", area_ha=round(total, 2), share=1.0,
+                        note=f"An optical alert found vegetation loss here {merge._when(day, optical_nb)}.")]
+        radar_first = min((runs[i].dates[f[0]] for i, _, _, f in looks.values() if f), default=None)
+        clauses, agree, best = [], False, None
+        for s in site_list:
             watching = s.start <= (not_before or day)  # watching over the whole window
-            if s.kind != "radar" or (i is None and watching):
+            if s.kind != "radar" or (s.name not in looks and watching):
                 continue
             short = SHORT.get(s.name, s.name)
-            share = 0.0
-            if i is not None:
-                run = runs[i]
-                part = _part_mask(run, gj)
-                hit = part & (run.result.labels > 0)
-                share = hit.sum() / max(part.sum(), 1)
+            i, part, share, found = looks.get(s.name, (None, None, 0.0, None))
+            began = (f"{short} began watching on {_say_day(s.start)}, after this had happened"
+                     if s.start > min(day, radar_first or day) else None)
             if share < ATTACH_MIN:
                 note = f"{short} radar did not flag it." if watching else (
-                    f"{s.name} was not flying yet." if s.name.startswith("NISAR") else f"{s.name} starts in {s.start.year}.")
+                    began or (f"{s.name} was not flying yet." if s.name.startswith("NISAR")
+                              else f"{s.name} starts in {s.start.year}."))
                 entries.append(dict(sensor=s.name, kind="radar", role="not_seen" if watching else "not_watching",
                                     first_date=None, last_date=None, not_before=None, confidence=None, area_ha=None,
                                     share=None, note=note))
                 continue
-            # the radar's own date for the part: its mean vegetation echo must drop by the detector's threshold
-            found = _part_drop(run, part, n_early[run.sensor], params[run.sensor])
+            run = runs[i]
+            hit = part & (run.result.labels > 0)
+            labels, counts = np.unique(run.result.labels[hit], return_counts=True)
+            grade = {r.label: r.confidence for r in run.result.regions}[int(labels[np.argmax(counts)])]
             if found is None:
-                entries.append(dict(sensor=s.name, kind="radar", role="not_seen", first_date=None, last_date=None,
-                                    not_before=None, confidence=None, area_ha=round(share * total, 2),
-                                    share=round(float(share), 3),
-                                    note=f"{short} radar flagged {share:.0%} of it, but its echo over the whole part "
-                                         "did not drop enough to date it."))
+                # flagged, but the part's mean echo does not drop enough to date it: no dates
+                if share >= DETECTED_SHARE:
+                    role, conf = "detected", grade
+                    note = f"{short} radar flagged {share:.0%} of it, but its echo over the whole part did not drop enough to date it."
+                else:
+                    role, conf = "not_seen", None
+                    note = (f"{short} radar flagged only {share:.0%} of it, and its echo over the whole part "
+                            "did not drop enough to date it.")
+                if not watching and began and role == "not_seen":
+                    note = f"{began[0].upper()}{began[1:]}; {note[0].lower()}{note[1:]}"
+                entries.append(dict(sensor=s.name, kind="radar", role=role, first_date=None, last_date=None,
+                                    not_before=None, confidence=conf, area_ha=round(share * total, 2),
+                                    share=round(share, 3), note=note))
                 continue
             t, k = found
             first, radar_nb = run.dates[t], None if k is None else run.dates[k]
-            labels, counts = np.unique(run.result.labels[hit], return_counts=True)
-            grade = {r.label: r.confidence for r in run.result.regions}[int(labels[np.argmax(counts)])]
-            if not_before is not None and first <= not_before:
+            if earlier is not None and earlier[0] == s.name:
                 text = f"{short} radar saw its vegetation echo drop earlier, by {_say_day(first)}"
             elif first < day:
                 text = f"{short} radar saw its vegetation echo drop by {_say_day(first)}"
             else:
-                text = f"{short} radar confirmed it through clouds on {_say_day(first)}"
+                text = f"{short} radar also saw its vegetation echo drop, by {_say_day(first)}"
             clauses.append((first, text))
             agree |= share >= merge.SHARE_AGREES
             entries.append(dict(sensor=s.name, kind="radar", role="detected", first_date=first.isoformat(),
                                 last_date=first.isoformat(), not_before=radar_nb and radar_nb.isoformat(), confidence=grade,
-                                area_ha=round(share * total, 2), share=round(float(share), 3),
+                                area_ha=round(share * total, 2), share=round(share, 3),
                                 note=text[0].upper() + text[1:] + f" (it flagged {share:.0%} of the area)."))
             if best is None or share > best:
                 best, run_i = share, i
         if best is None:
             run_i = next((i for i, r in enumerate(runs) if r.sensor == SENSOR_NAMES[S1]), 0)
-        head = f"An optical alert found vegetation loss here {merge._when(day, not_before)}"
+        if earlier is not None:  # radar saw the whole part changed before the optical window opened
+            head = (f"Vegetation loss here happened {merge._when(day, not_before)}: an optical alert confirmed it "
+                    f"by {_say_day(day)}")
+        else:
+            head = f"An optical alert found vegetation loss here {merge._when(day, not_before)}"
         explain = "; ".join([head] + [t for _, t in sorted(clauses, key=lambda c: c[0])]) + "."
         out.append(Merged(
             geometry=gj, type="clearing", first_date=day, last_date=day, not_before=not_before,
