@@ -215,7 +215,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "6 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "text": "2 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.340992&longitud=2.141505&zoom=18",
       "effect": "lowers"
@@ -228,7 +228,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 6 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 2 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching). The land is zoned as urban.",
     "evidence": {
      "before": "evidence/barcelona-0001_before.png",
      "after": "evidence/barcelona-0001_after.png",
@@ -401,7 +401,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "1 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "text": "1 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.314019&longitud=2.075794&zoom=18",
       "effect": "lowers"
@@ -421,7 +421,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 1 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 1 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching). The land is zoned as urban.",
     "evidence": {
      "before": "evidence/barcelona-0002_before.png",
      "after": "evidence/barcelona-0002_after.png",
@@ -610,7 +610,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "2 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "text": "2 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.496484&longitud=1.917221&zoom=18",
       "effect": "lowers"
@@ -630,7 +630,7 @@
       "effect": "neutral"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 2 building(s) are registered here (their years are not compared: this change began before the record does). The land is inside a planned development area.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 2 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/barcelona-0003_before.png",
      "after": "evidence/barcelona-0003_after.png",
@@ -795,7 +795,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "7 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "text": "6 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.554654&longitud=2.165879&zoom=18",
       "effect": "lowers"
@@ -808,7 +808,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 7 building(s) are registered here (their years are not compared: this change began before the record does). The land is inside a planned development area.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 6 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching). The land is inside a planned development area.",
     "evidence": {
      "before": "evidence/barcelona-0004_before.png",
      "after": "evidence/barcelona-0004_after.png",
@@ -933,7 +933,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "5 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "text": "3 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.325127&longitud=2.131564&zoom=18",
       "effect": "lowers"
@@ -946,7 +946,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 5 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 3 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching). The land is zoned as urban.",
     "evidence": {
      "before": "evidence/barcelona-0005_before.png",
      "after": "evidence/barcelona-0005_after.png",
@@ -1125,7 +1125,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "5 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "text": "2 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.467807&longitud=1.953137&zoom=18",
       "effect": "lowers"
@@ -1138,7 +1138,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 5 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 2 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching). The land is zoned as urban.",
     "evidence": {
      "before": "evidence/barcelona-0006_before.png",
      "after": "evidence/barcelona-0006_after.png",
@@ -1283,14 +1283,14 @@
      "delta": 13.7
     },
     "confidence": "high",
-    "verdict": "expected",
+    "verdict": "review",
     "reasons": [
      {
-      "code": "cadastre_building_found",
-      "text": "4 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "code": "no_record_found",
+      "text": "No building registered here is from the years the change could have started in, and no authorised solar plant or planned development area matches it.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.562990&longitud=2.035698&zoom=18",
-      "effect": "lowers"
+      "effect": "raises"
      },
      {
       "code": "zoning_urban",
@@ -1307,7 +1307,7 @@
       "effect": "neutral"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 4 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. No building registered here is from the years the change could have started in, and no authorised solar plant or planned development area matches it.",
     "evidence": {
      "before": "evidence/barcelona-0007_before.png",
      "after": "evidence/barcelona-0007_after.png",
@@ -1440,7 +1440,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "13 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "text": "2 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.356743&longitud=2.138450&zoom=18",
       "effect": "lowers"
@@ -1453,7 +1453,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 13 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 2 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching). The land is zoned as urban.",
     "evidence": {
      "before": "evidence/barcelona-0008_before.png",
      "after": "evidence/barcelona-0008_after.png",
@@ -1594,7 +1594,7 @@
     "reasons": [
      {
       "code": "cadastre_building_found",
-      "text": "6 building(s) are registered here (their years are not compared: this change began before the record does).",
+      "text": "1 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching).",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.532281&longitud=2.227918&zoom=18",
       "effect": "lowers"
@@ -1607,7 +1607,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 6 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 1 building(s) registered here date from 2015 or later or have no year (this change was already under way when the sensor began watching). The land is zoned as urban.",
     "evidence": {
      "before": "evidence/barcelona-0009_before.png",
      "after": "evidence/barcelona-0009_after.png",
@@ -1720,14 +1720,14 @@
      "delta": 7.2
     },
     "confidence": "medium",
-    "verdict": "expected",
+    "verdict": "review",
     "reasons": [
      {
-      "code": "cadastre_building_found",
-      "text": "1 building(s) are registered here (their years are not compared: this change began before the record does).",
-      "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
-      "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.493522&longitud=1.903105&zoom=18",
-      "effect": "lowers"
+      "code": "solar_application_pending",
+      "text": "An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet.",
+      "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
+      "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
+      "effect": "raises"
      },
      {
       "code": "zoning_urban",
@@ -1735,9 +1735,16 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
+     },
+     {
+      "code": "no_record_found",
+      "text": "No building registered here is from the years the change could have started in, and no authorised solar plant or planned development area matches it.",
+      "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
+      "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.493522&longitud=1.903105&zoom=18",
+      "effect": "raises"
      }
     ],
-    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. 1 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when Sentinel-1 began watching on 5 Jun 2016, so this record cannot say when it started. An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet. No building registered here is from the years the change could have started in, and no authorised solar plant or planned development area matches it.",
     "evidence": {
      "before": "evidence/barcelona-0010_before.png",
      "after": "evidence/barcelona-0010_after.png",
@@ -6384,7 +6391,7 @@
      },
      {
       "code": "protected_edge",
-      "text": "The place borders a protected area (Serra de Collserola, Serra de Collserola).",
+      "text": "The place borders a protected area (Serra de Collserola, Parc Natural de la Serra de Collserola).",
       "source": "PEIN + Natura 2000 (Generalitat de Catalunya, via Diputació de Barcelona)",
       "url": "https://natura2000.eea.europa.eu/Natura2000/SDF.aspx?site=ES5110024",
       "effect": "neutral"
@@ -6984,7 +6991,7 @@
     "reasons": [
      {
       "code": "protected_area",
-      "text": "The place lies inside a protected area (Riu Congost, Riu Congost).",
+      "text": "The place lies inside a protected area (Riu Congost).",
       "source": "PEIN + Natura 2000 (Generalitat de Catalunya, via Diputació de Barcelona)",
       "url": "https://natura2000.eea.europa.eu/Natura2000/SDF.aspx?site=ES5110025",
       "effect": "raises"
@@ -7011,7 +7018,7 @@
       "effect": "neutral"
      }
     ],
-    "explain": "Sentinel-1 radar saw the surface echo drop by 4 dB between 10 Sep 2017 and 1 Jun 2018, the pattern of ground being dug, moved or levelled. The place lies inside a protected area (Riu Congost, Riu Congost).",
+    "explain": "Sentinel-1 radar saw the surface echo drop by 4 dB between 10 Sep 2017 and 1 Jun 2018, the pattern of ground being dug, moved or levelled. The place lies inside a protected area (Riu Congost).",
     "evidence": {
      "before": "evidence/barcelona-0042_before.png",
      "after": "evidence/barcelona-0042_after.png",
@@ -7844,16 +7851,9 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "raises"
-     },
-     {
-      "code": "solar_plant_listed",
-      "text": "A solar plant of about 17.3 ha is listed for this municipality (the list gives no exact location).",
-      "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
-      "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
-      "effect": "lowers"
      }
     ],
-    "explain": "Sentinel-1 radar saw the surface echo rise by 12 dB between 1 and 25 Jun 2018, the pattern of new walls, roofs or metal structures. The land is port system land in the urban plan (MUC), where works like this are part of its use. A solar plant of about 17.3 ha is listed for this municipality (the list gives no exact location).",
+    "explain": "Sentinel-1 radar saw the surface echo rise by 12 dB between 1 and 25 Jun 2018, the pattern of new walls, roofs or metal structures. The land is port system land in the urban plan (MUC), where works like this are part of its use.",
     "evidence": {
      "before": "evidence/barcelona-0048_before.png",
      "after": "evidence/barcelona-0048_after.png",
@@ -9897,16 +9897,9 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "raises"
-     },
-     {
-      "code": "solar_plant_listed",
-      "text": "A solar plant of about 17.3 ha is listed for this municipality (the list gives no exact location).",
-      "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
-      "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
-      "effect": "lowers"
      }
     ],
-    "explain": "Sentinel-1 radar saw the surface echo rise by 12 dB between 29 Sep 2018 and 8 Jun 2019, the pattern of new walls, roofs or metal structures. The land is port system land in the urban plan (MUC), where works like this are part of its use. A solar plant of about 17.3 ha is listed for this municipality (the list gives no exact location).",
+    "explain": "Sentinel-1 radar saw the surface echo rise by 12 dB between 29 Sep 2018 and 8 Jun 2019, the pattern of new walls, roofs or metal structures. The land is port system land in the urban plan (MUC), where works like this are part of its use.",
     "evidence": {
      "before": "evidence/barcelona-0060_before.png",
      "after": "evidence/barcelona-0060_after.png",
@@ -11935,7 +11928,7 @@
      },
      {
       "code": "protected_edge",
-      "text": "The place borders a protected area (Serra de Collserola, Serra de Collserola).",
+      "text": "The place borders a protected area (Serra de Collserola, Parc Natural de la Serra de Collserola).",
       "source": "PEIN + Natura 2000 (Generalitat de Catalunya, via Diputació de Barcelona)",
       "url": "https://natura2000.eea.europa.eu/Natura2000/SDF.aspx?site=ES5110024",
       "effect": "neutral"
@@ -14707,7 +14700,7 @@
     "reasons": [
      {
       "code": "protected_area",
-      "text": "The place lies inside a protected area (Delta del Llobregat, Delta del Llobregat).",
+      "text": "The place lies inside a protected area (Delta del Llobregat).",
       "source": "PEIN + Natura 2000 (Generalitat de Catalunya, via Diputació de Barcelona)",
       "url": "https://sig.gencat.cat/visors/hipermapa.html",
       "effect": "raises"
@@ -14727,7 +14720,7 @@
       "effect": "raises"
      }
     ],
-    "explain": "Sentinel-1 radar saw the surface echo rise by 6 dB between 16 Aug and 9 Sep 2023, the pattern of new walls, roofs or metal structures. The place lies inside a protected area (Delta del Llobregat, Delta del Llobregat). The land is zoned as non-buildable.",
+    "explain": "Sentinel-1 radar saw the surface echo rise by 6 dB between 16 Aug and 9 Sep 2023, the pattern of new walls, roofs or metal structures. The place lies inside a protected area (Delta del Llobregat). The land is zoned as non-buildable.",
     "evidence": {
      "before": "evidence/barcelona-0093_before.png",
      "after": "evidence/barcelona-0093_after.png",
@@ -15402,10 +15395,10 @@
     "verdict": "expected",
     "reasons": [
      {
-      "code": "cadastre_building_found",
-      "text": "2 building(s) are registered here (their years are not compared: this change began before the record does).",
-      "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
-      "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.341085&longitud=2.148689&zoom=18",
+      "code": "system_land",
+      "text": "The land is port system land in the urban plan (MUC), where works like this are part of its use.",
+      "source": "Mapa urbanístic de Catalunya (MUC), qualifications, Generalitat de Catalunya",
+      "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
      },
      {
@@ -15414,16 +15407,9 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
-     },
-     {
-      "code": "system_land",
-      "text": "The land is port system land in the urban plan (MUC), where works like this are part of its use.",
-      "source": "Mapa urbanístic de Catalunya (MUC), qualifications, Generalitat de Catalunya",
-      "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
-      "effect": "lowers"
      }
     ],
-    "explain": "This change was already under way when NISAR began watching on 23 Jun 2026, so this record cannot say when it started. 2 building(s) are registered here (their years are not compared: this change began before the record does). The land is zoned as urban.",
+    "explain": "This change was already under way when NISAR began watching on 23 Jun 2026, so this record cannot say when it started. The land is port system land in the urban plan (MUC), where works like this are part of its use. The land is zoned as urban.",
     "evidence": {
      "before": "evidence/barcelona-0098_before.png",
      "after": "evidence/barcelona-0098_after.png",

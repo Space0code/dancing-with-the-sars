@@ -779,13 +779,46 @@ def late(**kw):
     return {**change(**kw), "sources": [{"role": "late_start"}, {"role": "not_watching"}]}
 
 
-def test_a_late_start_is_not_compared_by_building_year():
-    cad = {"cadastre": ok(buildings=3, built_since=0)}  # three buildings, all older than the sensor's first pass
-    dated = judge(change(area=8), {**records(zone="urban"), **cad})
-    undated = judge(late(area=8), {**records(zone="urban"), **cad})
+def test_a_late_start_counts_buildings_from_a_year_before_the_sensor_began_or_with_no_year():
+    old = {"cadastre": ok(buildings=3, built_since=0, undated=0)}  # three buildings, all older than that
+    dated = judge(change(area=8), {**records(zone="urban"), **old})
     assert dated[0] == "review" and "No building registered since the change" in dated[1][0]["text"]
-    assert undated[0] == "expected" and codes(undated[1])[0] == "cadastre_building_found"
-    assert "years are not compared" in undated[1][0]["text"] and "since the change" not in undated[1][0]["text"]
-    none = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=0, built_since=0)})
-    assert none[0] == "review" and none[1][0]["text"].startswith("No building is registered here")
+    none = judge(late(area=8), {**records(zone="urban"), **old})
+    assert none[0] == "review" and none[1][0]["text"].startswith("No building registered here is from the years")
     assert "since the change" not in none[1][0]["text"]
+    recent = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=3, built_since=1, undated=0)})
+    assert recent[0] == "expected" and codes(recent[1])[0] == "cadastre_building_found"
+    assert "date from 2025 or later" in recent[1][0]["text"]  # the change's first date is in 2026: one year of lead
+    undated = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=1, built_since=0, undated=1)})
+    assert undated[0] == "expected" and "have no year" in undated[1][0]["text"]
+    # a source that detected the change dates it: not a late start, the plain rule applies
+    dated_by_one = {**late(area=8), "sources": [{"role": "late_start"}, {"role": "detected"}]}
+    assert judge(dated_by_one, {**records(zone="urban"), **old})[0] == "review"
+
+
+def test_late_start_lookups_get_a_one_year_lead(monkeypatch):
+    from sarwatch import verdict
+
+    seen = {}
+    monkeypatch.setattr("sarwatch.context.lookup_all", lambda g, since=None, until=None: seen.update(since=since, until=until) or {})
+    verdict.run_lookups({"type": "Point", "coordinates": [0, 0]}, {**late(area=8), "first_date": "2016-06-05"})
+    assert seen == {"since": "2015-01-01", "until": "2016-06-05"}
+    verdict.run_lookups({"type": "Point", "coordinates": [0, 0]}, {**change(area=8), "first_date": "2016-06-05"})
+    assert seen == {"since": "2016-06-05", "until": "2016-06-05"}
+
+
+def test_port_land_needs_80_percent_and_hides_the_municipal_solar_plant():
+    assert judge(change(area=8), {**records(zone="urban"), **system_rec(share=0.7)})[0] == "review"
+    plants = [plant(ha=17.3)]
+    verdict, reasons, explain = judge(change(area=23), {**records(zone="non_buildable", plants=plants), **system_rec(share=0.97)})
+    assert verdict == "expected" and codes(reasons)[0] == "system_land" and "solar_plant_listed" not in codes(reasons)
+    assert "solar plant" not in explain
+    assert "solar_plant_listed" in codes(judge(change(area=23), {**records(zone="urban", plants=plants)})[1])  # elsewhere it stays
+
+
+def test_a_protected_area_is_named_once_and_a_missing_share_does_not_crash():
+    twin = {"protected": ok(inside=True, areas=[{"name": "Delta del Llobregat", "kind": "PEIN"},
+                                                {"name": "Delta del Llobregat", "kind": "Natura 2000"}])}
+    assert judge(change(area=8), {**records(), **twin})[1][0]["text"].count("Delta del Llobregat") == 1
+    nones = {"system": ok(system="port", shares={"port": None})}
+    assert judge(change(area=8), {**records(zone="urban"), **nones})[0] == "review"

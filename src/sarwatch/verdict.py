@@ -29,7 +29,8 @@ SOLAR_PENDING = ("en tramitaci",)  # "En tramitació": an application still bein
 RECORD_TYPES = ("clearing", "earthworks", "structure")  # change types a solar-plant listing can explain
 FIRE_TYPES = ("fire", "clearing", "other")  # change types a recorded wildfire can explain
 KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system")
-SYSTEM_SHARE = 0.5  # a change counts as on port or airport land when at least this much of it lies on it
+SYSTEM_SHARE = 0.8  # a change counts as on port or airport land when at least this much of it lies on it (the rest of
+                    # it would otherwise skip the zoning rules)
 
 # record key -> name shown when that service could not be checked
 LABELS = {
@@ -99,6 +100,13 @@ def _detector(change: dict) -> str:
 
 def _area_name(area: dict) -> str:
     return area.get("name") or area.get("kind") or "a protected area"
+
+
+def _is_late_start(change: dict) -> bool:
+    """Already under way when the sensor began watching, and no source dated it: the date is the sensor's first pass,
+    not the change's, so no rule may compare it with a record's date."""
+    roles = [src.get("role") for src in change.get("sources") or [] if isinstance(src, dict)]
+    return "late_start" in roles and "detected" not in roles
 
 
 def _zoning(zon) -> tuple[str | None, bool, dict]:
@@ -182,7 +190,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     areas = list(prot.get("areas") or []) if _ok(prot) else []
     inside = _ok(prot) and bool(prot.get("inside"))
     core_areas = [a for a in areas if not str(a.get("kind", "")).endswith("buffer zone")]
-    names = ", ".join(_area_name(a) for a in (core_areas or areas)[:2]) or "a protected nature area"
+    names = ", ".join(dict.fromkeys(_area_name(a) for a in (core_areas or areas)))[:200] or "a protected nature area"
     # only a buffer zone raises; a thin overlap (a share below EDGE_SHARE) just borders the area and stays neutral. A
     # buffer zone is not a protected area, so it never counts toward the share (``core_overlap_share``). An overlap
     # whose size is unknown (no outline from the service) counts as a real one: the safe side.
@@ -193,11 +201,13 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     zone, planned, zshares = _zoning(zon)
     # a late start was already under way when the sensor began watching: the record cannot date it, so the registry is
     # asked for buildings of any year (undated) instead of "built since the change"
-    late_start = any(isinstance(src, dict) and src.get("role") == "late_start" for src in change.get("sources") or [])
-    built = int(cad.get("buildings" if late_start else "built_since") or 0) if _ok(cad) else 0
+    late_start = _is_late_start(change)
+    built = int(cad.get("built_since") or 0) if _ok(cad) else 0
+    if late_start and _ok(cad):
+        built += int(cad.get("undated") or 0)  # a building with no year may well be the change itself
     system_kind = None
     if _ok(sysl) and ctype in RECORD_TYPES:
-        shares = sysl.get("shares") or {}
+        shares = {k: v for k, v in (sysl.get("shares") or {}).items() if isinstance(v, (int, float))}
         best = max(shares, key=shares.get) if shares else None
         system_kind = best if best and shares[best] >= SYSTEM_SHARE else None
     system_land = system_kind is not None
@@ -292,8 +302,10 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if built > 0:
         facts["cadastre_building_found"] = _reason(
             "cadastre_building_found",
-            f"{built} building(s) are registered here (their years are not compared: this change began before the "
-            "record does)." if late_start
+            f"{built} building(s) registered here date from {int(change_year) - 1} or later or have no year (this change "
+            "was already under way when the sensor began watching)." if late_start and change_year
+            else f"{built} building(s) are registered here (this change was already under way when the sensor began "
+            "watching)." if late_start
             else f"{built} building(s) registered here date from {change_year} or later, the year the change was first seen "
             "(the registry gives construction years only)." if change_year
             else f"{built} building(s) are registered here since the change.", "lowers", cad)
@@ -303,7 +315,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
             "system_land",
             f"The land is {noun} system land in the urban plan (MUC), where works like this are part of its use.",
             "lowers", sysl)
-    if solar_good:
+    if solar_good and decisive != "system_land":  # the plant list is per municipality: port land already explains it
         ha = _plant_ha(solar_good[0])
         facts["solar_plant_listed"] = _reason(
             "solar_plant_listed",
@@ -322,7 +334,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not matching and _ok(cad):
         facts["no_record_found"] = _reason(
             "no_record_found",
-            ("No building is registered here, and no authorised solar plant or planned development area matches this change."
+            ("No building registered here is from the years the change could have started in, and no authorised solar plant "
+             "or planned development area matches it."
              if late_start else
              "No building registered since the change (the land registry often records new buildings months late), "
              "no authorised solar plant and no planned development area match this change."),
@@ -464,7 +477,10 @@ def run_lookups(geometry: dict, change: dict) -> dict:
 
     try:
         # the cadastre asks "built since the change"; the wildfire map asks "a fire by then, at most a year before"
-        return lookup_all(geometry, since=change["first_date"], until=change["first_date"])
+        since = change["first_date"]
+        if _is_late_start(change) and since[:4].isdigit():
+            since = f"{int(since[:4]) - 1}-01-01"  # under way before the sensor began: allow a year of lead
+        return lookup_all(geometry, since=since, until=change["first_date"])
     except Exception as exc:  # lookups should never raise; if they do, record it instead of crashing the run
         return {k: {"source": v.capitalize(), "url": None, "checked": False, "error": str(exc)} for k, v in LABELS.items()}
 

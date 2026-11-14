@@ -88,6 +88,7 @@ def lookup(geometry: dict, since: str | None = None, **options) -> dict:
         "url": f"{VIEWER}?latitud={lat:.6f}&longitud={lon:.6f}&zoom=18",
         "buildings": len(found),
         "newest_date": dates[-1] if dates else None,
+        "undated": len(found) - len(dates),  # buildings whose construction year is missing or malformed
     }
     if since:
         year = int(since[:4])
