@@ -2,6 +2,7 @@
 from datetime import date, timedelta
 
 import numpy as np
+import pytest
 
 from sarwatch.change import ChangeParams, detect_changes
 
@@ -269,3 +270,68 @@ def test_normalize_is_off_by_default_and_removes_a_scene_wide_shift():
         stack[pol][-3:] *= gain(4)  # a calibration step or a soaking rain over the whole window
     assert len(detect_changes(stack, DATES, PIXEL_M).regions) >= 1
     assert detect_changes(stack, DATES, PIXEL_M, ChangeParams(normalize=True)).regions == []
+
+
+def test_split_is_off_by_default_and_cuts_a_growing_clearing_into_dated_parts():
+    stack = scene(5)
+    west, east = (slice(30, 70), slice(30, 70)), (slice(30, 70), slice(70, 110))  # 16 ha each, side by side
+    stack["HV"][3:][(slice(None), *west)] *= gain(-6)
+    stack["HV"][7:][(slice(None), *east)] *= gain(-6)
+
+    whole = detect_changes(stack, DATES, PIXEL_M)
+    assert len(whole.regions) == 1  # one region, one date: the growth is invisible
+
+    result = detect_changes(stack, DATES, PIXEL_M, ChangeParams(split="pass", split_min_ha=2.0))
+    assert len(result.regions) == 2
+    by_date = sorted(result.regions, key=lambda r: r.first_date)
+    assert [DATES.index(r.first_date) for r in by_date] == [3, 7]
+    assert iou(result.labels == by_date[0].label, truth_mask(west)) >= 0.7
+    assert iou(result.labels == by_date[1].label, truth_mask(east)) >= 0.7
+    assert all(r.type == "clearing" for r in result.regions)
+    assert [r.label for r in result.regions] == [1, 2]  # still sorted by area, labelled in that order
+    assert result.regions[0].area_ha >= result.regions[1].area_ha
+    assert sum(r.area_ha for r in result.regions) == pytest.approx(whole.regions[0].area_ha)
+
+
+def test_split_joins_slivers_to_a_neighbour_and_dates_each_part_by_its_own_pixels():
+    stack = scene(6)
+    main, sliver = (slice(30, 70), slice(30, 90)), (slice(30, 70), slice(90, 96))  # 24 ha + 2.4 ha strip
+    stack["HV"][4:][(slice(None), *main)] *= gain(-6)
+    stack["HV"][2:][(slice(None), *sliver)] *= gain(-6)
+
+    result = detect_changes(stack, DATES, PIXEL_M, ChangeParams(split="pass", split_min_ha=5.0))
+
+    assert len(result.regions) == 1  # the 2.4 ha strip is under 5 ha: joined to the clearing next to it
+    assert DATES.index(result.regions[0].first_date) == 4  # dated by the clearing, not by the earlier strip
+    assert (result.labels > 0)[sliver].mean() > 0.7
+
+
+def test_split_by_month_puts_passes_of_one_month_together():
+    dates = [date(2026, 3, 1) + timedelta(days=10 * i) for i in range(N_PASSES)]  # 1 Mar .. 20 Jun
+    stack = scene(7)
+    a, b = (slice(30, 70), slice(30, 70)), (slice(30, 70), slice(70, 110))
+    stack["HV"][4:][(slice(None), *a)] *= gain(-6)  # 10 Apr
+    stack["HV"][5:][(slice(None), *b)] *= gain(-6)  # 20 Apr: same month
+
+    by_pass = detect_changes(stack, dates, PIXEL_M, ChangeParams(split="pass"))
+    by_month = detect_changes(stack, dates, PIXEL_M, ChangeParams(split="month"))
+
+    assert len(by_pass.regions) == 2
+    assert len(by_month.regions) == 1
+    assert by_month.regions[0].first_date == dates[4]
+
+
+def test_split_rejects_an_unknown_mode():
+    stack = scene(8)
+    stack["HV"][4:][(slice(None), *RECT)] *= gain(-6)
+    with pytest.raises(ValueError):
+        detect_changes(stack, DATES, PIXEL_M, ChangeParams(split="week"))
+
+
+def test_structure_db_turns_a_weak_copol_rise_into_other():
+    stack = scene(9)
+    stack["HH"][CHANGE_PASS:][(slice(None), *RECT)] *= gain(4)
+
+    assert detect_changes(stack, DATES, PIXEL_M).regions[0].type == "structure"
+    strict = detect_changes(stack, DATES, PIXEL_M, ChangeParams(structure_db=6.0))
+    assert strict.regions[0].type == "other"
