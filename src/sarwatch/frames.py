@@ -40,7 +40,7 @@ PHOTO_MIN_GAP_DAYS = 3               # thin photo days closer together than this
 TIME_MAX_GAP_DAYS = 15               # temporal average: neighbours further away in time (snow gap) are not used
 BASELINE_SPAN = (date(2025, 6, 1), date(2025, 9, 30))   # snow-free summer: per-pixel median = "unchanged" level
 TINT_FROM_DB = 2.0                   # tint where VH is this far below the baseline ...
-TINT_FULL_DB = 6.0                   # ... full strength at this drop
+TINT_FULL_DB = 5.0                   # ... full strength at this drop
 TINT_MIN_ALPHA, TINT_MAX_ALPHA = 0.35, 0.9
 MIN_PATCH_HA = 1.0                   # smaller tinted patches are dropped
 WATER_DB = -22.0                     # baseline darker than this = water, never tinted

@@ -64,7 +64,7 @@ four corners `[lon, lat]` (top-left, top-right, bottom-right, bottom-left) share
 frames are north-up and the same size. Each set (`radar`, `photo`) is one picture per satellite pass or clear day,
 `frames` strictly sorted by date; `url` is a path inside the site folder that must exist. The app shows the latest
 frame at or before the slider date. Written by `python -m sarwatch.frames <site>` (radar: VH dB, one fixed grey
-stretch; photo: HLS true colour, cloud-free days). A site without `frames.json` is valid.
+stretch, pixels that lost echo since summer 2025 tinted orange; photo: HLS true colour, cloud-free days). A site without `frames.json` is valid.
 
 ## `series/<change id>.json`
 `{"series": [{name, unit, sensor, dates[], values[]}], "events": [{date, label}]}`. Each series has its own dates
