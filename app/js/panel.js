@@ -43,7 +43,7 @@ function reasonItem(r) {
   );
 }
 
-// Picture dates come from the change itself (before_date / after_date); older data falls back to the site's layers.json dates.
+// Picture dates: evidence.before_date / after_date when the exporter sets them, else the dates of the site's radar pictures (layers.json).
 function evidenceBlock(evidence, base, layers) {
   const date = (id) => layers.find((l) => l.id === id)?.date;
   const label = (name, d) => (d ? `${name} · ${formatDate(d)}` : name);
