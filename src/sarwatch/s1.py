@@ -9,6 +9,12 @@ Flow: search(bbox) lists products (ASF search API, no login) -> pick_burst() kee
 -> thin() spaces the dates out -> read_stack() reads only the window around bbox from each file (HTTP range
 requests with an Earthdata token) into {pol: (time, y, x)}, the input of change.detect_changes.
 
+A window larger than one burst (about 20 km along track): pick_bursts() keeps the bursts of ONE track that together
+cover it, as one BurstSet per date (only dates with every burst), and read_mosaic() reads one date's bursts onto one
+window grid. No resampling is needed: the bursts of one UTM zone share one 30 m lattice (coordinates are multiples of
+30 m; read_mosaic checks it), and the bursts of one date come from one pass, so where neighbours overlap they hold
+the same echo (the mosaic takes the mean of their valid values in linear power).
+
 Remote reads: ASF answers a file URL with redirects, [datapool.asf.alaska.edu ->] cumulus.asf.alaska.edu or
 cumulus.asf.earthdatacloud.nasa.gov (checks the Earthdata token) -> a signed URL on AWS, valid about an hour. The
 redirects are followed here by hand, sending the token only to ASF and Earthdata hosts (requests and curl drop it on
@@ -205,6 +211,90 @@ def pick_burst(scenes, bbox) -> list:
         return []
     best = max(by_burst.items(), key=score)
     return _one_per_date(best[1])
+
+
+@dataclass
+class BurstSet:
+    """The bursts of one track that together cover a window, on one date: one pass, read as one mosaic."""
+    start: datetime    # acquisition start of the earliest burst (UTC)
+    scenes: list       # one Scene per burst, sorted by burst ID
+    track: int
+    direction: str
+
+    @property
+    def name(self) -> str:
+        return " + ".join(sc.name for sc in self.scenes)
+
+    @property
+    def burst_ids(self) -> tuple:
+        return tuple(sc.burst_id for sc in self.scenes)
+
+
+MOSAIC_MIN_GAIN = 0.001  # a burst joins a mosaic only if it adds at least this share of the window
+MOSAIC_MIN_DATES = 0.5   # ... and has at least this share of the dates of the track's most frequent burst
+
+
+def _footprint_in(group, area):
+    """The median-sized footprint of a burst's dates, clipped to `area`; None when no footprint parses."""
+    from shapely import wkt
+
+    shapes = []
+    for sc in group:
+        try:
+            shapes.append(wkt.loads(sc.footprint).intersection(area))
+        except Exception:  # no or bad footprint
+            continue
+    if not shapes:
+        return None
+    shapes.sort(key=lambda g: g.area)
+    return shapes[len(shapes) // 2]
+
+
+def pick_bursts(scenes, bbox, track=None) -> list:
+    """The window as one mosaic per date: a time-sorted list of BurstSet, all on ONE track (one viewing geometry).
+
+    Per track and direction, bursts join greedily (the one adding the most window area first) while each adds at least
+    MOSAIC_MIN_GAIN of the window (bursts with under MOSAIC_MIN_DATES of the track's usual dates never join); only dates on which every chosen burst has a product are kept (the newest product
+    per burst and date). Prefers the track whose bursts cover the most of the window, then the most complete dates,
+    then the fewest bursts. `track` fixes the track instead.
+    """
+    from shapely.geometry import box
+    from shapely.ops import unary_union
+
+    area = box(*bbox)
+    by_track: dict = {}
+    for sc in scenes:
+        if track is None or sc.track == track:
+            by_track.setdefault((sc.track, sc.direction), {}).setdefault(sc.burst_id, []).append(sc)
+    options = []
+    for (trk, direction), bursts in by_track.items():
+        n_days = {b: len({sc.start.date() for sc in g}) for b, g in bursts.items()}
+        regular = max(n_days.values()) * MOSAIC_MIN_DATES  # a burst seen on a few dates only would empty the stack
+        shapes = {b: _footprint_in(g, area) for b, g in bursts.items() if n_days[b] >= regular}
+        shapes = {b: g for b, g in shapes.items() if g is not None and not g.is_empty}
+        chosen, union = [], None
+        while True:
+            gains = {b: (g.area if union is None else g.difference(union).area) / area.area
+                     for b, g in shapes.items() if b not in chosen}
+            if not gains:
+                break
+            best = max(gains, key=lambda b: (gains[b], b))
+            if gains[best] < MOSAIC_MIN_GAIN:
+                break
+            chosen.append(best)
+            union = shapes[best] if union is None else unary_union([union, shapes[best]])
+        if not chosen:
+            continue
+        chosen.sort()
+        per_burst = {b: {sc.start.date(): sc for sc in _one_per_date(bursts[b])} for b in chosen}
+        days = sorted(set.intersection(*(set(d) for d in per_burst.values())))
+        sets = [BurstSet(start=min(per_burst[b][day].start for b in chosen),
+                         scenes=[per_burst[b][day] for b in chosen], track=trk, direction=direction)
+                for day in days]
+        options.append(((round(union.area / area.area, 3), len(sets), -len(chosen), -trk), sets))
+    if not options:
+        return []
+    return max(options, key=lambda o: o[0])[1]
 
 
 def thin(scenes, max_dates=None, min_gap_days=None) -> list:
@@ -447,3 +537,72 @@ def read_stack(scenes, bbox, pols=("VV", "VH"), token=None, workers: int = 8) ->
                            bytes_per_date=nbytes / len(scenes), seconds=seconds, seconds_per_date=seconds / len(scenes),
                            bytes_note="estimate: compressed tiles the window touches + header per remote file")
     return stack, [sc.start.date() for sc in scenes], transform, ref["epsg"]
+
+
+def read_mosaic(bursts, bbox, pols=("VV", "VH"), token=None, workers: int = 8) -> tuple:
+    """Read one date's bursts (a BurstSet, or a list of Scenes of one pass) onto one window grid around bbox.
+
+    Returns (data, transform, epsg): data = {pol: (y, x) float32 linear power, NaN where no burst has a valid pixel}.
+    The window is bbox grown outward to whole pixels of the bursts' common lattice, so it is the same on every date.
+    Each burst's own mask applies to its own pixels; where bursts overlap, the mosaic is the mean of their valid values
+    in linear power. All bursts must share the first one's EPSG and lattice, else ValueError. Cost: last_read_stats.
+    """
+    import rasterio
+
+    t_start = time.perf_counter()
+    scenes = sorted(getattr(bursts, "scenes", bursts), key=lambda sc: sc.burst_id)
+    if not scenes:
+        raise ValueError("no bursts to read")
+    pols = tuple(pols)
+    for sc in scenes:
+        missing = [p for p in pols if p not in sc.urls]
+        if missing:
+            raise ValueError(f"{sc.name} has no {missing} layer (has {sorted(sc.urls)})")
+    jobs = [(i, p, sc.urls[p]) for i, sc in enumerate(scenes) for p in pols]
+    jobs += [(i, "mask", sc.urls["mask"]) for i, sc in enumerate(scenes) if "mask" in sc.urls]
+    if any(_remote(url) for _, _, url in jobs):
+        token = token or os.environ.get("EARTHDATA_TOKEN")
+        if not token:
+            raise RuntimeError("remote OPERA files need an Earthdata user token: set EARTHDATA_TOKEN "
+                               "(urs.earthdata.nasa.gov -> Generate Token) or pass token=")
+
+    # The first burst fixes the lattice; the window follows from bbox alone, so every date gets the same one.
+    path, opts = _gdal_source(scenes[0].urls[pols[0]], token)
+    with rasterio.Env(**opts), rasterio.open(path) as ds:
+        row0, col0, rows, cols = _bounds_window(ds, bbox)
+        ref = _grid(ds)
+        t = ds.transform
+    ref.update(x0=t.c + col0 * t.a, y0=t.f + row0 * t.e, rows=rows, cols=cols)
+
+    def run(job):
+        i, layer, url = job
+        return job, _read_one(url, ref, f"{scenes[i].name} {layer}", token, layer == "mask")
+
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+        results = list(pool.map(run, jobs))
+
+    own: dict = {i: {} for i in range(len(scenes))}
+    nbytes = 0
+    for (i, layer, _), (arr, nb) in results:
+        nbytes += nb
+        own[i][layer] = arr
+    total = {p: np.zeros((rows, cols), np.float64) for p in pols}
+    count = np.zeros((rows, cols), np.int32)
+    for layers in own.values():
+        ok = layers["mask"] == MASK_VALID if "mask" in layers else np.ones((rows, cols), bool)
+        for p in pols:
+            ok &= np.isfinite(layers[p])
+        for p in pols:
+            total[p] += np.where(ok, layers[p], 0.0)
+        count += ok
+    if not count.any():
+        raise ValueError(f"bbox {bbox} holds no valid pixel of bursts {[sc.burst_id for sc in scenes]}")
+    data = {p: np.where(count > 0, total[p] / np.maximum(count, 1), np.nan).astype(np.float32) for p in pols}
+
+    transform = (ref["a"], 0.0, ref["x0"], 0.0, ref["e"], ref["y0"])
+    seconds = time.perf_counter() - t_start
+    last_read_stats.clear()
+    last_read_stats.update(files=len(jobs), dates=1, bursts=len(scenes), shape=(rows, cols), bytes=nbytes,
+                           bytes_per_date=nbytes, seconds=seconds, seconds_per_date=seconds,
+                           bytes_note="estimate: compressed tiles the window touches + header per remote file")
+    return data, transform, ref["epsg"]

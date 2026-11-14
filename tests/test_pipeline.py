@@ -693,3 +693,38 @@ def test_sites_json_gets_the_site_sources(tmp_path):
     others = [s for s in json.loads(path.read_bytes())["sites"] if s["id"] != "muhos"]
     assert others == [s for s in json.loads(original)["sites"] if s["id"] != "muhos"]
     assert validate(tmp_path) is not None
+
+
+def test_s1_mosaic_reads_one_burst_set_per_date(fake, monkeypatch, capsys):
+    """A window larger than one burst: the site's track reaches pick_bursts, each date is read with read_mosaic,
+    and the dates stack and detect like single-burst dates."""
+    from sarwatch import s1
+
+    calls = {"track": [], "mosaic": []}
+
+    def pick_bursts(scenes, bbox, track=None):
+        calls["track"].append(track)
+        return [s1.BurstSet(start=sc.start, track=track, direction="ASCENDING",
+                            scenes=[SimpleNamespace(name=f"{sc.name}_{b}", burst_id=b, start=sc.start)
+                                    for b in ("T132_000001_IW2", "T132_000002_IW2")]) for sc in scenes]
+
+    def read_mosaic(bursts, bbox, pols=("VV", "VH"), token=None):
+        assert token == SECRET and len(bursts.scenes) == 2
+        day = bursts.start.date()
+        calls["mosaic"].append(day)
+        i = S_DAYS.index(day)
+        fake.s1.stats.update(bytes=9_000_000, dates=1)
+        return image(100 + i, S_SHAPE, pols, "VH", i >= S_CHANGE, S_RECT), S_TRANSFORM, S_EPSG
+
+    monkeypatch.setattr(s1, "pick_bursts", pick_bursts)
+    monkeypatch.setattr(s1, "read_mosaic", read_mosaic)
+    site = pipeline.SITES["muhos"]
+    monkeypatch.setattr(site, "skip_dates", ())
+    monkeypatch.setattr(site, "s1", pipeline.S1Settings(start=date(2026, 1, 1), mosaic=True, track=132))
+    assert pipeline.main(["muhos", "--no-nisar", *fake.args]) == 0
+
+    assert calls["track"] == [132] and sorted(calls["mosaic"]) == S_DAYS and fake.s1.reads == []
+    assert "fetched this run: 10 dates, 90.0 MB" in capsys.readouterr().out
+    clearing = [f["properties"] for f in features(fake.data, "muhos") if f["properties"]["type"] == "clearing"]
+    assert len(clearing) == 1 and clearing[0]["sensor"] == "Sentinel-1 C-band"
+    assert validate(fake.data) == []

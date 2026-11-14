@@ -87,6 +87,9 @@ class S1Settings:
     water_grow: int = 1            # pixels of shore masked around the water
     drop_baseline_dated: bool = False  # drop regions dated inside the baseline passes: for a short baseline that
                                        # defines "before" (Muhos), such a date is an artefact, not a change
+    mosaic: bool = False             # window larger than one burst: read the bursts of ONE track that cover it as one
+                                     # mosaic per date (s1.pick_bursts / s1.read_mosaic) instead of one burst
+    track: int | None = None         # with mosaic: fix the track instead of letting pick_bursts choose
 
     def __post_init__(self):
         if self.months is not None and (not self.months or not all(isinstance(m, int) and 1 <= m <= 12
@@ -174,6 +177,17 @@ SITES = {
                             params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True)),
         s1=S1Settings(start=date(2016, 4, 1), min_gap_days=28, months=(6, 7, 8, 9),
                       params=ChangeParams(boxcar=3, n_early=7, n_late=4, persist=99, threshold_db=3.0,
+                                          min_area_ha=1.0, normalize=True, hold=True)),
+    ),
+    # Barcelona and its region (#44, kb/site-barcelona.md): 50 x 39 km, larger than one Sentinel-1 burst, so
+    # Sentinel-1 reads the three IW2 bursts of track 132 ascending (Agroparc's track) as one mosaic per date.
+    # NISAR track 130 / frame 22 ascending covers the whole window. Settings start from Agroparc's.
+    "barcelona": Site(
+        id="barcelona", bbox=(1.85, 41.25, 2.45, 41.60),
+        nisar=NisarSettings(start=date(2026, 6, 1), track=130, frame=22, direction="ASCENDING",
+                            params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True)),
+        s1=S1Settings(start=date(2016, 4, 1), min_gap_days=20, months=(6, 7, 8, 9), mosaic=True, track=132,
+                      params=ChangeParams(boxcar=3, n_early=10, n_late=6, persist=99, threshold_db=3.0,
                                           min_area_ha=1.0, normalize=True, hold=True)),
     ),
 }
@@ -394,7 +408,13 @@ def _s1_items(site: Site) -> list:
 
     s = site.s1
     found = s1.search(site.bbox, s.start, s.end)
-    on_burst = s1.pick_burst(found, site.bbox)
+    if s.mosaic:  # one BurstSet per date: the bursts of one track, read as one mosaic
+        on_burst = s1.pick_bursts(found, site.bbox, track=s.track)
+        if on_burst:
+            log.info("s1: mosaic of %d bursts on track %d %s: %s", len(on_burst[0].scenes), on_burst[0].track,
+                     on_burst[0].direction.lower(), ", ".join(on_burst[0].burst_ids))
+    else:
+        on_burst = s1.pick_burst(found, site.bbox)
     burst = [sc for sc in on_burst if s.months is None or _day_of(sc).month in s.months]
     if s.months is not None and len(burst) < 2 <= len(on_burst):
         raise PipelineError(f"{site.id}: s1 months {s.months} keep {len(burst)} of {len(on_burst)} dates; "
@@ -411,9 +431,13 @@ def _s1_fetch(scene, bbox, token) -> Frame:
     if isinstance(stats, dict):
         stats.clear()
     t0 = time.perf_counter()
-    stack, dates, transform, epsg = s1.read_stack([scene], bbox, pols=POLS[S1], token=token)
+    if isinstance(scene, s1.BurstSet):
+        data, transform, epsg = s1.read_mosaic(scene, bbox, pols=POLS[S1], token=token)
+    else:
+        stack, dates, transform, epsg = s1.read_stack([scene], bbox, pols=POLS[S1], token=token)
+        data = {p: a[0] for p, a in stack.items()}
     nbytes = stats.get("bytes") if isinstance(stats, dict) else None
-    return Frame(day=_day_of(scene), data={p: a[0] for p, a in stack.items()}, transform=tuple(transform),
+    return Frame(day=_day_of(scene), data=data, transform=tuple(transform),
                  epsg=int(epsg), bbox=tuple(bbox), source=_name_of(scene),
                  mb=None if nbytes is None else nbytes / 1e6, seconds=time.perf_counter() - t0)
 
