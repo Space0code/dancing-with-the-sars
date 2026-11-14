@@ -98,6 +98,13 @@ def test_fire_dates_window():
     assert fire.lookup(COLERA, since="2023-09-01")["fires"] == []            # ended before ``since``
 
 
+@pytest.mark.parametrize("option", ["since", "until"])
+def test_fire_bad_dates_become_an_error_not_silently_ignored(option):
+    r = fire.lookup(COLERA, **{option: "garbage"})
+    assert r["checked"] is False and f"{option} must be YYYY-MM-DD" in r["error"]
+    assert "recorded" not in r
+
+
 def _fake_fires(monkeypatch, west_share):
     """EFFIS answer with one fire covering the western ``west_share`` of the Agroparc square."""
     lon0, lat0, lon1, lat1 = shape(AGROPARC).bounds
@@ -190,3 +197,6 @@ def test_live_smoke(monkeypatch, tmp_path):
     monkeypatch.setattr(_common, "OFFLINE", False)
     r = context.lookup_all(AGROPARC, since="2020-01-01")
     assert all(v["checked"] for v in r.values()), {k: v.get("error") for k, v in r.items()}
+    assert r["fire"]["recorded"] is False  # no fire at Agroparc
+    colera = fire.lookup(COLERA)  # a service change (layer, field names, axis order) would show up here
+    assert colera["checked"] and colera["recorded"] is True and colera["fires"][0]["area_ha"] == 541

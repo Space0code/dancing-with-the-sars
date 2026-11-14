@@ -39,6 +39,10 @@ def lookup(geometry: dict, since: str | None = None, until: str | None = None, *
     (``[{name, date, end, area_ha, overlap_share, country}]``, biggest overlap first). ``since="YYYY-MM-DD"`` drops
     fires that ended before that day; ``until="YYYY-MM-DD"`` drops fires that started after it or that ended more than
     ``WINDOW_DAYS`` before it (a burn scar from years ago does not explain a change today)."""
+    lo, hi = _day(since), _day(until)
+    for name, given, parsed in (("since", since, lo), ("until", until, hi)):
+        if given is not None and parsed is None:  # becomes ``error`` through ``safe``: never silently ignored
+            raise ValueError(f"{name} must be YYYY-MM-DD, got {given!r}")
     g = to_utm(geometry)
     lon0, lat0, lon1, lat1 = shape(geometry).bounds
     body = fetch("fire", SERVICE, {
@@ -47,8 +51,6 @@ def lookup(geometry: dict, since: str | None = None, until: str | None = None, *
         "bbox": f"{lat0},{lon0},{lat1},{lon1},urn:ogc:def:crs:EPSG::4326",
         "propertyName": "id,FIREDATE,FINALDATE,AREA_HA,COMMUNE,PROVINCE,COUNTRY",
     })
-    lo = _day(since)
-    hi = _day(until)
     fires = []
     for f in json.loads(body)["features"]:
         p = f["properties"]

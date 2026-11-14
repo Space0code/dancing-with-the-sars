@@ -69,6 +69,22 @@ def _day(value) -> str:
         return str(value or "On record")
 
 
+def _fire_text(fire: dict, explains: bool) -> str:
+    """Names the fire (commune, date, hectares) so a reader can find it on the EFFIS map: the record's link is only the
+    general viewer. A fire can be followed by salvage logging or building, so the text says "most likely"."""
+    fires = fire.get("fires") or []
+    top = fires[0] if fires and isinstance(fires[0], dict) else None
+    where = ""
+    if top:
+        ha = top.get("area_ha")
+        bits = [top.get("name"), top.get("date"), f"{ha:g} ha" if isinstance(ha, (int, float)) and ha else None]
+        label = "EFFIS burnt areas" if str(fire.get("source", "")).startswith("EFFIS") else "records"
+        where = f" ({label}: {', '.join(str(b) for b in bits if b)})"
+    if explains:
+        return f"A recorded wildfire burned here{where}, so this is most likely a burn scar and not new construction."
+    return f"A recorded wildfire burned here{where}, but it does not explain a new building or ground movement."
+
+
 def _area_name(area: dict) -> str:
     return area.get("name") or area.get("kind") or "a protected area"
 
@@ -154,15 +170,13 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     facts: dict[str, dict] = {}
     if fire_recorded:
         facts["fire_recorded"] = _reason(
-            "fire_recorded",
-            "A wildfire is on record here, so this is a natural change, not construction." if fire_explains
-            else "A wildfire is on record here, but it does not explain a new building or ground movement.",
+            "fire_recorded", _fire_text(fire, fire_explains),
             "lowers" if fire_explains else "neutral", fire, source="Wildfire records")
     if inside and not soft:
         facts["protected_area"] = _reason(
             "protected_area",
             f"The place lies inside a protected area ({names})." if not fire_explains
-            else f"The place lies inside {names}; a recorded wildfire is a natural event.",
+            else f"The place lies inside {names}; a recorded wildfire burned here.",
             "neutral" if fire_explains else "raises", prot)
     elif soft:
         facts["protected_buffer"] = _reason(
@@ -224,12 +238,13 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         for key in LABELS
         if not _ok(records.get(key)) and not (records.get(key) or {}).get("not_applicable")
     ]
-    if isinstance(fire, dict) and not _ok(fire) and not fire.get("not_applicable"):  # a lookup that failed (absent = not asked)
+    # a fire lookup that failed is reported; an absent one was simply not asked
+    if isinstance(fire, dict) and not _ok(fire) and not fire.get("not_applicable"):
         unavailable.append(_reason(
             "records_unavailable",
             "The wildfire map could not be checked, so a burn scar may be mistaken for a clearing.",
             "neutral", fire, source="Wildfire map"))
-    reasons =[facts[decisive]] + [r for k, r in facts.items() if k != decisive] + unavailable
+    reasons = [facts[decisive]] + [r for k, r in facts.items() if k != decisive] + unavailable
     return verdict, reasons, _explain(change, verdict, reasons)
 
 
