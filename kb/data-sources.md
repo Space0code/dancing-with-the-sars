@@ -63,6 +63,12 @@ Open-data portal: `analisi.transparenciacatalunya.cat` (Socrata API).
 7. MUC zoning: buildable vs non-buildable land
 8. EGMS Ortho: ready subsidence / uplift layer
 
+## Where processing runs
+The team is on mobile data: **never download NISAR to a laptop.** Radar processing runs in a GitHub Codespace
+(`.devcontainer/`, Earthdata token as a Codespaces secret); only small results enter the repo. A whole-file route
+for the demo sites would be ~50 granules ≈ 75 GB; window reads are estimated at 5–30 MB per date per site
+(to be measured in #15). ASF Harmony subsetting for GCOV is not available yet.
+
 ## Risks
 - **Legal layers are thin:** permits and environmental assessments are PDFs or not public, so "documented" can only be
   partly automated. The rest falls back to rules (protected area, zoning, cadastre).
