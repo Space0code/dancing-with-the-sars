@@ -49,6 +49,7 @@ Not useful here: GLAD alerts (tropics only), SEDAC (frozen 2025), ECOSTRESS, EMI
 | **PEIN + Natura 2000** | protected areas (Natura 2000 boundaries from 2019) | ✓ ArcGIS REST, all Catalonia: `gissrv.diba.cat/arcgis/rest/services/SITXELL/PEIN_XN2000_ENPE/MapServer` | change inside → escalate | L |
 | **Urban-planning map (MUC)** | urban / buildable / non-buildable land | ✓ **WFS, all Catalonia** (see below); REST copy for Barcelona province only; development sectors on open-data API `6wpu-9y2e` | change on non-buildable land → flag | L |
 | Solar PV plants (open data `ggx8-jkp4`) | status, ha, environmental-assessment procedure; municipality only | ✓ Socrata API, no login | explains many clearings | L |
+| **EFFIS burnt areas** (EU, JRC / Copernicus) | wildfire perimeters 2016→, date, hectares, commune | ✓ WFS, no key, all Europe (Catalonia included, 2026 fires too) | burn scar → "expected (recorded wildfire)", not clearing | L |
 | Planning register (RPUC), environmental assessments, forest-cutting permits, ICGC InSAR | PDFs / county aggregates / not public | ✗ | manual check only | H |
 
 Open-data portal: `analisi.transparenciacatalunya.cat` (Socrata API).
@@ -69,6 +70,18 @@ All Catalan / Spanish services answer in **EPSG:25831** (ETRS89 / UTM 31N, metre
   `CODI_CLAS_MUC` has 5 values across Catalonia: SUC / SNC (urban), SUD / SND (developable), SNU (non-buildable).
   Polygons can be big (a municipality's whole SNU area: ~200 kB for a 500 m box). Same server: WMS
   `…/PLANEJAMENT/wms` and other layers (qualifications, sectors, municipal boundaries).
+- **Wildfires** (`fire.py`, verified 14 Nov 2026): EFFIS WFS 2.0.0 `maps.effis.emergency.copernicus.eu/effis`, layer
+  `ms:modis.ba.poly` (burnt areas from MODIS, 2016 → a few days ago; yearly layers `…ba.poly.2016`…`.2025` exist too).
+  Fields: `FIREDATE` / `FINALDATE` (`YYYY-MM-DD HH:MM:SS`, FINALDATE can be null), `AREA_HA` (a whole number *as a
+  string*), `COMMUNE` (the only place name: no fire name), `COUNTRY` (ES / FR: fires over the border are in a Catalan
+  bbox). **`bbox` takes latitude first**: `lat0,lon0,lat1,lon1,urn:ogc:def:crs:EPSG::4326` (lon, lat gives 0 hits); the
+  GeoJSON it returns is lon, lat. No record cap seen up to 634 features. We send the polygon's bbox and intersect in
+  metres ourselves. EFFIS area is ~6–8 % below press figures (Pont de Vilomara 2022: 1,635 vs 1,743 ha; Gavarres 2026:
+  2,030 vs ~2,200 ha). MODIS does not map fires under ~20 ha. The `effis.nrt.ba.poly` layer answers with empty
+  attributes: don't use it. Licence CC BY 4.0, credit "EFFIS, European Commission Joint Research Centre / Copernicus
+  Emergency Management Service". Tried and rejected: Generalitat "Base cartogràfica d'incendis" (Socrata `dw2p-tke8`:
+  only download links, 1986–2021) and `bks7-dkfd` (table without geometry, to 2024-12). Test fires: Colera, 4 Aug 2023,
+  541 ha; Gavarres, 3 Jul 2026, 2,030 ha. NASA FIRMS (hotspots, needs a free key) was not needed.
 - **Solar list** (`solar.py`): `…/resource/ggx8-jkp4.json?$where=starts_with(codi_municipi,'08091')`. 379 rows (Nov 2026);
   `estat`: En tramitació / Autoritzat / En servei / Aprovat / No autoritzat / Desistit. `codi_municipi` = 5-digit INE +
   check digit; one row per plant per municipality. Point → municipality: WFS layer `PLANEJAMENT:MUC_AMBIT_MUNICIPAL`

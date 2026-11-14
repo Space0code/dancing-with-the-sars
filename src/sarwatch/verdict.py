@@ -224,7 +224,12 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         for key in LABELS
         if not _ok(records.get(key)) and not (records.get(key) or {}).get("not_applicable")
     ]
-    reasons = [facts[decisive]] + [r for k, r in facts.items() if k != decisive] + unavailable
+    if isinstance(fire, dict) and not _ok(fire) and not fire.get("not_applicable"):  # a lookup that failed (absent = not asked)
+        unavailable.append(_reason(
+            "records_unavailable",
+            "The wildfire map could not be checked, so a burn scar may be mistaken for a clearing.",
+            "neutral", fire, source="Wildfire map"))
+    reasons =[facts[decisive]] + [r for k, r in facts.items() if k != decisive] + unavailable
     return verdict, reasons, _explain(change, verdict, reasons)
 
 
@@ -281,7 +286,8 @@ def run_lookups(geometry: dict, change: dict) -> dict:
     from sarwatch.context import lookup_all  # needs the "verdict" extra (requests, shapely, pyproj)
 
     try:
-        return lookup_all(geometry, since=change["first_date"])
+        # the cadastre asks "built since the change"; the wildfire map asks "a fire by then, at most a year before"
+        return lookup_all(geometry, since=change["first_date"], until=change["first_date"])
     except Exception as exc:  # lookups should never raise; if they do, record it instead of crashing the run
         return {k: {"source": v.capitalize(), "url": None, "checked": False, "error": str(exc)} for k, v in LABELS.items()}
 

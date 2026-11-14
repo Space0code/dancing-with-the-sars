@@ -112,6 +112,21 @@ def test_recorded_fire_is_expected_even_in_a_protected_area():
     assert [r["effect"] for r in reasons if r["code"] == "protected_area"] == ["neutral"]
 
 
+def test_a_recorded_fire_from_the_lookup_makes_a_burn_scar_expected():
+    """The shape ``context.fire.lookup`` returns: ``recorded`` plus the list of fires."""
+    fire_record = ok(recorded=True, fires=[{"name": "Colera", "date": "2023-08-04", "area_ha": 541, "overlap_share": 1.0}])
+    verdict, reasons, _ = judge(change(area=40), {**records(zone="non_buildable"), "fire": fire_record})
+    assert verdict == "expected" and codes(reasons)[0] == "fire_recorded"
+
+
+def test_a_failed_fire_lookup_is_reported_not_silent():
+    failed = {"checked": False, "source": "EFFIS", "url": None, "error": "timeout"}
+    verdict, reasons, _ = judge(change(area=40), {**records(zone="urban"), "fire": failed})
+    assert verdict == "review" and "records_unavailable" in codes(reasons)
+    assert any("wildfire map" in r["text"] for r in reasons)
+    assert "records_unavailable" not in codes(judge(change(area=40), records(zone="urban"))[1])  # not asked: silent
+
+
 def test_fire_type_without_a_record_follows_the_normal_rules():
     assert judge(change(area=60, ctype="fire"), records(zone=None))[0] == "review"
 
