@@ -1,9 +1,10 @@
-// Written by Claude. Wires the intro, site switcher, map, the big picture (Radar / Satellite, swipe), legend, timeline, side panel, explainer and tour.
-import { APP, VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
+// Written by Claude. Wires the intro, site switcher, map, the big picture (Radar / Satellite, swipe), legend, timeline, drawer and tour.
+import { APP, VERDICTS, setVerdictColors, runningTotal, changeLabel, h } from "./format.js";
 import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
-import { renderIntro, renderStory, setStoryDate, showCard, showHint } from "./panel.js";
+import { renderIntro, renderStory, setStoryDate, showCard } from "./panel.js";
+import { createDrawer } from "./drawer.js";
 import { createInbox } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
@@ -87,18 +88,41 @@ async function main() {
     }, 250);
   }
 
+  /** Select a change (its card opens in the drawer) or, with null, clear the selection (the drawer stays as it is). */
   function select(feature) {
     if (feature) setOverlay(true);
     selectedId = feature ? feature.properties.id : null;
     writeHash();
     map.select(feature);
-    inbox.setSelected(feature ? feature.properties.id : null);
-    if (feature) {
-      showCard(feature, current, () => select(null));
-      inbox.showTab("details");
-    } else showHint();
+    inbox.setSelected(selectedId);
+    if (!feature) return;
+    showCard(feature, current);
+    drawer.setTitle(changeLabel(feature.properties.type));
+    drawer.show("card");
   }
-  const map = createChangeMap($("map"), { onSelect: select, bounds: overview });
+  const drawer = createDrawer({
+    onShow: (view) => view === "inbox" && inbox.refresh(),
+    onClose: () => select(null),
+    onBack: () => {
+      select(null);
+      showSiteDrawer();
+    },
+  });
+  /** The site-level view of the drawer: the story and the list of changes. */
+  function showSiteDrawer(view = drawer.lastTab) {
+    if (!current) return;
+    drawer.setTitle(current.site.name);
+    drawer.show(view === "story" && current.story ? "story" : "inbox");
+  }
+  // A click on empty map closes whatever is open; Esc does too (before the tour's own Esc handling).
+  const map = createChangeMap($("map"), { onSelect: (f) => (f ? select(f) : drawer.close()), bounds: overview });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !drawer.mode || document.querySelector("dialog[open]")) return;
+    drawer.close();
+    e.preventDefault();
+  });
+  const room = () => ({ bottom: tourRoom(), right: Math.min(480, $("map").clientWidth * 0.4) }); // the drawer covers the right side: keep the change clear of it
+  $("changes-btn").addEventListener("click", () => (drawer.mode && drawer.mode !== "card" ? drawer.close() : (select(null), showSiteDrawer())));
   await map.ready;
 
   // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
@@ -114,7 +138,7 @@ async function main() {
   };
   const inbox = createInbox({
     onOpen(feature) {
-      map.focus(feature, tourRoom());
+      map.focus(feature, room());
       select(feature);
     },
     onFilters() {
@@ -145,21 +169,18 @@ async function main() {
       else timeline.goTo(date, step.note ?? "");
       if (feature) {
         select(feature);
-        map.focus(feature, tourRoom());
+        map.focus(feature, room());
       } else {
         select(null);
+        drawer.close();
         map.view(current.site, tourRoom());
       }
     },
   });
   $("tour-btn").addEventListener("click", () => tour.start());
 
-  // Phones: the tour docks at the top of the bottom sheet. Desktop: it floats over the map, and the camera leaves room for it.
-  const phone = matchMedia("(max-width: 760px)");
-  const placeTour = () => (phone.matches ? $("panel").prepend($("tour")) : document.querySelector(".map-wrap").append($("tour")));
-  placeTour();
-  phone.addEventListener("change", placeTour);
-  const tourRoom = () => (tour.active && !phone.matches ? $("tour").offsetHeight + 30 : 0);
+  // The tour floats over the map (bottom left); the camera leaves room for it.
+  const tourRoom = () => (tour.active ? $("tour").offsetHeight + 30 : 0);
 
   function showIntro() {
     current = null;
@@ -169,10 +190,11 @@ async function main() {
     $("site").value = "";
     $("fake-badge").hidden = true;
     history.replaceState(null, "", location.pathname + location.search);
+    drawer.close();
+    $("changes-btn").hidden = true;
     renderIntro(sites, { onPick: (id) => openSite(id).catch((err) => showError(err.message)), onTour: () => tour.start() });
-    inbox.setSite([]); // no site, no list: the tabs hide and the Details view shows the intro
-    inbox.showTab("details");
-    $("panel-tabs").hidden = true;
+    $("intro").hidden = false;
+    inbox.setSite([]);
     picture.setSite(null);
     map.showOverview(overview);
     timeline.clear();
@@ -184,7 +206,9 @@ async function main() {
     $("map-error").hidden = true;
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
-    $("panel-tabs").hidden = false;
+    $("intro").hidden = true;
+    $("changes-btn").hidden = false;
+    drawer.close();
     history.replaceState(null, "", `#site=${site.id}`);
     clearTimeout(hashTimer); // a pending write still describes the old site: drop it, and write nothing while this one loads
     selectedId = null;
@@ -192,8 +216,8 @@ async function main() {
     loading = true;
     try {
       current = await loadSite(site);
-      renderStory(current.story, current.base); // first: it changes the map's size on phones
-      showHint();
+      renderStory(current.story, current.base);
+      drawer.setTabAvailable("story", Boolean(current.story));
       inbox.setSite(current.changes.features);
       map.setExtraFilter(null);
       map.showSite(site, current.changes, current.stages);
@@ -226,9 +250,9 @@ async function main() {
     const feature = current.changes.features.find((f) => f.properties.id === params.get("change"));
     if (feature) {
       if (!date) timeline.goTo(feature.properties.last_date); // a hand-made link without a date: show the change as it stands
-      map.focus(feature, tourRoom());
+      map.focus(feature, room());
       select(feature);
-    } else if (selectedId) select(null);
+    } else if (drawer.mode) drawer.close();
     return true;
   }
   window.addEventListener("hashchange", () => applyHash().catch((err) => showError(err.message))); // a link pasted into the same tab

@@ -1,8 +1,8 @@
-// Written by Claude. Side panel: the intro screen, the collapsible site story (with its curve) and the change card (the "why this label" checklist, signal chart).
+// Written by Claude. What goes in the drawer and the start box: the intro, the site story (with its curve) and the change card (the "why this label" checklist, signal chart).
 import { buildChart, buildStoryChart } from "./chart.js";
 import { loadJson } from "./data.js";
 import { buildChecklist } from "./checklist.js";
-import { h, APP, VERDICTS, verdictKey, changeLabel, sensorLabel, safeUrl } from "./format.js";
+import { h, VERDICTS, verdictKey, changeLabel, sensorLabel, safeUrl } from "./format.js";
 import { whenText, sizeText, confidenceText, seenBy } from "./seen.js";
 
 const $ = (id) => document.getElementById(id);
@@ -41,18 +41,16 @@ export function renderStory(story, base = "") {
     return;
   }
   box.hidden = false;
-  box.open = true;
   const sources = (story.sources ?? []).filter((s) => safeUrl(s.url));
   const sourceLine = sources.length
     ? [h("p", { class: "sources" }, "Sources: ", sources.flatMap((s, i) => [i ? " · " : "", h("a", { href: s.url, target: "_blank", rel: "noopener" }, s.title)]))]
     : []; // an array, not null: replaceChildren(null) would print the word "null"
   const chart = story.chart?.file ? [storyChartSlot(story.chart, base, token)] : [];
-  box.replaceChildren(h("summary", {}, story.headline), ...story.story.map((p) => h("p", {}, p)), ...chart, ...sourceLine);
+  box.replaceChildren(h("h3", {}, story.headline), ...story.story.map((p) => h("p", {}, p)), ...chart, ...sourceLine);
 }
 
 /** The first screen, before any site is open: what the app is for, the tour, and the sites. */
 export function renderIntro(sites, { onPick, onTour }) {
-  $("story").hidden = true;
   const siteButton = (s) =>
     h("li", {},
       h("button", { type: "button", class: "site-btn", disabled: !s.ready, onclick: () => onPick(s.id) },
@@ -61,28 +59,21 @@ export function renderIntro(sites, { onPick, onTour }) {
         s.ready ? null : h("span", { class: "soon" }, "coming soon")
       )
     );
-  $("card").replaceChildren(
-    h("section", { class: "intro" },
-      h("p", {}, "Pick a site to see where the land changed."),
-      h("ul", { class: "site-list" }, sites.map(siteButton)),
-      h("button", { type: "button", class: "primary big", onclick: onTour }, "Take the tour")
-    )
+  $("intro").replaceChildren(
+    h("p", {}, "Pick a site to see where the land changed."),
+    h("ul", { class: "site-list" }, sites.map(siteButton)),
+    h("button", { type: "button", class: "primary big", onclick: onTour }, "Take the tour")
   );
-}
-
-export function showHint() {
-  $("card").replaceChildren(h("p", { class: "hint" }, "Click a shape on the map for details."));
 }
 
 let cardToken = 0; // guards against a slow chart arriving after another card was opened
 
 /** Show one change. `site` is the loaded site data ({base}). */
-export function showCard(feature, site, onClose) {
+export function showCard(feature, site) {
   const { base } = site;
   const token = ++cardToken;
   const p = feature.properties;
   const key = verdictKey(p.verdict);
-  $("story").open = false;
   const evidence = p.evidence ?? {};
   const seen = seenBy(p); // null when the change has no `sources`
 
@@ -96,11 +87,7 @@ export function showCard(feature, site, onClose) {
 
   $("card").replaceChildren(
     h("article", { class: "card" },
-      h("div", { class: "card-head" },
-        h("span", { class: `badge ${key}` }, VERDICTS[key].label),
-        h("button", { class: "close", type: "button", onclick: onClose, "aria-label": "Close details" }, "Close")
-      ),
-      h("h2", {}, changeLabel(p.type)),
+      h("span", { class: `badge ${key}` }, VERDICTS[key].label),
       h("dl", { class: "facts" },
         h("dt", {}, "When"), h("dd", {}, whenText(p)),
         h("dt", {}, "Size"), h("dd", {}, sizeText(p)),
@@ -116,5 +103,5 @@ export function showCard(feature, site, onClose) {
       chartSlot
     )
   );
-  $("details-view").scrollTop = 0;
+  $("card-view").scrollTop = 0;
 }

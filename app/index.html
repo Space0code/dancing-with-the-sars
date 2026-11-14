@@ -27,6 +27,7 @@
       <span id="fake-badge" class="fake-badge" hidden>Fake data</span>
     </div>
     <div class="actions">
+      <button id="changes-btn" type="button" hidden>Changes</button>
       <button id="tour-btn" type="button" class="primary">Tour</button>
     </div>
   </header>
@@ -49,20 +50,24 @@
         <ul id="legend"></ul>
       </div>
       <section id="tour" class="tour" aria-label="Guided tour" aria-live="polite" hidden></section>
+      <section id="intro" class="intro" aria-label="Start" hidden></section>
       <p id="map-error" class="map-error" hidden></p>
-    </div>
 
-    <aside id="panel" aria-label="Details">
-      <div id="panel-tabs" class="tabs" role="tablist">
-        <button id="tab-details" type="button" role="tab" aria-selected="true" aria-controls="details-view">Details</button>
-        <button id="tab-inbox" type="button" role="tab" aria-selected="false" aria-controls="inbox">Changes <span id="inbox-count" class="n"></span></button>
-      </div>
-      <div id="details-view" class="view" role="tabpanel">
-        <details id="story" class="story" open></details>
-        <div id="card" aria-live="polite"></div>
-      </div>
-      <section id="inbox" class="view inbox" role="tabpanel" aria-label="Changes at this site" hidden></section>
-    </aside>
+      <aside id="drawer" class="drawer" aria-label="Details">
+        <div class="drawer-head">
+          <button id="drawer-back" type="button" class="back" hidden>&#8249; Changes</button>
+          <h2 id="drawer-title"></h2>
+          <button id="drawer-close" type="button" class="close" aria-label="Close">&#10005;</button>
+        </div>
+        <div id="drawer-tabs" class="tabs" role="tablist">
+          <button id="tab-story" type="button" role="tab" aria-selected="false" aria-controls="story-view">Story</button>
+          <button id="tab-inbox" type="button" role="tab" aria-selected="true" aria-controls="inbox">Changes <span id="inbox-count" class="n"></span></button>
+        </div>
+        <div id="story-view" class="view" role="tabpanel" hidden><div id="story" class="story"></div></div>
+        <section id="inbox" class="view inbox" role="tabpanel" aria-label="Changes at this site"></section>
+        <div id="card-view" class="view" hidden><div id="card" aria-live="polite"></div></div>
+      </aside>
+    </div>
   </main>
 
   <footer class="timeline" aria-label="Timeline">

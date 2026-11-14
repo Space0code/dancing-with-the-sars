@@ -166,6 +166,7 @@ export function createTimeline({ onDate }) {
       stops = snapshotsOf(site, features);
       own = { site, features, events, stops };
       slider.disabled = playBtn.disabled = false;
+      slider.max = stops.length - 1;
       slider.value = stops.length - 1;
       build();
       emit();

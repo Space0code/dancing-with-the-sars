@@ -1,4 +1,4 @@
-// Written by Claude. Review inbox: a sortable, filterable list of the open site's changes (the "Changes" tab in the side panel).
+// Written by Claude. Review inbox: a sortable, filterable list of the open site's changes (the "Changes" tab in the drawer).
 // Filtering on the map is a MapLibre expression (mapFilter), so the map never loops over features in JS. Rows render in chunks.
 import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, formatArea } from "./format.js";
 import { whenText } from "./seen.js";
@@ -76,18 +76,6 @@ export function createInbox({ onOpen, onFilters }) {
     sizeRow.hidden = sizeSteps.length < 2;
     setMinHa(0);
   }
-
-  // --- tabs ---
-  const tabs = { details: $("tab-details"), inbox: $("tab-inbox") };
-  const views = { details: $("details-view"), inbox: root };
-  function showTab(name) {
-    for (const key of Object.keys(tabs)) {
-      tabs[key].setAttribute("aria-selected", String(key === name));
-      views[key].hidden = key !== name;
-    }
-    if (name === "inbox") render();
-  }
-  for (const [name, button] of Object.entries(tabs)) button.addEventListener("click", () => showTab(name));
 
   // --- filtering ---
   const verdictOf = (f) => verdictKey(f.properties.verdict);
@@ -190,7 +178,8 @@ export function createInbox({ onOpen, onFilters }) {
       el?.setAttribute("aria-current", "true");
       if (!root.hidden) el?.scrollIntoView({ block: "nearest" });
     },
-    showTab,
+    /** The list became visible: build it if the data changed meanwhile. */
+    refresh: render,
     /** MapLibre filter expression for the user's filters (the date is filtered separately), or null. */
     mapFilter() {
       const parts = [];
