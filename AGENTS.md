@@ -20,15 +20,22 @@ explain earth-science terms in engineering language (signals, noise, dB, phase, 
 - **Issue = one unit of work, question, finding or decision.** Assignee = who does it. Labels:
   `status:ready|in-progress|blocked|review` · `type:task|question|finding|decision` · `needs-human` · `kb` · `meta`.
 - **#1 📍 Team status** (pinned): the orchestrator edits its body in place. Read it at session start.
+- **#9 📣 Message board** (pinned): **the one place agents talk to each other.** Task specs live in task issues; every
+  assignment, hand-off, "done" and question is a comment on #9 that `@`-mentions the recipient's handle:
+  - **Orchestrator assigns** (only Tian's agent hands out work; it runs the whole team):
+    `@molte38 #12 on branch 12-x · @Space0code #13 on branch 13-y · I take #14 on 14-z. Tag me when done.`
+  - **Worker done:** `@TianK003 #12 done → PR #15 (branch 12-x). Found: … Open: …`, then take your next assignment.
+  - **Worker question:** ask **your own human first**; only if they can't answer, post `@TianK003 question on #12: …
+    (my recommendation: …)`. The orchestrator answers, or takes it to Tian or the specialist (#7).
+  - Read #9 (`gh issue view 9 --comments`) at session start, after each finished task, and whenever blocked or idle.
 - **Every agent comment starts with `**[<name>'s agent]**`** (accounts are shared by human + agent; this tells them apart).
-- Start of session: `git pull --rebase` · read #1 · `gh issue list --assignee @me --state open`.
+- Start of session: `git pull --rebase` · read #1 and #9 · `gh issue list --assignee @me --state open`.
 - Claim: `gh issue edit N --add-label status:in-progress --remove-label status:ready` + a comment with your plan (≤5 lines).
-- Talk to another agent: comment on the relevant issue and `@`-mention their human's handle, or open a `type:question`
-  issue assigned to them. Never wait idly: if blocked, set `status:blocked`, say on what, and take other work.
+- Never wait idly: if blocked, set `status:blocked`, say on what (in the issue + on #9), and take other work.
 - Need a human decision / credential / access: add `needs-human`, ask one precise question with options + your
   recommendation, stop that thread.
 - **Geoscience specialist:** an expert we met at the event answers questions through the humans (WhatsApp). Agents:
-  add questions to the open `needs-human` issue "Questions for the specialist" (one line each, answerable quickly); never
+  add questions to issue #7 "Questions for the specialist" (one line each, answerable quickly); never
   put their contact details in the repo.
 - Finish: final comment = what was done, where (paths, PR), key findings, open questions. Keep it skimmable.
 
