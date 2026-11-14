@@ -55,7 +55,9 @@ already plain language (e.g. "Vegetation echo (HV)").
 
 ## `story.json`
 `{"headline", "story": [paragraph, ...], "events": [{date, label}], "sources": [{title, url}]}`. Events are shown as
-markers on the timeline (e.g. "Told an assessment was required").
+markers on the timeline (e.g. "Told an assessment was required"). Optional `"chart": {"title", "file", "note"}`: a
+curve for the story panel (e.g. hectares cleared over time at Muhos); `file` sits next to `story.json` and has the
+`series/<change id>.json` format; the validator does not check it yet (#73).
 
 ## `context/` (optional): what the records say
 `context/index.json` = `{"layers": [{id, title, kind, file, source, url, checked, note}]}`: `kind` is `protected` ·
