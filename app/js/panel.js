@@ -43,12 +43,12 @@ function reasonItem(r) {
   );
 }
 
-// Evidence pictures are crops of the site's radar pictures, so their dates come from layers.json (unverified for real sites).
+// Picture dates: evidence.before_date / after_date when the exporter sets them, else the dates of the site's radar pictures (layers.json).
 function evidenceBlock(evidence, base, layers) {
   const date = (id) => layers.find((l) => l.id === id)?.date;
   const label = (name, d) => (d ? `${name} · ${formatDate(d)}` : name);
-  const before = evidence.before && { src: base + evidence.before, label: label("Before", date("radar_before")) };
-  const after = evidence.after && { src: base + evidence.after, label: label("After", date("radar_after")) };
+  const before = evidence.before && { src: base + evidence.before, label: label("Before", evidence.before_date ?? date("radar_before")) };
+  const after = evidence.after && { src: base + evidence.after, label: label("After", evidence.after_date ?? date("radar_after")) };
   if (before && after) return buildSwipe(before, after);
   const single = before ?? after;
   if (single) return h("figure", { class: "single" }, h("img", { src: single.src, alt: `${single.label} picture of this place` }), h("figcaption", {}, single.label));
