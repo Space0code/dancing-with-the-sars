@@ -9,9 +9,10 @@ Flow: search(bbox) lists products (ASF search API, no login) -> pick_burst() kee
 -> thin() spaces the dates out -> read_stack() reads only the window around bbox from each file (HTTP range
 requests with an Earthdata token) into {pol: (time, y, x)}, the input of change.detect_changes.
 
-Remote reads: ASF answers a file URL with redirects, datapool.asf.alaska.edu -> cumulus.asf.alaska.edu (checks the
-token) -> a pre-signed S3 URL. The redirects are followed here by hand, sending the token only to ASF and Earthdata
-hosts, and GDAL then range-reads the S3 URL with no token: S3 refuses a request that carries one.
+Remote reads: ASF answers a file URL with redirects, [datapool.asf.alaska.edu ->] cumulus.asf.alaska.edu or
+cumulus.asf.earthdatacloud.nasa.gov (checks the Earthdata token) -> a signed URL on AWS, valid about an hour. The
+redirects are followed here by hand, sending the token only to ASF and Earthdata hosts (requests and curl drop it on
+a host change anyway), and GDAL then range-reads the signed URL with no token: S3 refuses a second auth mechanism.
 """
 from __future__ import annotations
 
@@ -113,12 +114,13 @@ def _utc(t) -> datetime:
     return t.astimezone(timezone.utc) if t.tzinfo else t.replace(tzinfo=timezone.utc)
 
 
-def _session():
+def _session(trust_env: bool = True):
     import requests
     from requests.adapters import HTTPAdapter
     from urllib3.util.retry import Retry
 
     s = requests.Session()
+    s.trust_env = trust_env
     retry = Retry(total=4, backoff_factor=1, status_forcelist=(429, 500, 502, 503, 504), allowed_methods=("GET",),
                   redirect=0, raise_on_redirect=False, raise_on_status=False)
     s.mount("https://", HTTPAdapter(max_retries=retry))
@@ -234,7 +236,7 @@ _local = threading.local()
 
 def _thread_session():
     if not hasattr(_local, "session"):
-        _local.session = _session()
+        _local.session = _session(trust_env=False)  # else a ~/.netrc entry would replace the bearer header
     return _local.session
 
 
@@ -246,12 +248,14 @@ def _token_host(url: str) -> bool:
 def resolve_url(url: str, token: str, max_hops: int = 6) -> tuple:
     """Follow ASF's redirects to the URL GDAL should range-read. Returns (url, headers GDAL must send).
 
-    The token goes only to TOKEN_HOSTS. The usual end is a redirect to a pre-signed S3 URL (valid about an hour),
-    read with no headers. A redirect to the Earthdata login page means the token was refused.
+    The token goes only to TOKEN_HOSTS. The usual end is a redirect to a signed AWS URL (valid about an hour), read
+    with no headers. A redirect to the Earthdata login page means the token was refused. Resolve with GET, not HEAD:
+    ASF signs the URL for the method it was asked with.
     """
     for _ in range(max_hops):
         headers = {"Authorization": f"Bearer {token}"} if _token_host(url) else {}
-        with _thread_session().get(url, headers=headers, allow_redirects=False, stream=True, timeout=60) as r:
+        with _thread_session().get(url, headers={**headers, "Range": "bytes=0-0"}, allow_redirects=False,
+                                   stream=True, timeout=60) as r:
             if r.is_redirect:
                 nxt = urljoin(url, r.headers["Location"])
                 host = (urlparse(nxt).hostname or "").lower()
