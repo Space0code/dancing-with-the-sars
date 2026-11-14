@@ -5,6 +5,7 @@ const PLAY_SECONDS = 12; // time to play through all snapshots (each step lasts 
 const MIN_STEP_MS = 250;
 const MAX_STEP_MS = 900;
 const MAX_TICKS = 80; // with more snapshots the plain ticks would merge into a solid block, so only the red bars stay
+const LEAD_IN = 4; // play from the end starts this many snapshots before the first change, not at the (often quiet) first one
 
 /** The site's snapshots, or (older data) the distinct change dates plus both ends of its time range. */
 function snapshotsOf(site, features) {
@@ -18,7 +19,8 @@ function snapshotsOf(site, features) {
 const satelliteNames = (sensor) =>
   sensor ? sensor.split(" + ").map((s) => sensorLabel(s).replace(/ satellite$/, "")).join(" + ") : "";
 
-export function createTimeline({ onDate }) {
+/** `onDate(iso)`: the slider moved to a snapshot. `onPlay()`: playing starts (before the first step). */
+export function createTimeline({ onDate, onPlay }) {
   const $ = (id) => document.getElementById(id);
   const slider = $("slider");
   const playBtn = $("play");
@@ -26,6 +28,7 @@ export function createTimeline({ onDate }) {
   let playing = false;
   let timer = 0;
   let stopAt = 0; // slider value where playing stops
+  let playFrom = 0; // where play starts when the slider is at the end
 
   const index = () => Number(slider.value);
   const pct = (i) => (stops.length > 1 ? (i / (stops.length - 1)) * 100 : 50);
@@ -66,9 +69,10 @@ export function createTimeline({ onDate }) {
   const stepMs = () => Math.min(MAX_STEP_MS, Math.max(MIN_STEP_MS, (PLAY_SECONDS * 1000) / stops.length));
 
   function play(until = stops.length - 1) {
-    if (index() >= until) slider.value = 0;
+    if (index() >= until) slider.value = playFrom;
     stopAt = until;
     playing = true;
+    onPlay?.();
     playBtn.textContent = "❚❚";
     playBtn.setAttribute("aria-label", "Pause timeline");
     emit();
@@ -84,6 +88,7 @@ export function createTimeline({ onDate }) {
   /** Red bars (where changes first show) and, when there are few snapshots, plain ticks. */
   function drawTicks(features) {
     const counts = new Map(); // snapshot index -> number of changes first seen there
+    playFrom = 0;
     for (const f of features) {
       let i = stops.findIndex((s) => s.date >= f.properties.first_date); // between two snapshots: the next one
       if (i < 0) i = stops.length - 1;
@@ -93,6 +98,7 @@ export function createTimeline({ onDate }) {
     if (stops.length <= MAX_TICKS) {
       stops.forEach((s, i) => !counts.has(i) && nodes.push(h("span", { class: "tick", style: `left:${pct(i)}%` })));
     }
+    if (counts.size) playFrom = Math.max(0, Math.min(...counts.keys()) - LEAD_IN);
     for (const [i, n] of [...counts].sort((x, y) => x[0] - y[0])) {
       const text = `${formatDate(stops[i].date)}: ${n} new ${n === 1 ? "change" : "changes"}`;
       nodes.push(

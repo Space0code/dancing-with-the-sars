@@ -38,7 +38,7 @@ def test_good_frames_pass(data):
 
 
 def test_frames_are_optional(data):
-    assert not (data / "fixture" / "frames.json").exists()
+    (data / "fixture" / "frames.json").unlink(missing_ok=True)
     assert validate(data) == []
 
 
