@@ -33,7 +33,7 @@ function niceTicks(min, max, count = 4) {
 
 function monthTicks(startDay, endDay) {
   const span = endDay - startDay;
-  const step = span <= 400 ? 2 : span <= 1200 ? 6 : 12;
+  const step = span <= 400 ? 2 : span <= 1200 ? 6 : span <= 2400 ? 12 : 24;
   const first = new Date(startDay * 86400000);
   const ticks = [];
   for (let y = first.getUTCFullYear(), m = 0; ; m += step) {

@@ -57,7 +57,8 @@ async function main() {
   if (!window.maplibregl) return showError("The map library could not be loaded. Check your internet connection and reload.");
 
   const [allSites, tourData] = await Promise.all([loadSites(), loadJson("tour.json").catch(() => ({ steps: [] }))]);
-  const sites = allSites.filter((s) => s.ready && !s.hidden); // the only sites the menu, the intro and the tour know
+  const sites = allSites.filter((s) => s.ready && !s.hidden); // the only sites the menu, the intro and the tour list
+  const openable = allSites.filter((s) => s.ready); // hidden sites open by link
   fillSiteSelect(sites);
   const overview = allSitesBounds(sites);
   let current = null; // the open site's data, or null on the intro screen
@@ -201,9 +202,10 @@ async function main() {
   }
 
   async function openSite(id) {
-    const site = sites.find((s) => s.id === id);
+    const site = openable.find((s) => s.id === id);
     if (!site) return;
     $("map-error").hidden = true;
+    if (!$("site").querySelector(`option[value="${site.id}"]`)) $("site").append(h("option", { value: site.id }, site.name)); // a hidden site, opened by link
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
     $("intro").hidden = true;
@@ -239,7 +241,7 @@ async function main() {
   async function applyHash() {
     const params = new URLSearchParams(location.hash.slice(1));
     const id = params.get("site");
-    if (!sites.some((s) => s.id === id)) return false;
+    if (!openable.some((s) => s.id === id)) return false;
     const date = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") ? params.get("date") : null; // anything else is ignored
     if (current?.site.id !== id) {
       tour.end();

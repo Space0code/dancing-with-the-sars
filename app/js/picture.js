@@ -107,7 +107,7 @@ export function createPicture(map, mapWrap, { onView } = {}) {
     if (my !== token) return;
     shown = { before: b, after: a };
     draw();
-    $("frame-label").textContent = labelFor(after);
+    $("frame-label").textContent = set ? labelFor(after) : "";
     swipe.setLabels(before ? sideLabel("Before", before) : "", after ? sideLabel("After", after) : "After: no picture");
   }
 
