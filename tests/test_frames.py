@@ -100,9 +100,10 @@ def test_radar_frames_end_to_end(tmp_path, monkeypatch):
     assert w == 700
     centre, edge = (slice(h // 2 - 20, h // 2 + 20), slice(w // 2 - 20, w // 2 + 20)), (slice(5, 25), slice(5, 25))
     summer, late = imgs[SUMMER[1].isoformat()], imgs[days[4].isoformat()]
-    # 2025: grey everywhere. 2026: the patch is orange (red high, blue low); the edge stays grey on dry and wet dates
+    # 2025: grey everywhere. 2026: the patch is pink (red and blue well above green); the edge stays grey on dry and wet dates
     assert np.abs(summer[centre][..., 0] - summer[centre][..., 2]).max() < 8
-    assert (late[centre][..., 0] - late[centre][..., 2]).mean() > 100
+    assert (late[centre][..., 0] - late[centre][..., 1]).mean() > 60
+    assert (late[centre][..., 2] - late[centre][..., 1]).mean() > 40
     assert np.abs(late[edge][..., 0] - late[edge][..., 2]).max() < 8
 
 

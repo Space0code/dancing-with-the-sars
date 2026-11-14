@@ -1,7 +1,7 @@
 """Picture frames for the app's time-lapse and before / after swipe (issue #89, format: kb/data-contract.md).
 
 One radar picture per Sentinel-1 pass (cross-pol VH in dB, speckle-smoothed in space and over neighbouring passes, one grey stretch for every date,
-with the pixels that lost echo since summer 2025 tinted orange)
+with the pixels that lost echo since summer 2025 tinted magenta-pink)
 and real colour photos (NASA HLS, cloud-free days only, one fixed colour stretch), all warped to one north-up grid
 over the site window. Output: app/data/<site>/frames/{radar,photo}/<date>.jpg + app/data/<site>/frames.json.
 
@@ -44,8 +44,8 @@ TINT_FULL_DB = 5.0                   # ... full strength at this drop
 TINT_MIN_ALPHA, TINT_MAX_ALPHA = 0.35, 0.9
 MIN_PATCH_HA = 1.0                   # smaller tinted patches are dropped
 WATER_DB = -22.0                     # baseline darker than this = water, never tinted
-TINT_RGB = (255, 70, 0)              # orange-red
-RADAR_CAPTION = "Radar picture. Grey: unchanged since summer 2025. Orange: the echo from trees and plants dropped here."
+TINT_RGB = (214, 40, 160)              # magenta-pink, apart from the verdict colours
+RADAR_CAPTION = "Radar picture. Grey: unchanged since summer 2025. Pink: the echo from trees and plants dropped here."
 PHOTO_CAPTION = "Colour images from Landsat and Sentinel-2 (NASA HLS), cloud-free days only."
 
 
