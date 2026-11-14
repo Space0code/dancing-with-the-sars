@@ -222,6 +222,26 @@ def test_series_include_other_sensors_over_the_same_ground(runs, site):
     assert {s["sensor"] for s in series_of("NISAR L-band", "structure")["series"]} == {"NISAR L-band"}
 
 
+def test_site_bbox_and_time_range_cover_all_data(runs, site):
+    _, site_dir = site
+    summary = write_site(site_dir, SITE, list(runs))
+
+    # time range: first to last pass of all runs (Sentinel-1 starts earlier, NISAR ends later)
+    assert summary["time_range"] == [S1_DATES[0].isoformat(), DATES[-1].isoformat()]
+    assert write_site(site_dir, SITE, [runs[0]])["time_range"] == [DATES[0].isoformat(), DATES[-1].isoformat()]
+
+    summary = write_site(site_dir, SITE, list(runs))
+    west, south, east, north = summary["bbox"]
+    points = [pt for f in load(site_dir, "changes.geojson")["features"] for ring in f["geometry"]["coordinates"]
+              for pt in ring]
+    points += [pt for layer in load(site_dir, "layers.json")["layers"] for pt in layer["coordinates"]]
+    lons, lats = [p[0] for p in points], [p[1] for p in points]
+    assert west < min(lons) and east > max(lons) and south < min(lats) and north > max(lats)
+    margin = 0.03  # small margin: at most ~3 % of the span on each side
+    assert min(lons) - west < margin * (max(lons) - min(lons)) and north - max(lats) < margin * (max(lats) - min(lats))
+    assert all(v == round(v, 4) for v in summary["bbox"])
+
+
 def test_rerun_with_fewer_changes_leaves_no_stale_files(runs, site):
     data, site_dir = site
     write_site(site_dir, SITE, list(runs))

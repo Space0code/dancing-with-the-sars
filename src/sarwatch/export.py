@@ -501,6 +501,18 @@ def _explain(kind: str, signal: dict | None, first, previous) -> str:
     return f"Radar saw the {echo} {'drop' if delta < 0 else 'rise'} by {amount} dB {when}, {pattern}."
 
 
+def _site_bbox(outlines: list, quads: list) -> list:
+    """[west, south, east, north] around every change outline and every site picture corner (a rotated picture
+    reaches past the configured window), plus BBOX_MARGIN_FRAC, rounded outwards to 4 decimals (~10 m)."""
+    bounds = [shape(g).bounds for g in outlines]
+    bounds += [(min(x for x, _ in q), min(y for _, y in q), max(x for x, _ in q), max(y for _, y in q)) for q in quads]
+    west, south = min(b[0] for b in bounds), min(b[1] for b in bounds)
+    east, north = max(b[2] for b in bounds), max(b[3] for b in bounds)
+    mx, my = BBOX_MARGIN_FRAC * (east - west), BBOX_MARGIN_FRAC * (north - south)
+    return [round(math.floor((west - mx) * 1e4) / 1e4, 4), round(math.floor((south - my) * 1e4) / 1e4, 4),
+            round(math.ceil((east + mx) * 1e4) / 1e4, 4), round(math.ceil((north + my) * 1e4) / 1e4, 4)]
+
+
 def _layer_ids(runs: list) -> list:
     ids, seen = [], Counter()
     for run in runs:
@@ -515,7 +527,9 @@ def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: i
 
     Every region of every run becomes one change, ids `<site_id>-0001`... ordered by first_date, then
     area descending. Files left in layers/, evidence/ and series/ by an earlier export are removed;
-    story.json and anything else in site_dir are left alone. Returns {"changes", "area_ha", "by_type"}.
+    story.json and anything else in site_dir are left alone. Returns {"changes", "area_ha", "by_type",
+    "bbox", "time_range"}, the last two for sites.json: the bbox holds every change and site picture, the
+    time range runs from the first to the last pass of all runs.
     """
     site_dir = Path(site_dir)
     for sub in ("layers", "evidence", "series"):
@@ -567,4 +581,6 @@ def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: i
         for path in (site_dir / sub).glob(pattern):
             if f"{sub}/{path.name}" not in written:
                 path.unlink()
-    return {"changes": len(feats), "area_ha": round(total, 2), "by_type": dict(sorted(by_type.items()))}
+    return {"changes": len(feats), "area_ha": round(total, 2), "by_type": dict(sorted(by_type.items())),
+            "bbox": _site_bbox([f["geometry"] for f in feats], [layer["coordinates"] for layer in layers]),
+            "time_range": [min(_iso(run.dates[0]) for run in runs), max(_iso(run.dates[-1]) for run in runs)]}
