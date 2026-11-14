@@ -1,10 +1,10 @@
-"""Pictures for the final Muhos data (#27): the clearing by date, a radar before / after pair, the cleared-hectares curve.
+"""Pictures for the final Muhos data (#27): the clearing by date and a radar before / after pair.
 
     python explore/muhos/final_pictures.py   # reads app/data/muhos/, writes explore/muhos/final_*.png
 
 Background: the site's Sentinel-1 composites from layers.json (2025 summer before, Sep-Oct 2026 after). The
-clearing's changes are filled by month of first detection; every other change is outlined in white. The curve is
-app/data/muhos/story_series.json. Needs only Pillow and the committed app data.
+clearing's changes are filled by month of first detection; every other change is outlined in white. Needs only Pillow
+and the committed app data.
 """
 from __future__ import annotations
 
@@ -134,59 +134,12 @@ def before_after(scope):
     out.save(OUT / "final_before_after.png", optimize=True)
 
 
-def curve():
-    doc = json.loads((SITE / "story_series.json").read_text())
-    series = doc["series"]
-    w, h, left, right, top, bottom = 1060, 440, 70, 330, 50, 50
-    out = Image.new("RGB", (w, h), rgb(PANEL))
-    d = ImageDraw.Draw(out)
-    d0 = date(2025, 9, 1).toordinal()
-    d1 = date(2026, 11, 1).toordinal()
-    vmax = 400
-
-    def xy(day, v):
-        return (left + (date.fromisoformat(day).toordinal() - d0) / (d1 - d0) * (w - left - right),
-                h - bottom - v / vmax * (h - top - bottom))
-
-    d.text((left, 12), "Muhos: cleared hectares inside the clearing outline, by source", fill=rgb(INK), font=BOLD)
-    for v in range(0, vmax + 1, 100):
-        y = xy("2025-09-01", v)[1]
-        d.line([(left, y), (w - right, y)], fill=(225, 225, 222))
-        d.text((left - 40, y - 8), f"{v}", fill=rgb(INK), font=SMALL)
-    for m in ("2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-10-01"):
-        x = xy(m, 0)[0]
-        d.line([(x, h - bottom), (x, h - bottom + 5)], fill=rgb(INK))
-        d.text((x - 20, h - bottom + 8), f"{date.fromisoformat(m):%b %Y}", fill=rgb(INK), font=SMALL)
-    g0, g1 = xy("2025-10-01", 0)[0], xy("2026-03-31", 0)[0]  # no usable passes: winter, left out
-    d.rectangle([g0, top, g1, h - bottom], fill=(236, 236, 233))
-    d.multiline_text((g0 + 8, top + 6), "winter: no usable\nradar or optical looks", fill=rgb(INK), font=SMALL)
-    colours = ["#2a6fdb", "#e0661c", "#1a9e5a"]
-    for s, c in zip(series, colours):
-        pts = [xy(day, v) for day, v in zip(s["dates"], s["values"]) if v is not None]
-        for a, b in zip(pts, pts[1:]):
-            if b[0] - a[0] < (g1 - g0) / 2:  # never draw a line across the winter gap
-                d.line([a, b], fill=rgb(c), width=3)
-        for p in pts:
-            d.ellipse([p[0] - 3, p[1] - 3, p[0] + 3, p[1] + 3], fill=rgb(c))
-    ly = top
-    for s, c in zip(series, colours):
-        d.rectangle([w - right + 16, ly + 4, w - right + 34, ly + 14], fill=rgb(c))
-        d.multiline_text((w - right + 40, ly), s["name"].replace(", ", ",\n"), fill=rgb(INK), font=SMALL)
-        ly += 54
-    for e in doc.get("events", []):
-        x = xy(e["date"], 0)[0]
-        d.line([(x, top), (x, h - bottom)], fill=(160, 160, 160))
-    out.save(OUT / "final_hectares_curve.png", optimize=True)
-
-
 def main():
     changes = json.loads((SITE / "changes.geojson").read_text(encoding="utf-8"))["features"]
     scope = json.loads((OUT / "clearing_scope.geojson").read_text())["geometry"]
     growth_map(changes, scope)
     before_after(scope)
-    if (SITE / "story_series.json").is_file():
-        curve()
-    print("wrote explore/muhos/final_growth_by_date.png, final_before_after.png, final_hectares_curve.png")
+    print("wrote explore/muhos/final_growth_by_date.png, final_before_after.png")
 
 
 if __name__ == "__main__":

@@ -5,8 +5,8 @@
 
 Steps: search the archive -> one NISAR track / one Sentinel-1 burst (one pixel grid, one scene per date) -> read the
 site's window one date at a time into data/stacks/<site>/<sensor>/<YYYY-MM-DD>.npz -> stack the cache (grids checked)
--> sarwatch.change.detect_changes per sensor -> sarwatch.export.write_site -> mark the site ready in sites.json ->
-placeholder story.json if there is none -> sarwatch.contract.validate -> summary.
+-> sarwatch.change.detect_changes per sensor -> sarwatch.export.write_site -> mark the site ready in sites.json (with its
+notes) -> sarwatch.contract.validate -> summary.
 
 A cached date is never fetched again: an interrupted run resumes, and reruns with other thresholds (--offline) cost no
 data. New dates are fetched ends first (first, last, second, second-to-last, ...), so a partial cache still has an early
@@ -45,8 +45,6 @@ TOKEN_KEYS = ("EARTHDATA_TOKEN", "EARTH_DATA_TOKEN")  # spellings accepted in .e
 NISAR, S1 = "nisar", "s1"  # cache folder names
 SENSOR_NAMES = {NISAR: "NISAR L-band", S1: "Sentinel-1 C-band"}
 POLS = {NISAR: ("HH", "HV"), S1: ("VV", "VH")}
-STORY_PLACEHOLDER = ("The written story of this site is coming soon. Until then, the map shows the changes the "
-                     "radar found, and each card says what was seen and when.")
 
 
 class PipelineError(Exception):
@@ -123,6 +121,7 @@ class Site:
                                   # a change is dropped when its outline contains the point; applied before max_changes
     max_changes: int | None = None  # a large window: keep only this many changes (largest first, low confidence
                                     # counted at half its area); needs `sources` (applies to the merged changes)
+    notes: tuple[str, ...] = ()   # sites.json `notes`: neutral facts about the data, at most 4, each up to 140 characters
 
 
 @dataclass
@@ -153,7 +152,7 @@ MUHOS_SKIP = ("2025-05-01..2025-05-31", "2025-10-01..2026-03-31", "2026-11-01..2
 MUHOS_PARAMS: dict = {}  # all Muhos tuning is per sensor, below
 
 SITES = {
-    # Google's reported clear-cut; NISAR stack measured on 14 Nov: 11 dates 25 Jun -> 4 Nov 2026, grid EPSG:3413.
+    # A forest clear-cut in northern Finland; NISAR stack measured on 14 Nov: 11 dates 25 Jun -> 4 Nov 2026, grid EPSG:3413.
     "muhos": Site(
         id="muhos", bbox=(26.02, 64.795, 26.20, 64.875),
         nisar=NisarSettings(start=date(2026, 6, 1), track=157, frame=35, direction="ASCENDING",
@@ -164,6 +163,9 @@ SITES = {
                       params=ChangeParams(boxcar=5, n_early=21, n_late=10, threshold_db=1.5, persist=3,
                                           min_area_ha=5.0, normalize=True, split="month", structure_db=6.0)),
         skip_dates=MUHOS_SKIP, params=MUHOS_PARAMS,
+        notes=("Radar pictures are Sentinel-1 until 25 Jun 2026 and NISAR after that.",
+               "Sentinel-1 passes from Oct 2025 to Mar 2026 are left out (wet or frozen ground): changes in that gap are dated within it.",
+               "Optical alerts (OPERA DIST-ALERT) cannot see the ground from Nov to Mar (snow, little light)."),
         optical=OpticalSettings(start=date(2025, 10, 1), since=date(2026, 1, 1), min_ha=2.0,
                                 blind=("2025-11-01..2026-03-31",)),
         sources=(
@@ -190,6 +192,8 @@ SITES = {
         s1=S1Settings(start=date(2016, 4, 1), min_gap_days=28, months=(6, 7, 8, 9),
                       params=ChangeParams(boxcar=3, n_early=7, n_late=4, persist=99, threshold_db=3.0,
                                           min_area_ha=1.0, normalize=True, hold=True)),
+        notes=("Sentinel-1 is compared summer (Jun-Sep) against summer: the 2016-2017 summers are the baseline, 2026 the end state.",
+               "NISAR L-band has observed this area since June 2026."),
     ),
     # Barcelona and its region (#44, kb/site-barcelona.md): 50 x 39 km, larger than one Sentinel-1 burst, so
     # Sentinel-1 reads the three IW2 bursts of track 132 ascending (Agroparc's track) as one mosaic per date.
@@ -214,6 +218,10 @@ SITES = {
         # Port of Barcelona, a berth: NISAR's "earthworks" there is most likely a moored ship, not ground works
         exclude_points=((2.1705, 41.3525),),
         max_changes=100, layer_bytes=2_000_000,
+        notes=("Open water (the sea and port basins) is masked out of the radar comparison.",
+               "Sentinel-1 is compared summer (Jun-Sep) against summer: the 2016 summer is the baseline, 2026 the end state.",
+               "NISAR L-band has observed since June 2026; it reports clearing, structure and earthworks only.",
+               "Only the 100 largest changes are kept."),
     ),
 }
 
@@ -1178,9 +1186,10 @@ def _snapshots_text(snapshots: list, nl: str) -> str:
     return '"snapshots": [' + nl + f",{nl}".join("    " + r for r in rows) + "]"
 
 
-def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, snapshots=None, sources=None) -> dict:
-    """Set the site's ready = true, time_range, (if given) bbox, snapshots and sources; every other site and field
-    stays as it was (text included)."""
+def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, snapshots=None, sources=None,
+                       notes=None) -> dict:
+    """Set the site's ready = true, time_range, (if given) bbox, snapshots, sources and notes; every other site and
+    field stays as it was (text included)."""
     index_path = Path(index_path)
     _site_entry(index_path, site_id)
     text = index_path.read_bytes().decode("utf-8")
@@ -1194,6 +1203,8 @@ def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, s
         entry["snapshots"] = snapshots
     if sources is not None:
         entry["sources"] = sources
+    if notes:
+        entry["notes"] = notes
     new = None
     nl = "\r\n" if "\r\n" in text else "\n"
     m = re.search(r'\{\s*"id":\s*' + re.escape(json.dumps(site_id)), text)
@@ -1221,25 +1232,19 @@ def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, s
             if not n5:  # first time: right after time_range
                 block, n5 = re.subn(r'("time_range":\s*\[[^\]]*\])', lambda g: g.group(1) + "," + nl + "   " + line,
                                     block, count=1)
-        if n1 == n2 == n3 == n4 == n5 == 1:
+        n6 = 1
+        if notes:
+            line = '"notes": ' + json.dumps(notes, ensure_ascii=False)
+            block, n6 = re.subn(r'"notes":\s*\[(?:"(?:[^"\\]|\\.)*"\s*,?\s*)*\]', lambda _: line, block, count=1)
+            if not n6:  # first time: right after time_range, sources and snapshots
+                block, n6 = re.subn(r'("time_range":\s*\[[^\]]*\])', lambda g: g.group(1) + "," + nl + "   " + line,
+                                    block, count=1)
+        if n1 == n2 == n3 == n4 == n5 == n6 == 1:
             new = head + block + tail
     if new is None or json.loads(new) != index:
         new = _format_sites(index, nl)
     index_path.write_bytes(new.encode("utf-8"))
     return entry
-
-
-def ensure_story(site_dir, headline: str) -> bool:
-    """Write a minimal story.json if there is none; never touch an existing one (the verdict track owns it)."""
-    path = Path(site_dir) / "story.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    story = {"headline": headline, "story": [STORY_PLACEHOLDER], "events": [], "sources": []}
-    try:
-        with open(path, "x", encoding="utf-8") as f:
-            f.write(json.dumps(story, indent=1, ensure_ascii=False) + "\n")
-    except FileExistsError:
-        return False
-    return True
 
 
 def _tally(site_dir: Path, key: str) -> dict:
@@ -1264,7 +1269,8 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     use = [s for s in sensors if (s == NISAR and site.nisar) or (s == S1 and site.s1 and site.use_s1)]
     if not use:
         raise PipelineError(f"{site_id}: no sensor left to run")
-    entry = None if fetch_only else _site_entry(out / "sites.json", site_id)  # fail before spending data
+    if not fetch_only:
+        _site_entry(out / "sites.json", site_id)  # fail before spending data
     spans = _skip_spans(site, skip_dates)  # typos in the settings fail here too, not after the downloads
     params = {s: _params(site, s, threshold_db, min_area_ha, normalize=normalize, hold=hold) for s in use}
     token = None if offline else load_token()
@@ -1335,9 +1341,7 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         for d in map(str, optical_days):
             by_date[d] = OPTICAL if d not in by_date else " + ".join(sorted({*by_date[d].split(" + "), OPTICAL}))
         stops = [{"date": d, "sensor": by_date[d]} for d in sorted(by_date) if first <= d <= last]
-    update_sites_index(out / "sites.json", site_id, (first, last), bbox, stops, sources)
-    if ensure_story(site_dir, entry.get("name") or site_id):
-        log.info("wrote a placeholder %s", site_dir / "story.json")
+    update_sites_index(out / "sites.json", site_id, (first, last), bbox, stops, sources, list(site.notes))
     problems = validate(out)
 
     by_type = _tally(site_dir, "type")

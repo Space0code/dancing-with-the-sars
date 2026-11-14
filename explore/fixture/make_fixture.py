@@ -239,17 +239,6 @@ def main() -> None:
         })
     collection = {"type": "FeatureCollection", "features": features}
     (OUT / "changes.geojson").write_text(json.dumps(collection, indent=1), encoding="utf-8")
-
-    story = {
-        "headline": "Fake example site (for building the app)",
-        "story": [
-            "Nothing here is real. This site exists so the app and the verdict rules can be built and tested.",
-            "It contains one change of every kind and every verdict, spread over three years.",
-        ],
-        "events": [{"date": "2025-07-01", "label": "A court pauses the works (fake)"}],
-        "sources": [{"title": "Hand-off contract", "url": "https://github.com/Space0code/dancing-with-the-sars"}],
-    }
-    (OUT / "story.json").write_text(json.dumps(story, indent=1), encoding="utf-8")
     write_snapshots()
     print(f"wrote {len(features)} fake changes to {OUT}")
 
