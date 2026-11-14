@@ -1,4 +1,4 @@
-// Written by Claude. Timeline slider: one step = one satellite snapshot. Red bars mark where changes first show; story events get a flag.
+// Written by Claude. Timeline slider: one step = one satellite snapshot. Red bars mark where changes first show.
 import { formatDate, toDay, h } from "./format.js";
 
 const PLAY_SECONDS = 12; // time to play through all snapshots (each step lasts between MIN_STEP_MS and MAX_STEP_MS)
@@ -22,7 +22,7 @@ export function createTimeline({ onDate }) {
   const slider = $("slider");
   const playBtn = $("play");
   let stops = []; // [{date, sensor}], oldest first: the open view's pictures
-  let own = null; // {site, features, events, stops}: the open site; `own.stops` = its snapshots (the radar view)
+  let own = null; // {features, stops}: the open site; `own.stops` = its snapshots (the radar view)
   let playing = false;
   let timer = 0;
   let stopAt = 0; // slider value where playing stops
@@ -123,26 +123,12 @@ export function createTimeline({ onDate }) {
 
   /** Draw the track for the current stops: slider range, end dates, red bars and (if any) event flags. */
   function build() {
-    const { site, features, events } = own;
+    const { features } = own;
     slider.max = stops.length - 1;
     $("range-start").textContent = formatDate(stops[0].date);
     $("range-end").textContent = formatDate(stops[stops.length - 1].date);
     $("event-note").textContent = "";
     drawTicks(features);
-    $("events").replaceChildren(
-      ...events
-        .filter((e) => e.date >= stops[0].date && e.date <= site.time_range[1])
-        .map((e) =>
-          h("button", {
-            class: "event-marker", type: "button", style: `left:${pct(snap(e.date))}%`,
-            title: `${formatDate(e.date)}: ${e.label}`, "aria-label": `Event on ${formatDate(e.date)}: ${e.label}`,
-            onclick: () => {
-              goToIndex(snap(e.date));
-              $("event-note").textContent = `${formatDate(e.date)}: ${e.label}`;
-            },
-          }, "⚑")
-        )
-    );
   }
 
   playBtn.addEventListener("click", () => (playing ? stop() : play()));
@@ -160,11 +146,11 @@ export function createTimeline({ onDate }) {
   });
 
   return {
-    /** Open a site: its snapshots, its changes (for the red bars) and its story events. The slider starts at the end. */
-    setRange(site, features = [], events = []) {
+    /** Open a site: its snapshots, its changes (for the red bars) . The slider starts at the end. */
+    setRange(site, features = []) {
       stop();
       stops = snapshotsOf(site, features);
-      own = { site, features, events, stops };
+      own = { features, stops };
       slider.disabled = playBtn.disabled = false;
       slider.max = stops.length - 1;
       slider.value = stops.length - 1;
@@ -191,7 +177,6 @@ export function createTimeline({ onDate }) {
       stops = [];
       slider.disabled = playBtn.disabled = true;
       for (const id of ["range-start", "range-end", "event-note", "gap-note", "total"]) $(id).textContent = "";
-      $("events").replaceChildren();
       $("ticks").replaceChildren();
       $("date-label").textContent = "Choose a site";
     },

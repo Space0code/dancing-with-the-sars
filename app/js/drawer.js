@@ -1,13 +1,13 @@
 // Written by Claude. The drawer over the right side of the map. It is closed by default (the map has the whole width) and
-// shows one of three views: the site's overview ("story"), the list of changes ("inbox"), or one change's card ("card").
+// shows one of three views: the site's overview ("overview"), the list of changes ("inbox"), or one change's card ("card").
 // Closes with its X button, with Esc (main.js) and with a click on empty map (main.js).
 
 /** `onClose()`: the drawer was closed. `onBack()`: the card's "back to the list" was pressed. `onShow(view)`: a view became visible. */
 export function createDrawer({ onClose, onBack, onShow }) {
   const $ = (id) => document.getElementById(id);
   const el = $("drawer");
-  const views = { story: $("story-view"), inbox: $("inbox"), card: $("card-view") };
-  const tabs = { story: $("tab-story"), inbox: $("tab-inbox") };
+  const views = { overview: $("overview-view"), inbox: $("inbox"), card: $("card-view") };
+  const tabs = { overview: $("tab-overview"), inbox: $("tab-inbox") };
   let mode = null; // the open view, or null when closed
   let lastTab = "inbox"; // what "back" returns to
 
@@ -45,7 +45,5 @@ export function createDrawer({ onClose, onBack, onShow }) {
     get mode() { return mode; },
     get lastTab() { return lastTab; },
     setTitle(text) { $("drawer-title").textContent = text; },
-    /** Hide the Story tab (a site without a story) */
-    setTabAvailable(view, available) { tabs[view].hidden = !available; },
   };
 }

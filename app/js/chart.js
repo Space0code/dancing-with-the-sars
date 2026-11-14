@@ -1,6 +1,6 @@
 // Written by Claude. Charts in plain SVG, one line per series, no library: the signal chart on the change card and
-// the curve in a site story (story.chart, same file format as a series file).
-import { h, toDay, formatDate, sensorLabel } from "./format.js";
+// the site overview's graph of cumulative changed area (built from the changes themselves).
+import { h, toDay, sensorLabel, VERDICTS, verdictKey } from "./format.js";
 
 const NS = "http://www.w3.org/2000/svg";
 const W = 360, H = 230, M = { l: 46, r: 12, t: 22, b: 30 };
@@ -47,11 +47,10 @@ function monthTicks(startDay, endDay) {
 
 /**
  * Draw the usable series of a series file. Options: `mark` = a date to flag as "Change first seen" (or null),
- * `zero` = the y-axis starts at 0, `axis` = the y-axis label. Returns {svg, lines, events, setCursor(iso|null)}.
+ * `zero` = the y-axis starts at 0, `axis` = the y-axis label. Returns {svg, lines, setCursor(iso|null)}.
  */
 function draw(series, data, { mark = null, zero = false, axis }) {
-  const events = (data.events ?? []).filter((e) => e.date !== mark);
-  const days = series.flatMap((s) => s.dates.map(toDay)).concat(mark ? [toDay(mark)] : [], events.map((e) => toDay(e.date)));
+  const days = series.flatMap((s) => s.dates.map(toDay)).concat(mark ? [toDay(mark)] : []);
   const startDay = Math.min(...days), endDay = Math.max(...days);
   const values = series.flatMap((s) => s.values).filter((v) => v != null);
   const vMin = zero ? 0 : Math.min(...values), vMax = Math.max(...values);
@@ -66,7 +65,7 @@ function draw(series, data, { mark = null, zero = false, axis }) {
   const lines = series.map((s) => {
     const key = sensorKey(s.sensor);
     const index = (bySensor[key] = (bySensor[key] ?? -1) + 1);
-    const color = SENSOR_COLORS[key], dash = DASHES[index % DASHES.length];
+    const color = s.color ?? SENSOR_COLORS[key], dash = s.color ? "" : DASHES[index % DASHES.length];
     let path = "", pen = false;
     s.dates.forEach((d, i) => {
       const v = s.values[i];
@@ -87,17 +86,13 @@ function draw(series, data, { mark = null, zero = false, axis }) {
       el("line", { x1: x(t.day), x2: x(t.day), y1: H - M.b, y2: H - M.b + 4, stroke: "#8a949b" }),
       el("text", { x: x(t.day), y: H - M.b + 16, "text-anchor": x(t.day) > W - M.r - 16 ? "end" : "middle", class: "chart-tick" }, t.label))),
     el("line", { x1: M.l, x2: W - M.r, y1: H - M.b, y2: H - M.b, stroke: "#8a949b" }),
-    ...events.map((e) => el("g", {},
-      el("title", {}, `${e.date}: ${e.label}`),
-      el("line", { x1: x(toDay(e.date)), x2: x(toDay(e.date)), y1: M.t, y2: H - M.b, stroke: "#8a949b", "stroke-dasharray": "1 3" }),
-      el("path", { d: `M${x(toDay(e.date)) - 4} ${H - M.b} l4 -7 l4 7z`, fill: "#555" }))),
     ...(mark ? [
       el("line", { x1: changeX, x2: changeX, y1: M.t - 4, y2: H - M.b, stroke: "#B3261E", "stroke-width": 1.6, "stroke-dasharray": "5 3" }),
       el("text", { x: changeX + (changeX > W * 0.6 ? -4 : 4), y: M.t - 8, "text-anchor": changeX > W * 0.6 ? "end" : "start", class: "chart-flag" }, "Change first seen"),
     ] : []),
     ...lines.map((l) => el("path", { d: l.path, fill: "none", stroke: l.color, "stroke-width": 2, "stroke-dasharray": l.dash || null, "stroke-linejoin": "round" })),
     // Few satellite passes (e.g. 2): show each measurement as a dot, so a straight line is not read as a continuous trend.
-    ...lines.filter((l) => l.s.dates.length <= DOT_MAX).flatMap((l) =>
+    ...lines.filter((l) => l.s.dates.length <= DOT_MAX && !l.s.color).flatMap((l) =>
       l.s.dates.flatMap((d, i) => (l.s.values[i] == null ? [] : [el("circle", { cx: x(toDay(d)), cy: y(l.s.values[i]), r: 3, fill: l.color, stroke: "#fff", "stroke-width": 1 })]))),
     el("text", { x: 0, y: 0, transform: `translate(11 ${(M.t + H - M.b) / 2}) rotate(-90)`, "text-anchor": "middle", class: "chart-axis" }, axis),
     cursor
@@ -110,39 +105,58 @@ function draw(series, data, { mark = null, zero = false, axis }) {
     cursor.setAttribute("visibility", shown ? "visible" : "hidden");
     if (shown) for (const k of ["x1", "x2"]) cursor.setAttribute(k, x(Math.min(day, endDay)).toFixed(1));
   };
-  return { svg, lines, events, setCursor };
+  return { svg, lines, setCursor };
 }
 
-function legendFor(lines, events, label) {
+function legendFor(lines, label) {
   return h("ul", { class: "chart-legend" },
     lines.map((l) => h("li", {},
       el("svg", { viewBox: "0 0 26 8", width: 26, height: 8, "aria-hidden": "true" },
         el("line", { x1: 0, x2: 26, y1: 4, y2: 4, stroke: l.color, "stroke-width": 2.5, "stroke-dasharray": l.dash || null })),
-      h("span", {}, label(l.s)))),
-    events.map((e) => h("li", {}, h("span", { class: "tri", "aria-hidden": "true" }, "▲"), h("span", {}, `${e.label}, ${formatDate(e.date)}`)))
+      h("span", {}, label(l.s))))
   );
 }
 
 const usable = (data) => (data?.series ?? []).filter((s) => s.dates?.length);
 
-/** The change card's signal chart. `data` is a series file ({series, events}); `change` is the change's properties. */
+/** The change card's signal chart. `data` is a series file ({series}); `change` is the change's properties. */
 export function buildChart(data, change) {
   const series = usable(data);
   if (!series.length) return h("p", { class: "note" }, "No signal history for this change yet.");
-  const { svg, lines, events } = draw(series, data, { mark: change.first_date, axis: `Signal strength (${series[0].unit})` });
-  return h("div", {}, svg, legendFor(lines, events, (s) => `${s.name} · ${sensorLabel(s.sensor)}`),
+  const { svg, lines } = draw(series, data, { mark: change.first_date, axis: `Signal strength (${series[0].unit})` });
+  return h("div", {}, svg, legendFor(lines, (s) => `${s.name} · ${sensorLabel(s.sensor)}`),
     h("p", { class: "note" }, HINT));
 }
 
-/** A site story's curve (story.chart): y from 0, series names as the legend, each series' `note` as a line under it, the chart's `note` as the caption, a slider line. */
-export function buildStoryChart(data, chart) {
-  const series = usable(data);
-  if (!series.some((s) => s.values?.some((v) => v != null))) return null; // nothing to draw: no chart at all
-  const { svg, lines, events, setCursor } = draw(series, data, { zero: true, axis: series[0].unit });
-  const node = h("figure", { class: "story-chart" },
-    chart.title ? h("figcaption", { class: "story-chart-title" }, chart.title) : null,
-    svg, legendFor(lines, events, (s) => s.name),
-    ...series.filter((s) => s.note).map((s) => h("p", { class: "note" }, s.note)),
-    chart.note ? h("p", { class: "note" }, chart.note) : null);
-  return { node, setDate: setCursor };
+/**
+ * The site overview's graph: cumulative area of detected change over time, one line per label (a single line when no
+ * change has a label). `features` are the site's changes; `range` = [first, last] day of the site. Has a slider line.
+ */
+export function buildAreaChart(features, range) {
+  const groups = new Map(); // label key -> changes
+  for (const f of features) {
+    const key = verdictKey(f.properties.verdict);
+    groups.set(key, [...(groups.get(key) ?? []), f]);
+  }
+  const judged = [...groups.keys()].some((key) => key !== "none");
+  const order = ["high_concern", "review", "expected", "none"];
+  const series = [...groups]
+    .sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))
+    .map(([key, list]) => {
+      const sorted = list.slice().sort((a, b) => a.properties.first_date.localeCompare(b.properties.first_date));
+      const dates = [range[0]], values = [0];
+      let total = 0;
+      for (const f of sorted) {
+        dates.push(f.properties.first_date, f.properties.first_date); // a step: up at the day it was first seen
+        values.push(Math.round(total * 10) / 10);
+        total += f.properties.area_ha;
+        values.push(Math.round(total * 10) / 10);
+      }
+      dates.push(range[1]);
+      values.push(values.at(-1));
+      return { name: judged ? VERDICTS[key].label : "All changes", color: judged ? VERDICTS[key].color : "#0a0a0a", dates, values, unit: "ha" };
+    });
+  if (!series.length) return null;
+  const { svg, lines, setCursor } = draw(series, {}, { zero: true, axis: "Cumulative area (ha)" });
+  return { node: h("figure", { class: "area-chart" }, svg, legendFor(lines, (s) => s.name)), setDate: setCursor };
 }

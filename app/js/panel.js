@@ -1,52 +1,81 @@
-// Written by Claude. What goes in the drawer and the start box: the intro, the site story (with its curve) and the change card (the "why this label" checklist, signal chart).
-import { buildChart, buildStoryChart } from "./chart.js";
+// Written by Claude. What goes in the drawer and the start box: the intro, the site overview (computed from the changes, the
+// same for every site) and the change card (the "why this label" checklist, signal chart).
+import { buildChart, buildAreaChart } from "./chart.js";
 import { loadJson } from "./data.js";
 import { buildChecklist } from "./checklist.js";
-import { h, VERDICTS, verdictKey, changeLabel, sensorLabel, safeUrl } from "./format.js";
+import { h, VERDICTS, verdictKey, changeLabel, sensorLabel, formatArea, safeUrl } from "./format.js";
 import { whenText, sizeText, confidenceText, seenBy } from "./seen.js";
 
 const $ = (id) => document.getElementById(id);
 
-let storyChart = null; // {setDate} of the open story's curve, if it has one
-let storyToken = 0; // a slow chart file must not land in another site's story
-let storyDate = null; // the slider date, so a chart that loads late starts at the right place
+let areaChart = null; // {setDate} of the open overview's graph
+let overviewDate = null; // the slider date, so the graph starts at the right place
 
-/** Move the story curve's slider line (called on every timeline step). */
-export function setStoryDate(iso) {
-  storyDate = iso;
-  storyChart?.setDate(iso);
+/** Move the overview graph's slider line (called on every timeline step). */
+export function setOverviewDate(iso) {
+  overviewDate = iso;
+  areaChart?.setDate(iso);
 }
 
-// story.chart: {title, file, note}; the file sits next to story.json and has the format of a series file.
-function storyChartSlot(chart, base, token) {
-  const slot = h("div", { class: "story-chart-slot" });
-  loadJson(base + chart.file)
-    .then((data) => {
-      const built = token === storyToken && buildStoryChart(data, chart);
-      if (!built) return;
-      slot.replaceChildren(built.node);
-      storyChart = built;
-      built.setDate(storyDate);
-    })
-    .catch(() => token === storyToken && slot.replaceChildren(h("p", { class: "note" }, "The chart could not be loaded.")));
-  return slot;
+const MONTH = new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "UTC" });
+const YEAR = new Intl.DateTimeFormat("en-GB", { year: "numeric", timeZone: "UTC" });
+/** "Apr–Oct 2026" · "Oct 2026" · "Oct 2025–Apr 2026" from two ISO dates. */
+export function periodText(a, b) {
+  const [da, db] = [new Date(a), new Date(b)];
+  const sameYear = YEAR.format(da) === YEAR.format(db);
+  const from = sameYear ? MONTH.format(da) : `${MONTH.format(da)} ${YEAR.format(da)}`;
+  const to = `${MONTH.format(db)} ${YEAR.format(db)}`;
+  return from === to || (sameYear && MONTH.format(da) === MONTH.format(db)) ? to : `${from}–${to}`;
 }
 
-export function renderStory(story, base = "") {
-  const box = $("story");
-  const token = ++storyToken;
-  storyChart = null;
-  if (!story) {
-    box.hidden = true;
-    return;
+/** Short satellite names found in the changes' `sources` (or their single `sensor`), each once, in order of appearance. */
+export function sensorNames(features) {
+  const names = [];
+  for (const f of features) {
+    for (const raw of (f.properties.sources ?? []).map((s) => s.sensor).concat(f.properties.sources?.length ? [] : [f.properties.sensor])) {
+      const name = /nisar/i.test(raw) ? "NISAR" : /sentinel-1/i.test(raw) ? "Sentinel-1" : /dist-alert|optical|hls|sentinel-2/i.test(raw) ? "Optical alerts" : raw;
+      if (name && !names.includes(name)) names.push(name);
+    }
   }
-  box.hidden = false;
-  const sources = (story.sources ?? []).filter((s) => safeUrl(s.url));
-  const sourceLine = sources.length
-    ? [h("p", { class: "sources" }, "Sources: ", sources.flatMap((s, i) => [i ? " · " : "", h("a", { href: s.url, target: "_blank", rel: "noopener" }, s.title)]))]
-    : []; // an array, not null: replaceChildren(null) would print the word "null"
-  const chart = story.chart?.file ? [storyChartSlot(story.chart, base, token)] : [];
-  box.replaceChildren(h("h3", {}, story.headline), ...story.story.map((p) => h("p", {}, p)), ...chart, ...sourceLine);
+  return names;
+}
+
+/** The site overview: one computed line, counts per label, the cumulative-area graph and the site's data notes (if any). */
+export function renderOverview(site, features) {
+  const box = $("overview");
+  areaChart = null;
+  const total = features.reduce((sum, f) => sum + f.properties.area_ha, 0);
+  const first = features.map((f) => f.properties.first_date).sort()[0];
+  const last = features.map((f) => f.properties.last_date).sort().at(-1);
+  const line = [
+    `${features.length} ${features.length === 1 ? "change" : "changes"}`,
+    formatArea(total),
+    first ? periodText(first, last) : null,
+    sensorNames(features).join(", ") || null,
+  ].filter(Boolean).join(" · ");
+
+  const counts = Object.keys(VERDICTS)
+    .map((key) => [key, features.filter((f) => verdictKey(f.properties.verdict) === key).length])
+    .filter(([, n]) => n > 0);
+  const countList = h("ul", { class: "label-counts" }, counts.map(([key, n]) =>
+    h("li", {}, h("span", { class: "swatch", style: `background:${VERDICTS[key].color}` }), VERDICTS[key].label, h("span", { class: "n" }, String(n)))));
+
+  const slot = h("div", { class: "area-chart-slot" });
+  const built = features.length ? buildAreaChart(features, site.time_range) : null;
+  if (built) {
+    slot.replaceChildren(built.node);
+    areaChart = built;
+    built.setDate(overviewDate);
+  }
+  const notes = Array.isArray(site.notes) ? site.notes.filter((n) => typeof n === "string" && n) : [];
+  box.replaceChildren(...[
+    h("p", { class: "overview-line" }, line),
+    features.length ? countList : h("p", { class: "note" }, "No changes at this site."),
+    built ? h("h3", {}, "Changed area over time") : null,
+    slot,
+    notes.length ? h("h3", {}, "About this data") : null,
+    notes.length ? h("ul", { class: "data-notes" }, notes.map((n) => h("li", {}, n))) : null,
+  ].filter(Boolean)); // replaceChildren(null) would print the word "null"
 }
 
 /** The first screen, before any site is open: what the app is for, the tour, and the sites. */

@@ -3,7 +3,7 @@ import { APP, VERDICTS, setVerdictColors, runningTotal, changeLabel, h } from ".
 import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
-import { renderIntro, renderStory, setStoryDate, showCard } from "./panel.js";
+import { renderIntro, renderOverview, setOverviewDate, showCard } from "./panel.js";
 import { createDrawer } from "./drawer.js";
 import { createInbox } from "./inbox.js";
 import { createPicture } from "./picture.js";
@@ -108,11 +108,11 @@ async function main() {
       showSiteDrawer();
     },
   });
-  /** The site-level view of the drawer: the story and the list of changes. */
+  /** The site-level view of the drawer: the overview and the list of changes. */
   function showSiteDrawer(view = drawer.lastTab) {
     if (!current) return;
     drawer.setTitle(current.site.name);
-    drawer.show(view === "story" && current.story ? "story" : "inbox");
+    drawer.show(view);
   }
   // A click on empty map closes whatever is open; Esc does too (before the tour's own Esc handling).
   const map = createChangeMap($("map"), { onSelect: (f) => (f ? select(f) : drawer.close()), bounds: overview });
@@ -151,7 +151,7 @@ async function main() {
       map.setDate(iso);
       picture.setDate(iso);
       inbox.setDate(iso);
-      setStoryDate(iso);
+      setOverviewDate(iso);
       refreshTotal();
       lastDate = iso;
       writeHash();
@@ -216,13 +216,12 @@ async function main() {
     loading = true;
     try {
       current = await loadSite(site);
-      renderStory(current.story, current.base);
-      drawer.setTabAvailable("story", Boolean(current.story));
+      renderOverview(site, current.changes.features);
       inbox.setSite(current.changes.features);
       map.setExtraFilter(null);
       map.showSite(site, current.changes, current.stages);
       picture.setSite(current);
-      timeline.setRange(site, current.changes.features, current.story?.events);
+      timeline.setRange(site, current.changes.features);
       syncStops(); // a site with photos only starts in Satellite
     } finally {
       loading = false;

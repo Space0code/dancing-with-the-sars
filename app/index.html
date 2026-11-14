@@ -60,10 +60,10 @@
           <button id="drawer-close" type="button" class="close" aria-label="Close">&#10005;</button>
         </div>
         <div id="drawer-tabs" class="tabs" role="tablist">
-          <button id="tab-story" type="button" role="tab" aria-selected="false" aria-controls="story-view">Story</button>
+          <button id="tab-overview" type="button" role="tab" aria-selected="false" aria-controls="overview-view">Overview</button>
           <button id="tab-inbox" type="button" role="tab" aria-selected="true" aria-controls="inbox">Changes <span id="inbox-count" class="n"></span></button>
         </div>
-        <div id="story-view" class="view" role="tabpanel" hidden><div id="story" class="story"></div></div>
+        <div id="overview-view" class="view" role="tabpanel" hidden><div id="overview" class="overview"></div></div>
         <section id="inbox" class="view inbox" role="tabpanel" aria-label="Changes at this site"></section>
         <div id="card-view" class="view" hidden><div id="card" aria-live="polite"></div></div>
       </aside>
@@ -81,7 +81,6 @@
       <div class="track">
         <input id="slider" type="range" min="0" max="0" step="1" value="0" aria-label="Date">
         <div id="ticks" class="ticks"></div>
-        <div id="events" class="events"></div>
         <div class="range-ends"><span id="range-start"></span><span id="event-note" class="event-note"></span><span id="range-end"></span></div>
       </div>
     </div>
