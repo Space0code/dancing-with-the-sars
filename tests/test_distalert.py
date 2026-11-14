@@ -119,8 +119,7 @@ def test_read_window_holds_the_right_pixels_and_grid(tmp_path):
     assert np.isnat(alerts.first_date[expected == 0]).all() and not np.isnat(alerts.first_date[expected > 0]).any()
     assert set(alerts.layers) == {da.STATUS, da.DATE, "VEG-ANOM-MAX"}
     assert alerts.pixel_ha == pytest.approx(0.09)
-    assert da.last_read_stats["files"] == 3 and da.last_read_stats["shape"] == (rows, cols)
-    assert da.last_read_stats["bytes"] > 0 and da.last_read_stats["seconds"] >= 0
+    assert alerts.cost["files"] == 3 and alerts.cost["bytes"] > 0 and alerts.cost["seconds"] >= 0
 
 
 def test_window_partly_outside_the_tile_is_nodata(tmp_path):
@@ -391,4 +390,4 @@ def test_live_muhos_latest_alert_state():
     dated = alerts.first_date[~np.isnat(alerts.first_date)]
     assert np.isin(alerts.status, da.CONFIRMED).sum() * alerts.pixel_ha > 100  # the clearing is in the window
     assert dated.max() <= np.datetime64(alerts.acquired) and dated.min() > np.datetime64(alerts.acquired) - np.timedelta64(400, "D")
-    print(f"\nlive read: {g.name}, shape {alerts.status.shape}, stats {da.last_read_stats}")
+    print(f"\nlive read: {g.name}, shape {alerts.status.shape}, cost {alerts.cost}")

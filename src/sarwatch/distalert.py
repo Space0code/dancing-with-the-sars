@@ -43,10 +43,6 @@ CONFIRMED = (3, 6, 7, 8, 9, 10)        # high confidence (7, 8 finished; 9, 10 o
 STRONG = (4, 5, 6, 8, 10)              # largest loss >= 50% of the vegetation cover
 CLASSES = {"confirmed": CONFIRMED, "provisional": PROVISIONAL, "first": FIRST}
 
-# Cost of the last read_window call: files, window shape, bytes (estimate: compressed tiles the window touches plus
-# s1.HEADER_BYTES per remote file) and wall-clock seconds.
-last_read_stats: dict = {}
-
 
 @dataclass
 class Granule:
@@ -69,6 +65,9 @@ class Alerts:
     granule: str            # source granule; "combined: <first> .. <last>" after combine()
     acquired: date          # acquisition date of the (newest) source granule
     layers: dict = field(default_factory=dict)  # every layer read, raw: name -> array
+    # read cost: "files", "bytes" (estimate: compressed tiles the window touches + s1.HEADER_BYTES per remote file),
+    # "seconds" (wall clock); summed over the inputs after combine()
+    cost: dict = field(default_factory=dict)
 
     @property
     def pixel_ha(self) -> float:
@@ -254,7 +253,7 @@ def read_window(granule: Granule, bbox, layers=(STATUS, DATE), token=None, worke
 
     Parts of the window outside the tile hold the layer's nodata value (status 255, date NaT). Remote files need an
     Earthdata token (token=None: $EARTHDATA_TOKEN or the repo's .env); local paths in Granule.urls need none. The
-    token goes only to Earthdata hosts, never to the signed CloudFront URL. Cost: module-level last_read_stats.
+    token goes only to Earthdata hosts, never to the signed CloudFront URL. The read cost lands in Alerts.cost.
     """
     t_start = time.perf_counter()
     layers = tuple(dict.fromkeys((STATUS, DATE) + tuple(layers)))
@@ -273,14 +272,11 @@ def read_window(granule: Granule, bbox, layers=(STATUS, DATE), token=None, worke
                 or (grid["rows"], grid["cols"]) != (ref["rows"], ref["cols"]):
             raise ValueError(f"grid mismatch in {granule.name}: {name} vs {STATUS}")
     raw = {name: arr for name, (arr, _, _) in results.items()}
-    nbytes = sum(nb for _, _, nb in results.values())
-    seconds = time.perf_counter() - t_start
-    last_read_stats.clear()
-    last_read_stats.update(files=len(layers), shape=(ref["rows"], ref["cols"]), bytes=nbytes, seconds=seconds,
-                           bytes_note="estimate: compressed tiles the window touches + header per remote file")
+    cost = {"files": len(layers), "bytes": sum(nb for _, _, nb in results.values()),
+            "seconds": time.perf_counter() - t_start}
     return Alerts(status=raw[STATUS], first_date=days_to_dates(raw[DATE]),
                   transform=(ref["a"], 0.0, ref["x0"], 0.0, ref["e"], ref["y0"]), epsg=ref["epsg"],
-                  granule=granule.name, acquired=granule.start.date(), layers=raw)
+                  granule=granule.name, acquired=granule.start.date(), layers=raw, cost=cost)
 
 
 def combine(snapshots) -> Alerts:
@@ -310,9 +306,9 @@ def combine(snapshots) -> Alerts:
     hit = ~np.isnat(best)
     first[hit] = best[hit]
     status[hit] = best_status[hit]
+    cost = {k: sum(a.cost.get(k, 0) for a in snaps) for k in ("files", "bytes", "seconds")}
     return Alerts(status=status, first_date=first, transform=newest.transform, epsg=newest.epsg,
-                  granule=f"combined: {snaps[0].granule} .. {newest.granule}", acquired=newest.acquired,
-                  layers={})
+                  granule=f"combined: {snaps[0].granule} .. {newest.granule}", acquired=newest.acquired, cost=cost)
 
 
 def circle_mask(alerts: Alerts, lon: float, lat: float, radius_m: float) -> np.ndarray:
