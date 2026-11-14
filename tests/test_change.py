@@ -14,14 +14,14 @@ RECT_HA = 24.0
 CHANGE_PASS = 5
 
 
-def speckle(rng, mean, looks=16):
+def speckle(rng, mean, looks=16, passes=N_PASSES):
     """A (time, y, x) stack of uniform ground with `looks`-look speckle: gamma noise with the given mean."""
-    return rng.gamma(looks, mean / looks, size=(N_PASSES, NY, NX)).astype(np.float32)
+    return rng.gamma(looks, mean / looks, size=(passes, NY, NX)).astype(np.float32)
 
 
-def scene(seed=0):
+def scene(seed=0, passes=N_PASSES):
     rng = np.random.default_rng(seed)
-    return {"HH": speckle(rng, HH_MEAN), "HV": speckle(rng, HV_MEAN)}
+    return {"HH": speckle(rng, HH_MEAN, passes=passes), "HV": speckle(rng, HV_MEAN, passes=passes)}
 
 
 def gain(db):
@@ -197,3 +197,44 @@ def test_regions_are_sorted_by_area_and_labelled_in_that_order():
     assert result.regions[0].area_ha > result.regions[1].area_ha
     assert [DATES.index(r.first_date) for r in result.regions] == [CHANGE_PASS, 8]
     assert (result.labels == 2)[small].any() and not (result.labels == 2)[RECT].any()
+
+
+def test_a_few_stray_pixels_do_not_turn_a_clearing_into_earthworks():
+    stack = scene(10)
+    stack["HV"][CHANGE_PASS:][(slice(None), *RECT)] *= gain(-6)
+    stack["HH"][CHANGE_PASS:, 40:45, 50:55] *= gain(8)   # a small bright pile of logs
+    stack["HH"][CHANGE_PASS:, 53:61, 82:90] *= gain(-8)  # a small puddle (bigger: the boxcar dilutes a drop)
+
+    result = detect_changes(stack, DATES, PIXEL_M)
+
+    assert len(result.regions) == 1
+    assert result.regions[0].type == "clearing"
+
+
+def test_lower_threshold_still_names_a_weaker_cband_clearing():
+    rng = np.random.default_rng(11)
+    stack = {"VV": speckle(rng, HH_MEAN), "VH": speckle(rng, HV_MEAN)}
+    stack["VH"][CHANGE_PASS:][(slice(None), *RECT)] *= gain(-2.5)  # C-band sees less of the canopy
+
+    result = detect_changes(stack, DATES, PIXEL_M, ChangeParams(threshold_db=2.0))
+
+    assert len(result.regions) == 1
+    region = result.regions[0]
+    assert region.type == "clearing" and region.signal["metric"] == "VH_dB"
+    assert iou(result.labels == region.label, truth_mask(RECT)) >= 0.7
+
+
+def test_erratic_change_after_a_long_quiet_baseline_is_earthworks():
+    passes = 30
+    dates = [date(2024, 1, 1) + timedelta(days=12 * i) for i in range(passes)]
+    stack = scene(12, passes)
+    offsets_db = [0] * 18 + [6, 1, 7, 2, 8, 1, 7, 2, 6, 1, 7, 6]  # 18 quiet passes, then the ground is reworked
+    for t, offset in enumerate(offsets_db):
+        stack["HH"][t][RECT] *= gain(offset)
+
+    result = detect_changes(stack, dates, PIXEL_M)
+
+    assert len(result.regions) == 1
+    region = result.regions[0]
+    assert region.type == "earthworks"
+    assert 18 <= dates.index(region.first_date) <= 20
