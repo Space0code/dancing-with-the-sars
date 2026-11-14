@@ -126,3 +126,26 @@ def test_live_smoke(monkeypatch, tmp_path):
     monkeypatch.setattr(_common, "OFFLINE", False)
     r = context.lookup_all(AGROPARC, since="2020-01-01")
     assert all(v["checked"] for v in r.values()), {k: v.get("error") for k, v in r.items()}
+
+
+def test_cadastre_splits_a_slow_tile(monkeypatch):
+    import requests
+    calls = []
+
+    def fake(source, url, params, **kw):
+        x0, y0, x1, y1 = (float(v) for v in params["bbox"].split(","))
+        calls.append(x1 - x0)
+        if x1 - x0 > 600:  # the big tile is too slow; its quarters answer
+            raise requests.ReadTimeout("slow")
+        return b'<?xml version="1.0"?><gml:FeatureCollection xmlns:gml="http://www.opengis.net/gml/3.2"/>'
+
+    monkeypatch.setattr(cadastre, "fetch", fake)
+    r = cadastre.lookup(square(1.85, 41.45, 400))  # one 800 m tile
+    assert r["checked"] and r["buildings"] == 0
+    assert len(calls) == 5 and all(c <= 600 for c in calls[1:])
+
+
+def test_cadastre_ignores_malformed_dates():
+    assert cadastre._date("1975-01-01T00:00:00") == "1975-01-01"
+    assert cadastre._date("0-01-01T00:00:00") is None
+    assert cadastre._date(None) is None and cadastre._date("") is None

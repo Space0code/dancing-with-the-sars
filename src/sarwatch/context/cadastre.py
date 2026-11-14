@@ -11,6 +11,8 @@ from __future__ import annotations
 import math
 import xml.etree.ElementTree as ET
 
+import requests
+
 from pyproj import Transformer
 from shapely.geometry import Polygon, box
 
@@ -27,6 +29,12 @@ NS = {"gml": "http://www.opengis.net/gml/3.2",
 _to_wgs = Transformer.from_crs(UTM, 4326, always_xy=True).transform
 
 
+def _date(text: str | None) -> str | None:
+    """``YYYY-MM-DD`` from the GML timestamp, or None for missing / malformed ones (some records hold e.g. ``0-01-01``)."""
+    d = (text or "").strip()[:10]
+    return d if len(d) == 10 and d[:4].isdigit() and d[4] == "-" and int(d[:4]) >= 1000 else None
+
+
 def _parse(body: bytes) -> list[dict]:
     root = ET.fromstring(body)
     out = []
@@ -40,22 +48,37 @@ def _parse(body: bytes) -> list[dict]:
         use = b.find("bu-ext2d:currentUse", NS)
         out.append({
             "id": b.get(f"{{{NS['gml']}}}id"),
-            "date": begin.text[:10] if begin is not None and begin.text else None,
+            "date": _date(begin.text if begin is not None else None),
             "use": use.text if use is not None and use.text else None,
             "parts": parts,
         })
     return out
 
 
+MIN_SPLIT_M = 120      # don't split a slow tile below this side length
+
+
+def _quarters(x0, y0, x1, y1):
+    xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+    return ((x0, y0, xm, ym), (xm, y0, x1, ym), (x0, ym, xm, y1), (xm, ym, x1, y1))
+
+
 def _tile(x0: float, y0: float, x1: float, y1: float) -> list[dict]:
-    body = fetch("cadastre", SERVICE, {
-        "service": "WFS", "version": "2.0.0", "request": "GetFeature", "typeNames": "BU:Building",
-        "srsName": "EPSG::25831", "bbox": f"{x0:.0f},{y0:.0f},{x1:.0f},{y1:.0f}",
-    }, timeout=90)  # dense urban tiles can take > 30 s
+    """Buildings in one box. A dense town tile (~4 MB of GML) can take minutes, so a big tile that times out is
+    split in four instead of retried; a full tile (5,000 buildings, possibly truncated) is split too."""
+    splittable = min(x1 - x0, y1 - y0) / 2 >= MIN_SPLIT_M
+    try:
+        body = fetch("cadastre", SERVICE, {
+            "service": "WFS", "version": "2.0.0", "request": "GetFeature", "typeNames": "BU:Building",
+            "srsName": "EPSG::25831", "bbox": f"{x0:.0f},{y0:.0f},{x1:.0f},{y1:.0f}",
+        }, timeout=60, retries=0 if splittable else None)
+    except requests.Timeout:
+        if not splittable:
+            raise
+        return [f for q in _quarters(x0, y0, x1, y1) for f in _tile(*q)]
     feats = _parse(body)
-    if len(feats) >= MAX_FEATURES:  # truncated: split in four
-        xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
-        return [f for q in ((x0, y0, xm, ym), (xm, y0, x1, ym), (x0, ym, xm, y1), (xm, ym, x1, y1)) for f in _tile(*q)]
+    if len(feats) >= MAX_FEATURES:
+        return [f for q in _quarters(x0, y0, x1, y1) for f in _tile(*q)]
     return feats
 
 

@@ -64,8 +64,8 @@ def _wgs(g):
     return shapely.transform(g, lambda xy: np.column_stack(_to_wgs(xy[:, 0], xy[:, 1])))
 
 
-def _feature(g, props: dict) -> dict:
-    geom = mapping(shapely.set_precision(_wgs(g), 1e-6))
+def _feature(g, props: dict, grid: float = 1e-6) -> dict:
+    geom = mapping(shapely.set_precision(_wgs(g), grid))
     return {"type": "Feature", "geometry": geom, "properties": {k: v for k, v in props.items() if v is not None}}
 
 
@@ -113,9 +113,8 @@ def protected_layer(site_box, tol: float):
             else:
                 name = a["NOM_ESPAI"]
                 label = f"{protected.ENPE_KINDS.get(a['CODI_ESPAI'], 'Protected area').capitalize()}: {name}"
-            feats.append(_feature(g, {"label": label, "class": cls, "name": name,
-                                      "area_ha": round(g.area / 1e4, 1)}))
-    names = sorted({f["properties"]["name"] for f in feats})
+            feats.append((g, {"label": label, "class": cls, "name": name, "area_ha": round(g.area / 1e4, 1)}))
+    names = sorted({props["name"] for _, props in feats})
     note = ("Inside the box: " + "; ".join(names)) if names else "No protected area inside this box."
     return feats, {"id": "protected", "title": "Protected nature areas", "kind": "protected",
                    "source": protected.SOURCE, "url": protected.VIEWER, "note": note}
@@ -149,10 +148,8 @@ def zoning_layer(site_box, tol: float):
     for cls in ("non_buildable", "planned", "buildable"):
         if cls in merged:
             g = unary_union(merged[cls]).simplify(tol)
-            feats.append(_feature(g, {"label": ZONING_LABEL[cls], "class": cls,
-                                      "area_ha": round(g.area / 1e4, 1)}))
-    total = site_box.area
-    share = {f["properties"]["class"]: f["properties"]["area_ha"] * 1e4 / total for f in feats}
+            feats.append((g, {"label": ZONING_LABEL[cls], "class": cls, "area_ha": round(g.area / 1e4, 1)}))
+    share = {props["class"]: g.area / site_box.area for g, props in feats}
     note = "Share of the box: " + ", ".join(f"{ZONING_LABEL[c].split(' (')[0].lower()} {round(100 * v)} %"
                                              for c, v in share.items())
     return feats, {"id": "zoning", "title": "Zoning: where building is allowed", "kind": "zoning",
@@ -169,19 +166,23 @@ def buildings_layer(site_box, tol: float):
             if t.intersects(site_box):
                 for b in cadastre._tile(*t.bounds):
                     found.setdefault(b["id"], b)
-    feats, years = [], []
+    groups, years = {}, []  # one feature per (year, use): thousands of footprints stay under 1 MB
     for b in found.values():
         g = _polys(unary_union(b["parts"]).buffer(0).intersection(site_box)) if b["parts"] else None
         if g is None:
             continue
         year = int(b["date"][:4]) if b["date"] else None
-        use = USE.get(b.get("use"), None)
-        label = "Registered building" + (f" ({use})" if use else "") + (f", built {year}" if year else ", year unknown")
-        feats.append(_feature(g.simplify(tol), {"label": label, "year": year, "name": b["id"].rsplit(".", 1)[-1]}))
+        groups.setdefault((year, USE.get(b.get("use"))), []).append(g.simplify(tol))
         if year:
             years.append(year)
+    feats = []
+    for (year, use), gs in sorted(groups.items(), key=lambda kv: (kv[0][0] or 0, kv[0][1] or "")):
+        n = len(gs)
+        label = (f"{n} registered building{'s' if n > 1 else ''}" + (f" ({use})" if use else "")
+                 + (f", built {year}" if year else ", year unknown"))
+        feats.append((unary_union(gs), {"label": label, "year": year}))
     recent = sum(1 for y in years if y >= 2016)
-    note = (f"{len(feats)} buildings on the land registry; {recent} built in 2016 or later"
+    note = (f"{sum(len(gs) for gs in groups.values())} buildings on the land registry; {recent} built in 2016 or later"
             + (f", newest {max(years)}" if years else "") + ". Construction year only, no exact date.")
     return feats, {"id": "buildings", "title": "Buildings on the land registry", "kind": "buildings",
                    "source": cadastre.SOURCE, "url": cadastre.VIEWER, "note": note}
@@ -193,20 +194,33 @@ def solar_note(site_box) -> str | None:
     for f in zoning.features_in_box(*site_box.bounds, layer="PLANEJAMENT:MUC_AMBIT_MUNICIPAL"):
         if shape(f["geometry"]).buffer(0).intersection(site_box).area > 0:
             munis[f["properties"]["CODI_INE"]] = f["properties"]["MUNICIPI"]
+    status = {"En tramitació": "pending", "Autoritzat": "authorised", "En servei": "in service", "Aprovat": "approved",
+              "No autoritzat": "refused", "Desistit": "withdrawn"}
     plants = []
     for code in sorted(munis):
         rows = json.loads(fetch("solar", solar.SERVICE, {"$where": f"starts_with(codi_municipi, '{code}')",
                                                          "$limit": 1000}))
-        plants += [f"{r.get('nom')} ({r.get('municipi')}, {r.get('superf_cie_ha', '?')} ha, {r.get('estat', '').lower()})"
+        plants += [f"{r.get('nom')}, {r.get('municipi')}, {r.get('superf_cie_ha', '?')} ha, "
+                   f"{status.get(r.get('estat'), r.get('estat'))}"
                    for r in rows if str(r.get("codi_municipi", ""))[:5] == code]
     if not plants:
         return f"No solar plant filed in {', '.join(sorted(munis.values()))} (list has no map positions)."
-    return "Solar plants filed here (list has no map positions): " + "; ".join(plants)
+    head = f"{len(plants)} solar plants filed in these towns (no map positions): "
+    text, shown = head, 0
+    for pl in plants:  # whole entries only, then "+N more", within the 160-char note
+        more = f" +{len(plants) - shown - 1} more" if shown + 1 < len(plants) else ""
+        if len(text) + len(pl) + len(more) + 2 > 160:
+            break
+        text += ("; " if shown else "") + pl
+        shown += 1
+    return text + (f"; +{len(plants) - shown} more" if shown < len(plants) else "")
 
 
 # --- driver -------------------------------------------------------------------------------------------------------
 
 BUILDERS = {"protected": (protected_layer, 10.0), "zoning": (zoning_layer, 5.0), "buildings": (buildings_layer, 0.5)}
+# If a file is over MAX_FILE: simplify more and round coarser (1e-5° ≈ 1 m), without asking the services again.
+SHRINK = [(1, 1e-6), (2, 1e-6), (2, 1e-5), (4, 1e-5), (8, 1e-5), (16, 1e-5)]
 
 
 def build(site: str, out_dir: Path | None = None, today: str | None = None, bbox: list[float] | None = None) -> dict:
@@ -219,13 +233,14 @@ def build(site: str, out_dir: Path | None = None, today: str | None = None, bbox
     index = {"layers": []}
     for lid, (fn, tol) in BUILDERS.items():
         try:
-            feats, meta = fn(site_box, tol)
+            shapes, meta = fn(site_box, tol)
             path = out / f"{lid}.geojson"
-            size = _write(path, feats)
-            while size > MAX_FILE and tol < 50:  # too big: simplify harder
-                tol *= 2
-                feats, meta = fn(site_box, tol)
+            for factor, grid in SHRINK:
+                feats = [_feature(g.simplify(tol * factor) if factor > 1 else g, props, grid) for g, props in shapes]
+                feats = [f for f in feats if f["geometry"]["coordinates"]]
                 size = _write(path, feats)
+                if size <= MAX_FILE:
+                    break
             index["layers"].append({**meta, "note": _short(meta["note"]), "file": path.name, "checked": today})
             print(f"{lid}: {len(feats)} features, {size / 1e3:.0f} kB", file=sys.stderr)
         except Exception as e:  # noqa: BLE001 (a failed service leaves its layer out, never crashes)
