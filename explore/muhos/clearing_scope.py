@@ -105,7 +105,7 @@ def main(argv=None) -> None:
         for f in json.loads(changes.read_text(encoding="utf-8"))["features"]:
             overlap = shape(f["geometry"]).intersection(geom_ll)
             if not overlap.is_empty:
-                kind = f["properties"]["type"]
+                kind = f'{f["properties"]["sensor"].split()[0]} {f["properties"]["type"]}'
                 detected[kind] = round(detected.get(kind, 0) + geodesic_ha(overlap), 1)
 
     props = {
