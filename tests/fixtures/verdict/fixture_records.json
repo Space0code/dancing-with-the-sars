@@ -1,0 +1,18 @@
+{
+ "version": 1,
+ "default": {
+  "protected": {"checked": true, "source": "Hand-entered (test)", "inside": false, "areas": []},
+  "cadastre": {"checked": true, "source": "Hand-entered (test)", "buildings": 0, "built_since": 0},
+  "zoning": {"checked": true, "source": "Hand-entered (test)", "zone": null},
+  "solar": {"checked": true, "source": "Hand-entered (test)", "plants": []}
+ },
+ "changes": {
+  "fixture-0001": {"zoning": {"zone": "non_buildable"}},
+  "fixture-0002": {"zoning": {"zone": "developable"}, "cadastre": {"buildings": 2, "built_since": 2}},
+  "fixture-0003": {"protected": {"inside": true, "areas": [{"name": "Test Natura 2000 area", "kind": "natura2000"}]}},
+  "fixture-0004": {"zoning": {"zone": "non_buildable"}},
+  "fixture-0005": {"fire": {"recorded": true}},
+  "fixture-0006": {"zoning": {"zone": "non_buildable"}},
+  "fixture-0007": {"zoning": {"zone": "developable"}, "cadastre": {"buildings": 1, "built_since": 1}}
+ }
+}
