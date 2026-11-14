@@ -96,6 +96,26 @@ class Run:
     epsg: int              # projected CRS of the grid (UTM, EPSG:3413, ...)
 
 
+@dataclass
+class Merged:
+    """One change made of detections from several sources (sarwatch.merge), written instead of one run's regions.
+    Pictures, signal and series come from `run` (an index into the runs) and its `region`; with region None the
+    pictures still come from that run, the series is sampled from every run under the outline and the signal is
+    `signal` (or null)."""
+    geometry: dict              # GeoJSON Polygon / MultiPolygon, lon/lat
+    type: str
+    first_date: date
+    last_date: date
+    not_before: date | None
+    confidence: str
+    sensor: str                 # the source that set first_date
+    explain: str
+    sources: list               # contract `sources` entries
+    run: int
+    region: object = None       # sarwatch.change.Region of runs[run], or None
+    signal: dict | None = None  # used when region is None: {metric, before, after, delta}
+
+
 # ---------------------------------------------------------------- small helpers
 
 def _iso(d) -> str:
@@ -460,18 +480,34 @@ def _sample(other: Run, x: np.ndarray, y: np.ndarray, epsg: int):
     return out
 
 
-def _series_doc(runs: list, i: int, region) -> dict:
+def _outline_centres(run: Run, outline: dict) -> tuple:
+    """Centres (x, y) [run CRS] of the run's grid pixels inside a lon/lat outline."""
+    tr = _transformer(4326, run.epsg)
+    geom = shapely.transform(shape(outline), lambda xy: np.column_stack(tr.transform(xy[:, 0], xy[:, 1])))
+    ny, nx = run.result.labels.shape
+    inside = features.rasterize([geom], out_shape=(ny, nx), transform=Affine(*run.transform), dtype="uint8") > 0
+    rows, cols = np.nonzero(inside)
+    a, b, c, d, e, f = run.transform
+    cc, rr = cols + 0.5, rows + 0.5
+    return a * cc + b * rr + c, d * cc + e * rr + f
+
+
+def _series_doc(runs: list, i: int, region, outline: dict | None = None, first=None) -> dict:
+    """The region's own series plus every other run sampled under it; region None: every run sampled under the
+    outline."""
     run = runs[i]
-    series = [_series(p, run.sensor, region.series["dates"], region.series[f"{p}_dB"]) for p in _ordered(run.stack)]
-    if len(runs) > 1:
-        x, y = _pixel_centres(run, region)
+    series = [] if region is None else [_series(p, run.sensor, region.series["dates"], region.series[f"{p}_dB"])
+                                        for p in _ordered(run.stack)]
+    if region is None or len(runs) > 1:
+        x, y = _outline_centres(run, outline) if region is None else _pixel_centres(run, region)
         for j, other in enumerate(runs):
-            if j == i:
+            if j == i and region is not None:
                 continue
             sampled = _sample(other, x, y, run.epsg)
             if sampled is not None:
                 series += [_series(p, other.sensor, other.dates, v) for p, v in sampled.items()]
-    return {"series": series, "events": [{"date": _iso(region.first_date), "label": "Change first seen"}]}
+    day = region.first_date if first is None else first
+    return {"series": series, "events": [{"date": _iso(day), "label": "Change first seen"}]}
 
 
 # ---------------------------------------------------------------- changes
@@ -522,11 +558,13 @@ def _layer_ids(runs: list) -> list:
     return ids
 
 
-def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: int = 3) -> dict:
+def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: int = 3,
+               merged: list | None = None) -> dict:
     """Write changes.geojson, layers.json + layers/*.png, evidence/*.png, series/*.json under site_dir.
 
     Every region of every run becomes one change, ids `<site_id>-0001`... ordered by first_date, then
-    area descending. Files left in layers/, evidence/ and series/ by an earlier export are removed;
+    area descending. With `merged` (a list of Merged), those are the changes instead, with their `not_before`
+    and `sources`. Files left in layers/, evidence/ and series/ by an earlier export are removed;
     story.json and anything else in site_dir are left alone. Returns {"changes", "area_ha", "by_type",
     "bbox", "time_range"}, the last two for sites.json: the bbox holds every change and site picture, the
     time range runs from the first to the last pass of all runs.
@@ -549,29 +587,40 @@ def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: i
     _write_json(site_dir / "layers.json", {"layers": layers})
 
     # area from the final lon/lat outline on the ellipsoid: grid pixels are not equal-area in every projection
-    outlines = [_outlines(run) for run in runs]
-    items = [(i, region, max(round(_geodesic_ha(outlines[i][region.label]), 2), 0.01))
-             for i, run in enumerate(runs) for region in run.result.regions]
-    items.sort(key=lambda it: (_iso(it[1].first_date), -it[2], it[0], it[1].label))
+    if merged is None:
+        outlines = [_outlines(run) for run in runs]
+        merged = []
+        for i, run in enumerate(runs):
+            for region in run.result.regions:
+                signal = _signal(region.signal)
+                merged.append(Merged(
+                    geometry=outlines[i][region.label], type=region.type, first_date=region.first_date,
+                    last_date=region.last_date, not_before=None, confidence=region.confidence, sensor=run.sensor,
+                    explain=_explain(region.type, signal, region.first_date,
+                                     _pass_before(run.dates, region.first_date)),
+                    sources=None, run=i, region=region))
+    items = [(m, max(round(_geodesic_ha(m.geometry), 2), 0.01)) for m in merged]
+    items.sort(key=lambda it: (_iso(it[0].first_date), -it[1], it[0].run, it[0].region.label if it[0].region else 0))
     feats, by_type, total = [], Counter(), 0.0
-    for n, (i, region, area) in enumerate(items, start=1):
-        run, pics, cid = runs[i], pictures[i], f"{site_id}-{n:04d}"
+    for n, (m, area) in enumerate(items, start=1):
+        run, pics, cid = runs[m.run], pictures[m.run], f"{site_id}-{n:04d}"
         files = {"before": f"evidence/{cid}_before.png", "after": f"evidence/{cid}_after.png",
                  "series": f"series/{cid}.json"}
-        _write_evidence(run, pics, outlines[i][region.label], {k: site_dir / files[k] for k in ("before", "after")})
-        _write_json(site_dir / files["series"], _series_doc(runs, i, region))
+        _write_evidence(run, pics, m.geometry, {k: site_dir / files[k] for k in ("before", "after")})
+        _write_json(site_dir / files["series"], _series_doc(runs, m.run, m.region, m.geometry, m.first_date))
         written.update(files.values())
         evidence = {**files, "before_date": pics.date("before"), "after_date": pics.date("after")}
-        signal = _signal(region.signal)
-        feats.append({"type": "Feature", "geometry": outlines[i][region.label], "properties": {
-            "id": cid, "site": site_id, "type": region.type,
-            "first_date": _iso(region.first_date), "last_date": _iso(region.last_date),
-            "area_ha": area, "sensor": run.sensor, "signal": signal, "confidence": region.confidence,
-            "verdict": None, "reasons": [],
-            "explain": _explain(region.type, signal, region.first_date, _pass_before(run.dates, region.first_date)),
-            "evidence": evidence,
-        }})
-        by_type[region.type] += 1
+        props = {
+            "id": cid, "site": site_id, "type": m.type,
+            "first_date": _iso(m.first_date), "last_date": _iso(m.last_date),
+            "area_ha": area, "sensor": m.sensor, "signal": _signal(m.region.signal if m.region else m.signal),
+            "confidence": m.confidence, "verdict": None, "reasons": [], "explain": m.explain, "evidence": evidence,
+        }
+        if m.sources is not None:
+            props["not_before"] = None if m.not_before is None else _iso(m.not_before)
+            props["sources"] = m.sources
+        feats.append({"type": "Feature", "geometry": m.geometry, "properties": props})
+        by_type[m.type] += 1
         total += area
     lines = ",\n".join(json.dumps(f, allow_nan=False) for f in feats)  # one change per line: small, diffable
     (site_dir / "changes.geojson").write_text(

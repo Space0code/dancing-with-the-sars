@@ -121,6 +121,10 @@ def fake(monkeypatch, tmp_path):
 
     monkeypatch.setenv("EARTHDATA_TOKEN", SECRET)
     monkeypatch.setattr(pipeline, "REPO_ROOT", tmp_path)  # .env lookups land in tmp_path, never the real repo
+    for site in pipeline.SITES.values():  # radar machinery only: the source merge has its own tests
+        monkeypatch.setattr(site, "optical", None)
+        monkeypatch.setattr(site, "sources", ())
+        monkeypatch.setattr(site, "primary_scope", None)
     data = tmp_path / "app" / "data"
     data.mkdir(parents=True)
     # the real index, every site not ready, so the validator needs no other site folders
