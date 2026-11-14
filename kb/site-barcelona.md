@@ -27,7 +27,7 @@ to move it. Its south-west corner overlaps the Agroparc window (1.79-1.91, 41.41
   regions at tile edges. Code: `s1.pick_bursts` (one track, greedy burst choice, only dates with every burst) and
   `s1.read_mosaic`; site switch `S1Settings(mosaic=True, track=132)`.
 - Dates: Jun–Sep of every year, at least 20 days apart (`months=(6, 7, 8, 9)`, `min_gap_days=20`): **57 dates**,
-  5 June 2016 → September 2026, 4–6 per summer. Baseline = the 2016 + 2017 summers (10 passes), end state = the 2026
+  5 June 2016 → September 2026, 4–6 per summer. Baseline = the 2016 summer only (5 passes), end state = the 2026
   summer (6 passes), the Agroparc comparison (summer against summer, so the farmland's yearly cycle cancels out).
 - **Measured cost:** 28.6 MB and 10–16 s per date (VV + VH + mask of three bursts; NaN 0.1 %: layover / shadow and
   one corner). 57 dates ≈ 1.6 GB, ≈ 12 min.
@@ -61,13 +61,16 @@ found by looking at quick-looks (`explore/barcelona/look.py`):
   October, and on the Llobregat delta and Maresme fields the "other" class was whole fields whose HV rose 5–7 dB (crops
   growing). 137 of 203 regions. `structure_db=6` turns weaker HH rises into "other" first. A year-to-year "churn" mask
   from the Sentinel-1 decade was tried and rejected: construction sites churn as much as fields (both ~1–1.5 dB).
-- **100 changes** (`max_changes`): the largest merged changes, a low-confidence one counted at half its area.
+- **100 changes** (`max_changes`, after `exclude_points`): the largest merged changes, a low-confidence one counted at half its area.
   Site pictures above 2 MB get a 256-colour palette (`layer_bytes`): the folder is 6.6 MB.
 
 ## First result (14 Nov 2026)
-742 Sentinel-1 + 66 NISAR regions → 762 merged changes → the 100 largest: structure 74 = 511 ha, earthworks 15 =
-94 ha, clearing 9 = 47 ha, other 2 = 14 ha (666 ha). 96 from Sentinel-1, 4 from NISAR (2026). Zoning (MUC): 68 on
-urban land, 23 developable, 9 non-buildable (port land counts as non-buildable in MUC). Pictures and the list of
+700 Sentinel-1 + 66 NISAR regions → 762 merged changes → the 100 largest: structure 75 = 515 ha, earthworks 14 =
+90 ha, clearing 9 = 47 ha, other 2 = 14 ha (666 ha). 97 from Sentinel-1, 3 from NISAR (2026). 10 Sentinel-1 and 2 NISAR
+changes are late starts (already under way when the sensor began watching): their date is that sensor's first pass and
+the card says the record cannot date them. One change, a moored ship at a port berth that NISAR read as earthworks, is
+left out by `exclude_points`. Zoning (MUC) counts from the first run (68 urban, 23 developable, 9 non-buildable) are
+not redone. Pictures and the list of
 what is still wrong: PR #110.
 
 <sub>Written by Claude</sub>

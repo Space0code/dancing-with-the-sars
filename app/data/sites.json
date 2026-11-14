@@ -54,7 +54,7 @@
   {"id": "barcelona", "name": "Barcelona and its region, Catalonia", "country": "ES", "ready": true, "hidden": true,
    "center": [2.15, 41.425], "zoom": 10.5, "bbox": [1.8312, 41.238, 2.4656, 41.6118],
    "time_range": ["2016-06-05", "2026-11-02"],
-   "sources": [{"sensor": "Sentinel-1 C-band", "kind": "radar", "start": "2016-06-05", "end": null, "revisit_days": 12, "sees": ["clearing", "structure", "earthworks", "other"], "risky_months": []}, {"sensor": "NISAR L-band", "kind": "radar", "start": "2026-06-23", "end": null, "revisit_days": 12, "sees": ["clearing", "structure", "earthworks", "other"], "risky_months": []}],
+   "sources": [{"sensor": "Sentinel-1 C-band", "kind": "radar", "start": "2016-06-05", "end": null, "revisit_days": 12, "sees": ["clearing", "structure", "earthworks", "other"], "risky_months": []}, {"sensor": "NISAR L-band", "kind": "radar", "start": "2026-06-23", "end": null, "revisit_days": 12, "sees": ["clearing", "structure", "earthworks"], "risky_months": []}],
    "snapshots": [
     {"date": "2016-06-05", "sensor": "Sentinel-1 C-band"}, {"date": "2016-06-29", "sensor": "Sentinel-1 C-band"}, {"date": "2016-07-23", "sensor": "Sentinel-1 C-band"},
     {"date": "2016-08-16", "sensor": "Sentinel-1 C-band"}, {"date": "2016-09-09", "sensor": "Sentinel-1 C-band"}, {"date": "2017-06-06", "sensor": "Sentinel-1 C-band"},

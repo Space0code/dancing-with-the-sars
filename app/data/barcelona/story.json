@@ -3,8 +3,8 @@
  "story": [
   "The map shows the 100 largest lasting changes that satellite radar saw between 2016 and 2026 in a 50 × 39 km window around Barcelona: the city, the Llobregat delta with the airport and the port, the Vallès with Sabadell, Terrassa and Cerdanyola, and the start of the Maresme.",
   "Sentinel-1 radar is compared summer against summer. The summer of 2016 is the starting point, and a place counts only if it looks different in every pass of the summer of 2026. Each change is dated by the first summer from which it stayed changed, so a change made in autumn, winter or spring is dated to the summer after it.",
-  "NISAR adds June to November 2026. Over farm fields its short record mostly sees crops growing and being harvested, so from NISAR only cleared vegetation, new structures and ground works are shown. The sea and the port basins are left out of the comparison.",
-  "Radar sees how the ground sends the radar echo back: new roofs and walls, paved or bare ground, trees removed. It does not tell whether a change was allowed. Each change is not judged yet; the check against Catalan public records comes next."
+  "NISAR adds June to November 2026. Over farm fields its short record mostly sees crops growing and being harvested, so from NISAR only cleared vegetation, new structures and ground works are shown. The sea, the port basins and the airport runways are masked out, so changes there are not reported.",
+  "Radar sees how the ground sends the radar echo back: new roofs and walls, paved or bare ground, trees removed. It does not tell whether a change was allowed. No change has been judged yet; the check against Catalan public records comes next."
  ],
  "events": [],
  "sources": [
