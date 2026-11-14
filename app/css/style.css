@@ -145,14 +145,23 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
 .facts dd { margin: 0; }
 .explain { margin: 8px 0; font-size: 16px; }
 .note { font-size: 13px; color: var(--muted); margin: 6px 0; }
-.reasons { list-style: none; margin: 0; padding: 0; }
-.reasons li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; padding: 5px 0; border-top: 1px solid var(--line); }
-.reasons li:first-child { border-top: 0; }
-.mark { font-size: 12px; text-align: center; padding-top: 3px; }
+.checklist { list-style: none; margin: 0; padding: 0; }
+.checklist li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; padding: 6px 4px; border-top: 1px solid var(--line); }
+.checklist li:first-child { border-top: 0; }
+.checklist li.deciding { background: #f1f5f9; border-radius: 6px; border-top: 0; }
+.checklist li.deciding + li { border-top: 0; }
+.checklist p { margin: 0; }
+.checklist .question { font-size: 13px; color: var(--muted); }
+.checklist .answer + .answer { margin-top: 4px; }
+.checklist cite { display: block; font-size: 13px; color: var(--muted); font-style: normal; }
+.checklist a { color: var(--accent); }
+.decider { margin-left: 6px; padding: 0 6px; border-radius: 4px; background: var(--ink); color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.mark { font-weight: 700; text-align: center; padding-top: 1px; }
 .mark.raises { color: #a33a00; }
 .mark.lowers { color: #0a5a8c; }
-.reasons cite { display: block; font-size: 13px; color: var(--muted); font-style: normal; }
-.reasons a { color: var(--accent); }
+.mark.neutral { color: var(--muted); }
+.mark.unchecked { color: #7a5b00; }
+.checklist-key { font-size: 12px; }
 /* Before/after swipe */
 .swipe-frame {
   position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--line); background: #eee;

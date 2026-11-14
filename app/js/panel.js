@@ -1,16 +1,11 @@
-// Written by Claude. Side panel: the intro screen, the collapsible site story and the change card (reasons, before/after swipe, signal chart).
+// Written by Claude. Side panel: the intro screen, the collapsible site story and the change card (the "why this label" checklist, before/after swipe, signal chart).
 import { buildChart } from "./chart.js";
 import { buildSwipe } from "./swipe.js";
 import { loadJson } from "./data.js";
+import { buildChecklist } from "./checklist.js";
 import { h, APP, VERDICTS, verdictKey, changeLabel, confidenceLabel, sensorLabel, formatDate, formatArea, safeUrl } from "./format.js";
 
 const $ = (id) => document.getElementById(id);
-
-const EFFECT = {
-  raises: { mark: "▲", text: "Raises concern" },
-  lowers: { mark: "▼", text: "Lowers concern" },
-  neutral: { mark: "●", text: "Neutral" },
-};
 
 export function renderStory(story) {
   const box = $("story");
@@ -29,15 +24,6 @@ export function renderStory(story) {
 
 function when(p) {
   return p.first_date === p.last_date ? formatDate(p.first_date) : `${formatDate(p.first_date)} to ${formatDate(p.last_date)}`;
-}
-
-function reasonItem(r) {
-  const effect = EFFECT[r.effect] ?? EFFECT.neutral;
-  const url = safeUrl(r.url);
-  return h("li", {},
-    h("span", { class: `mark ${r.effect}`, title: effect.text, role: "img", "aria-label": effect.text }, effect.mark),
-    h("div", {}, r.text, h("cite", {}, "Source: ", url ? h("a", { href: url, target: "_blank", rel: "noopener" }, r.source) : r.source))
-  );
 }
 
 // Picture dates: evidence.before_date / after_date when the exporter sets them, else the dates of the site's radar pictures (layers.json).
@@ -110,9 +96,8 @@ export function showCard(feature, site, onClose) {
         h("dt", {}, "Confidence"), h("dd", {}, confidenceLabel(p.confidence))
       ),
       p.explain ? h("p", { class: "explain" }, p.explain) : null,
-      p.reasons?.length ? h("h3", {}, "Why this verdict") : null,
-      p.reasons?.length ? h("ul", { class: "reasons" }, p.reasons.map(reasonItem)) : null,
-      p.verdict ? h("p", { class: "note" }, "A verdict says where a person should look first. It is not a finding about anyone.") : h("p", { class: "note" }, "This change has not been checked against public records yet."),
+      ...buildChecklist(p, site.site?.country),
+      p.verdict ? h("p", { class: "note" }, "A label says where a person should look first. It is not a finding about anyone.") : null,
       h("h3", {}, "Before and after"),
       evidenceBlock(evidence, base, layers),
       h("h3", {}, "Radar signal over time"),
