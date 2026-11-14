@@ -138,7 +138,10 @@ def test_two_runs_give_a_valid_site_in_the_right_place(runs, site):
     assert p["signal"]["delta"] == round(p["signal"]["delta"], 1)
     assert p["verdict"] is None and p["reasons"] == []
     assert "vegetation echo drop by 6 dB" in p["explain"] and "trees" in p["explain"]
-    assert "Aug 2026" in p["explain"]
+    # the radar only knows the change happened between two passes: the one before it showed and the first showing it
+    first = date.fromisoformat(p["first_date"])
+    previous = DATES[DATES.index(first) - 1]
+    assert f"between {previous.day} {previous:%b} and {first.day} {first:%b %Y}," in p["explain"]
     for ring in clearing["geometry"]["coordinates"]:
         assert ring[0] == ring[-1]
         assert all(v == round(v, 6) for pt in ring for v in pt)
@@ -164,8 +167,9 @@ def test_site_pictures_have_array_corners_in_contract_order(runs, site):
         assert np.allclose(layer["coordinates"], expected, atol=2e-6)
         img = Image.open(site_dir / layer["url"])
         assert max(img.size) <= export.MAX_LAYER_PX
-        assert "NISAR" in layer["title"] or "Sentinel-1" in layer["title"]
-        assert "Red = surface echo" in layer["caption"] and "Green = vegetation echo" in layer["caption"]
+        assert layer["title"] in ("NISAR radar, before", "NISAR radar, after",
+                                  "Sentinel-1 radar, before", "Sentinel-1 radar, after")  # the date has its own field
+        assert "Yellow-green = trees" in layer["caption"] and len(layer["caption"]) <= 130
 
     before, after = layers[0], layers[1]
     assert before["date"] == DATES[1].isoformat() and after["date"] == DATES[-2].isoformat()

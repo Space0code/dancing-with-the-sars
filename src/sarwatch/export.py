@@ -314,22 +314,19 @@ def _site_picture(power: dict, band: str, run: Run, path: Path) -> list:
 
 
 def _layer_text(run: Run, pics: _Pictures, when: str) -> tuple:
+    """Title (no date: layers.json has its own date field) and a short plain-language caption (~120 characters)."""
     used = pics.dates[when]
     satellite = re.sub(r"\s+[A-Za-z]-band$", "", run.sensor.strip())
-    title = f"{satellite} radar, {when} ({_span(used[0], used[-1], ' to ')})"
     passes = f"{len(used)} passes" if len(used) > 1 else "1 pass"
-    head = f"Radar picture from {satellite}: the typical echo of {passes}, {_span(used[0], used[-1], ' to ')}."
+    head = f"{passes}, {_span(used[0], used[-1], ' to ')}."
     co, cross = _co_cross(run.stack)
     if co is not None and cross is not None:
-        body = (f" Red = surface echo ({co.upper()}), strong from bare ground and buildings. Green = vegetation echo"
-                f" ({cross.upper()}), strong from trees. Blue = how much stronger the surface echo is than the"
-                " vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light"
-                " pink to white, water dark blue.")
+        body = " Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark blue = water."
     else:
         pol = co or cross or next(iter(run.stack))
         source = "trees and bushes" if pol.upper() in CROSSPOL else "bare ground and buildings"
-        body = f" Shades of grey: brighter = stronger {_echo(pol)} ({pol.upper()}), mostly from {source}."
-    return title, head + body + " Transparent = no data."
+        body = f" Brighter = stronger {_echo(pol)} ({pol.upper()}), mostly from {source}."
+    return f"{satellite} radar, {when}", head + body
 
 
 # ---------------------------------------------------------------- evidence crops
@@ -445,8 +442,16 @@ def _signal(sig) -> dict | None:
     return {"metric": str(sig["metric"]), **{k: _num(sig.get(k), 1) for k in ("before", "after", "delta")}}
 
 
-def _explain(kind: str, signal: dict | None, first, last) -> str:
-    when = f"on {_span(first, first, '')}" if _iso(first) == _iso(last) else f"between {_span(first, last, ' and ')}"
+def _pass_before(dates, day):
+    """The last pass of `dates` before `day`; None if there is none."""
+    earlier = [d for d in dates if _iso(d) < _iso(day)]
+    return max(earlier, key=_iso) if earlier else None
+
+
+def _explain(kind: str, signal: dict | None, first, previous) -> str:
+    """One sentence for the card. The radar only knows the change happened between two passes: the last one
+    before it showed (`previous`) and the first one that shows it (`first`)."""
+    when = f"between {_span(previous, first, ' and ')}" if previous is not None else f"by {_span(first, first, '')}"
     pattern = PATTERNS.get(kind, PATTERNS["other"])
     delta = signal.get("delta") if signal else None
     if not delta:  # None or 0
@@ -509,7 +514,7 @@ def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: i
             "first_date": _iso(region.first_date), "last_date": _iso(region.last_date),
             "area_ha": area, "sensor": run.sensor, "signal": signal, "confidence": region.confidence,
             "verdict": None, "reasons": [],
-            "explain": _explain(region.type, signal, region.first_date, region.last_date),
+            "explain": _explain(region.type, signal, region.first_date, _pass_before(run.dates, region.first_date)),
             "evidence": evidence,
         }})
         by_type[region.type] += 1
