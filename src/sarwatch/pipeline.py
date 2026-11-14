@@ -82,6 +82,8 @@ class S1Settings:
                                      # compared across years, so farmland's yearly wet / dry cycle cancels out
     params: ChangeParams = field(default_factory=lambda: ChangeParams(boxcar=3))  # 30 m pixels: smaller window
     water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
+    drop_baseline_dated: bool = False  # drop regions dated inside the baseline passes: for a short baseline that
+                                       # defines "before" (Muhos), such a date is an artefact, not a change
 
     def __post_init__(self):
         if self.months is not None and (not self.months or not all(isinstance(m, int) and 1 <= m <= 12
@@ -118,7 +120,7 @@ SITES = {
         id="muhos", bbox=(25.94, 64.80, 26.15, 64.89),
         nisar=NisarSettings(start=date(2026, 6, 1), track=157, frame=35, direction="ASCENDING",
                             params=ChangeParams(boxcar=7, threshold_db=2.5, min_area_ha=2.0)),
-        s1=S1Settings(start=date(2025, 5, 1), end=date(2026, 11, 10), water_db=-16.0,
+        s1=S1Settings(start=date(2025, 5, 1), end=date(2026, 11, 10), water_db=-16.0, drop_baseline_dated=True,
                       params=ChangeParams(boxcar=5, n_early=19, n_late=10, threshold_db=2.0, persist=3,
                                           min_area_ha=3.0)),
         skip_dates=MUHOS_SKIP, params=MUHOS_PARAMS,
@@ -513,7 +515,7 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     log.info("%s: baseline %s .. %s (%d passes), end state %s .. %s (%d passes)", sensor, dates[0],
              dates[n_early - 1], n_early, dates[-n_late], dates[-1], n_late)
     result = detect_changes(stack, dates, pixel, params, valid=valid)
-    if sensor == S1:
+    if sensor == S1 and site.s1.drop_baseline_dated:
         result = _drop_baseline_dated(result, dates[n_early - 1])
     log.info("%s: %d dates, %d change regions (threshold %.1f dB, min %.2f ha)", sensor, len(dates),
              len(result.regions), params.threshold_db, params.min_area_ha)
