@@ -1,0 +1,101 @@
+// Written by Claude. MapLibre map: basemaps (no API key), verdict-colored change polygons, date filter, selection.
+import { VERDICTS } from "./format.js";
+
+const BASEMAPS = {
+  satellite: "base-satellite",
+  light: "base-light",
+};
+
+const STYLE = {
+  version: 8,
+  sources: {
+    satellite: {
+      type: "raster",
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: "Imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community",
+    },
+    light: {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    },
+  },
+  layers: [
+    { id: BASEMAPS.satellite, type: "raster", source: "satellite" },
+    { id: BASEMAPS.light, type: "raster", source: "light", layout: { visibility: "none" } },
+  ],
+};
+
+const verdictColor = [
+  "match", ["get", "verdict"],
+  "expected", VERDICTS.expected.color,
+  "review", VERDICTS.review.color,
+  "high_concern", VERDICTS.high_concern.color,
+  VERDICTS.none.color,
+];
+
+const EMPTY = { type: "FeatureCollection", features: [] };
+const DATE_LAYERS = ["changes-fill", "changes-casing", "changes-line"];
+
+export function createChangeMap(container, { onSelect }) {
+  const map = new maplibregl.Map({ container, style: STYLE, center: [1.6, 41.8], zoom: 6, attributionControl: { compact: true } });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+  new ResizeObserver(() => map.resize()).observe(container);
+
+  let features = new Map();
+  let dateIso = "9999-12-31";
+
+  const ready = new Promise((resolve, reject) => {
+    map.on("error", (e) => e.error && /style|webgl/i.test(e.error.message) && reject(e.error));
+    map.on("load", () => {
+      map.addSource("changes", { type: "geojson", data: EMPTY });
+      map.addLayer({ id: "changes-fill", type: "fill", source: "changes", paint: { "fill-color": verdictColor, "fill-opacity": 0.45 } });
+      map.addLayer({ id: "changes-casing", type: "line", source: "changes", paint: { "line-color": "#1b1b1b", "line-width": 4.5 } });
+      map.addLayer({ id: "changes-line", type: "line", source: "changes", paint: { "line-color": verdictColor, "line-width": 2.5 } });
+      map.addLayer({
+        id: "changes-selected", type: "line", source: "changes", filter: ["==", ["get", "id"], ""],
+        paint: { "line-color": "#ffffff", "line-width": 3, "line-gap-width": 5, "line-opacity": 0.95 },
+      });
+      map.on("mouseenter", "changes-fill", () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", "changes-fill", () => (map.getCanvas().style.cursor = ""));
+      map.on("click", (e) => {
+        const hit = map.queryRenderedFeatures(e.point, { layers: ["changes-fill"] })[0];
+        onSelect(hit ? features.get(hit.properties.id) : null);
+      });
+      resolve();
+    });
+  });
+
+  function applyDateFilter() {
+    const filter = ["<=", ["get", "first_date"], dateIso];
+    for (const id of DATE_LAYERS) map.setFilter(id, filter);
+  }
+
+  return {
+    ready,
+    showSite(site, collection) {
+      map.resize(); // measure the container now, so the camera centers on the final size
+      features = new Map(collection.features.map((f) => [f.properties.id, f]));
+      map.getSource("changes").setData(collection);
+      this.select(null);
+      applyDateFilter();
+      map.flyTo({ center: site.center, zoom: site.zoom, essential: true });
+    },
+    setDate(iso) {
+      dateIso = iso;
+      applyDateFilter();
+    },
+    select(feature) {
+      map.setFilter("changes-selected", ["==", ["get", "id"], feature ? feature.properties.id : ""]);
+    },
+    setBasemap(name) {
+      for (const [key, layerId] of Object.entries(BASEMAPS)) {
+        map.setLayoutProperty(layerId, "visibility", key === name ? "visible" : "none");
+      }
+    },
+  };
+}

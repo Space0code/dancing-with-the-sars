@@ -1,0 +1,59 @@
+<!doctype html>
+<!-- Written by Claude -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Land-change monitor</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Land-change monitor</h1>
+    <div class="site-picker">
+      <label for="site">Site</label>
+      <select id="site"></select>
+      <span id="fake-badge" class="fake-badge" hidden>Fake data</span>
+    </div>
+    <div class="basemap" role="radiogroup" aria-label="Background map">
+      <label><input type="radio" name="basemap" value="satellite" checked> Satellite</label>
+      <label><input type="radio" name="basemap" value="light"> Map</label>
+    </div>
+  </header>
+
+  <main>
+    <div class="map-wrap">
+      <div id="map" aria-label="Map of detected land changes"></div>
+      <div class="legend" aria-label="Legend">
+        <ul id="legend"></ul>
+      </div>
+      <p id="map-error" class="map-error" hidden></p>
+    </div>
+
+    <aside id="panel" aria-label="Details">
+      <details id="story" class="story" open></details>
+      <div id="card" aria-live="polite"></div>
+    </aside>
+  </main>
+
+  <footer class="timeline" aria-label="Timeline">
+    <div class="timeline-top">
+      <output id="date-label" class="date-label"></output>
+      <span id="total" class="total"></span>
+    </div>
+    <div class="timeline-row">
+      <button id="play" class="play" type="button" aria-label="Play timeline">▶</button>
+      <div class="track">
+        <input id="slider" type="range" min="0" max="0" step="1" value="0" aria-label="Date">
+        <div id="events" class="events"></div>
+        <div class="range-ends"><span id="range-start"></span><span id="event-note" class="event-note"></span><span id="range-end"></span></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
