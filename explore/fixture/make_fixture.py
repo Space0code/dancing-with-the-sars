@@ -24,6 +24,7 @@ M_PER_DEG_LON = 111_320.0 * math.cos(math.radians((SOUTH + NORTH) / 2))
 
 NISAR_DATES = [date(2026, 6, 23) + timedelta(days=12 * i) for i in range(12)]
 S1_DATES = [date(2024 + m // 12, m % 12 + 1, 15) for m in range(34)]  # Jan 2024 .. Oct 2026
+BEFORE_DATE, AFTER_DATE = "2024-01-15", "2026-11-02"  # dates of the two site pictures
 
 # type -> (HH change, HV change) in dB once the change has happened
 EFFECT_DB = {
@@ -154,9 +155,9 @@ def main() -> None:
 
     corners = [[WEST, NORTH], [EAST, NORTH], [EAST, SOUTH], [WEST, SOUTH]]
     layers = {"layers": [
-        {"id": "radar_before", "title": "Radar picture before", "date": "2024-01-15", "url": "layers/radar_before.png",
+        {"id": "radar_before", "title": "Radar picture before", "date": BEFORE_DATE, "url": "layers/radar_before.png",
          "coordinates": corners, "caption": "Fake radar picture. Red = surface echo (HH), green = vegetation echo (HV)."},
-        {"id": "radar_after", "title": "Radar picture after", "date": "2026-11-02", "url": "layers/radar_after.png",
+        {"id": "radar_after", "title": "Radar picture after", "date": AFTER_DATE, "url": "layers/radar_after.png",
          "coordinates": corners, "caption": "Fake radar picture after the changes."},
     ]}
     (OUT / "layers.json").write_text(json.dumps(layers, indent=1), encoding="utf-8")
@@ -192,7 +193,7 @@ def main() -> None:
                 "confidence": confidence, "verdict": verdict, "reasons": reasons,
                 "explain": EXPLAIN[kind].format(d=delta),
                 "evidence": {"before": f"evidence/{cid}_before.png", "after": f"evidence/{cid}_after.png",
-                             "series": f"series/{cid}.json"},
+                             "series": f"series/{cid}.json", "before_date": BEFORE_DATE, "after_date": AFTER_DATE},
             },
         })
     collection = {"type": "FeatureCollection", "features": features}

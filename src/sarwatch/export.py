@@ -34,7 +34,7 @@ from pathlib import Path
 import numpy as np
 import shapely
 from PIL import Image
-from pyproj import Transformer
+from pyproj import Geod, Transformer
 from rasterio import features
 from rasterio.transform import Affine
 from scipy import ndimage
@@ -62,6 +62,7 @@ OUTLINE_RGBA = (255, 221, 0, 255)  # yellow: stands out on every false colour ab
 SIMPLIFY_PX = 0.5                # outline simplification tolerance, in grid pixels
 MIN_FOOTPRINT_PX = 3             # another run's series needs at least this many of its pixels under the change
 
+GEOD = Geod(ellps="WGS84")
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 PATTERNS = {
     "clearing": "the pattern left when trees are removed",
@@ -178,6 +179,11 @@ def _lonlat_geojson(geom, epsg: int) -> dict:
     return {"type": "MultiPolygon", "coordinates": [[_round_ring(r) for r in poly] for poly in coords]}
 
 
+def _geodesic_ha(geojson: dict) -> float:
+    area_m2, _ = GEOD.geometry_area_perimeter(shape(geojson))
+    return abs(area_m2) / 1e4
+
+
 def _outline(geom, tolerance: float, epsg: int) -> dict:
     """Simplified outline in lon/lat; falls back to the exact pixel outline if simplifying breaks it."""
     simple = geom.simplify(tolerance, preserve_topology=True)
@@ -267,6 +273,11 @@ class _Pictures:
     band: str
     power: dict  # "before" | "after" -> {pol: (y, x)}
     dates: dict  # "before" | "after" -> list of the pass dates used
+
+    def date(self, when: str) -> str:
+        """The picture's date: the middle one of the passes it combines."""
+        used = self.dates[when]
+        return _iso(used[len(used) // 2])
 
 
 def _pictures(run: Run, n_before: int, n_after: int) -> _Pictures:
@@ -468,24 +479,25 @@ def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: i
             corners = _site_picture(pics.power[when], pics.band, run, site_dir / rel)
             written.add(rel)
             title, caption = _layer_text(run, pics, when)
-            used = pics.dates[when]
-            layers.append({"id": f"{base}_{when}", "title": title, "date": _iso(used[len(used) // 2]),
+            layers.append({"id": f"{base}_{when}", "title": title, "date": pics.date(when),
                            "url": rel, "coordinates": corners, "caption": caption})
     _write_json(site_dir / "layers.json", {"layers": layers})
 
+    # area from the final lon/lat outline on the ellipsoid: grid pixels are not equal-area in every projection
     outlines = [_outlines(run) for run in runs]
-    items = [(i, region) for i, run in enumerate(runs) for region in run.result.regions]
-    items.sort(key=lambda it: (_iso(it[1].first_date), -it[1].area_ha, it[0], it[1].label))
+    items = [(i, region, max(round(_geodesic_ha(outlines[i][region.label]), 2), 0.01))
+             for i, run in enumerate(runs) for region in run.result.regions]
+    items.sort(key=lambda it: (_iso(it[1].first_date), -it[2], it[0], it[1].label))
     feats, by_type, total = [], Counter(), 0.0
-    for n, (i, region) in enumerate(items, start=1):
-        run, cid = runs[i], f"{site_id}-{n:04d}"
-        evidence = {"before": f"evidence/{cid}_before.png", "after": f"evidence/{cid}_after.png",
-                    "series": f"series/{cid}.json"}
-        _write_evidence(run, pictures[i], region, {k: site_dir / evidence[k] for k in ("before", "after")})
-        _write_json(site_dir / evidence["series"], _series_doc(runs, i, region))
-        written.update(evidence.values())
+    for n, (i, region, area) in enumerate(items, start=1):
+        run, pics, cid = runs[i], pictures[i], f"{site_id}-{n:04d}"
+        files = {"before": f"evidence/{cid}_before.png", "after": f"evidence/{cid}_after.png",
+                 "series": f"series/{cid}.json"}
+        _write_evidence(run, pics, region, {k: site_dir / files[k] for k in ("before", "after")})
+        _write_json(site_dir / files["series"], _series_doc(runs, i, region))
+        written.update(files.values())
+        evidence = {**files, "before_date": pics.date("before"), "after_date": pics.date("after")}
         signal = _signal(region.signal)
-        area = max(round(float(region.area_ha), 2), 0.01)
         feats.append({"type": "Feature", "geometry": outlines[i][region.label], "properties": {
             "id": cid, "site": site_id, "type": region.type,
             "first_date": _iso(region.first_date), "last_date": _iso(region.last_date),

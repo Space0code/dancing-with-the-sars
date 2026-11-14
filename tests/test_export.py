@@ -130,7 +130,9 @@ def test_two_runs_give_a_valid_site_in_the_right_place(runs, site):
     area_m2, _ = GEOD.geometry_area_perimeter(poly)
     assert abs(area_m2) / 1e4 == pytest.approx(CLEAR_HA, rel=0.2)
     assert area_m2 > 0  # counter-clockwise exterior (RFC 7946)
-    assert p["area_ha"] == pytest.approx(CLEAR_HA, rel=0.2)
+    assert p["area_ha"] == pytest.approx(abs(area_m2) / 1e4, abs=0.01)  # geodesic, not a pixel count
+    assert p["evidence"]["before_date"] == DATES[1].isoformat()  # middle of the 3 "before" passes
+    assert p["evidence"]["after_date"] == DATES[-2].isoformat()
     assert p["signal"]["metric"] == "HV_dB" and p["signal"]["delta"] == pytest.approx(-6, abs=0.5)
     assert p["signal"]["delta"] == round(p["signal"]["delta"], 1)
     assert p["verdict"] is None and p["reasons"] == []
