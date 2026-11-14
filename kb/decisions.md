@@ -21,5 +21,13 @@ One line each: `date · decision · why · issue`. Newest at the bottom.
 - 2026-11-14 · No Google Earth Engine: OPERA RTC-S1 + DIST-ALERT via Earthdata Login cover history and overview · nobody has an account; one credential is enough · #10
 - 2026-11-14 · Web app is a static site with no build step (MapLibre from a CDN) · nothing to break, hosts anywhere · #10
 - 2026-11-14 · Every assignment names the model; the orchestrator model only orchestrates, implementation runs on Opus/Sonnet · cost and role clarity · #10
+- 2026-11-14 · Radar files may be downloaded and processed on laptops, the Codespace stays optional; still only small results in the repo · the team moved to fast wifi at 16:00 · #9
+- 2026-11-14 · Work ships as small pilots humans can look at; a checkpoint where all three humans run the app and steer · decide from what we see, not from text (Tomi's proposal) · #9
+- 2026-11-14 · Every PR that changes the app or its data carries a picture in `docs/screenshots/` · Tian: pictures at every stage · #9
+- 2026-11-14 · Each "done" note ends with at most two yes/no questions for the humans; after about midnight the orchestrator decides alone and logs it here · the humans sleep, the work continues · #9
+- 2026-11-14 · Adopted from Tomi's lists: record layers, Catalonia from optical alerts, minimum-size slider, "why this label" checklist, shareable link, CSV download, "play Muhos". Rejected: click-anywhere record lookup · cheap, visible, useful to a regulator; the rejected one depends on government services allowing browser requests · #45 #50 #51 #52
+- 2026-11-14 · OPERA DIST-ALERT optical alerts also date the Muhos clearing before NISAR's first calibrated pass (25 Jun) · most of the ~330 ha was cut earlier, and Sentinel-1 reads wait for an account approval · #44
+- 2026-11-14 · Record layers live in `<site>/context/` (`index.json` + one GeoJSON per layer) · the data side and the app side can build in parallel · #45 #52
+- 2026-11-14 · A second orchestrator-level agent plans and hands out work; the main one reviews, merges and runs the radar sub-agents · keeps teammates supplied with work · #9
 
 <sub>Written by Claude</sub>
