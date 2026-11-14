@@ -98,7 +98,7 @@ def test_never_raises(fn, monkeypatch, tmp_path):
         assert r["checked"] is False and r["error"] and r["source"] and r["url"]
 
 
-def test_cadastre_tiles_stay_under_the_4km2_limit(monkeypatch):
+def test_cadastre_tiles_stay_under_the_1km2_limit(monkeypatch):
     boxes = []
     empty = b'<?xml version="1.0"?><gml:FeatureCollection xmlns:gml="http://www.opengis.net/gml/3.2"/>'
 
@@ -109,8 +109,8 @@ def test_cadastre_tiles_stay_under_the_4km2_limit(monkeypatch):
     monkeypatch.setattr(cadastre, "fetch", fake)
     r = cadastre.lookup(square(1.85, 41.45, 2600))  # 5.2 km square, 27 km²
     assert r["checked"] and r["buildings"] == 0
-    assert len(boxes) == 9
-    assert all((x1 - x0) * (y1 - y0) <= 4e6 for x0, y0, x1, y1 in boxes)
+    assert len(boxes) == 36
+    assert all((x1 - x0) * (y1 - y0) <= 1e6 for x0, y0, x1, y1 in boxes)
 
 
 def test_cadastre_since_compares_years(monkeypatch):

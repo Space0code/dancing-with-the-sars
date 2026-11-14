@@ -35,7 +35,8 @@ class OfflineMiss(RuntimeError):
     """OFFLINE is set and the response is not in the cache."""
 
 
-def fetch(source: str, url: str, params: dict | None = None, *, method: str = "GET", cache: bool = True) -> bytes:
+def fetch(source: str, url: str, params: dict | None = None, *, method: str = "GET", cache: bool = True,
+          timeout: float | None = None) -> bytes:
     """Return the response body. Retries on network errors / 5xx, caches successes, raises on final failure."""
     params = dict(params or {})
     key = hashlib.sha256(json.dumps([method, url, sorted(params.items())], ensure_ascii=False).encode()).hexdigest()
@@ -48,7 +49,7 @@ def fetch(source: str, url: str, params: dict | None = None, *, method: str = "G
     for attempt in range(RETRIES + 1):
         try:
             kw = {"params": params} if method == "GET" else {"data": params}
-            r = requests.request(method, url, timeout=TIMEOUT, headers={"User-Agent": USER_AGENT}, **kw)
+            r = requests.request(method, url, timeout=timeout or TIMEOUT, headers={"User-Agent": USER_AGENT}, **kw)
             if r.status_code >= 500:
                 raise requests.HTTPError(f"HTTP {r.status_code}")
             r.raise_for_status()

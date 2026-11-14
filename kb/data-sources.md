@@ -41,7 +41,7 @@ Not useful here: GLAD alerts (tropics only), SEDAC (frozen 2025), ECOSTRESS, EMI
 ## 3. Spain / Catalonia: the "is it documented?" layers
 | Dataset | What | Machine query? | Use for us | Effort |
 |---|---|---|---|---|
-| **Cadastre buildings** (INSPIRE WFS) | footprints + construction date | ✓ WFS, ≤4 km² and ≤5,000 features per request, no login | new building with no record → flag | L |
+| **Cadastre buildings** (INSPIRE WFS) | footprints + construction date | ✓ WFS, ≤1 km² and ≤5,000 features per request, no login | new building with no record → flag | L |
 | **ICGC orthophoto** | 25 cm, yearly 2016–2025 | WMS `geoserveis.icgc.cat/servei/catalunya/orto-territorial/wms` | before/after evidence pictures | L |
 | ICGC land cover | 1 m, 41 classes: 2009, 2018, 2019–22, 2023, 2024 | WMS + GeoPackage | forest → built transitions | L |
 | ICGC LiDAR (PNOA fallback) | ≥8 pts/m², flown 2021–23 | download only | cut/fill elevation differences | M–H |
@@ -61,8 +61,8 @@ All Catalan / Spanish services answer in **EPSG:25831** (ETRS89 / UTM 31N, metre
   pnac/pnat/pnin/rni/rnp/rnfs + buffer zones zpnac/zpnat/zrnp). Covers all Catalonia (Delta de l'Ebre answers).
   `outFields` naming a field the layer lacks → HTTP 200 with `{"error":…}`. Occasional random 400s → retry.
 - **Cadastre** (`cadastre.py`): `ovc.catastro.meh.es/INSPIRE/wfsBU.aspx?service=WFS&version=2.0.0&request=GetFeature&
-  typeNames=BU:Building&srsName=EPSG::25831&bbox=x0,y0,x1,y1`. A 9 km² box → `Area of extension out of limits`; we
-  tile at 1.9 km. GML 3.2, ISO-8859-1. Construction date `dateOfConstruction/…/beginning` is **year precision** (1 Jan);
+  typeNames=BU:Building&srsName=EPSG::25831&bbox=x0,y0,x1,y1`. Box limit is **1 km²** (1,000 m square OK; 1,100 m square or
+  4,000 × 500 m → `Area of extension out of limits`); we tile at 990 m. GML 3.2, ISO-8859-1. Construction date `dateOfConstruction/…/beginning` is **year precision** (1 Jan);
   `beginLifespanVersion` is the record-edit date, not construction.
 - **MUC zoning** (`zoning.py`): GeoServer WFS `sig.gencat.cat/ows/PLANEJAMENT/wfs`, layer
   `PLANEJAMENT:MUC_CLASSIFICACIONS`, `bbox=…,urn:ogc:def:crs:EPSG::25831`, `outputFormat=application/json`.

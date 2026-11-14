@@ -1,8 +1,8 @@
 """Spanish land registry (Catastro) buildings: how many registered buildings touch the polygon, and how recent.
 
-Service: INSPIRE WFS of the Dirección General del Catastro, no login. Limits: the request box must be **≤ 4 km²** (else
-``Area of extension out of limits``) and holds at most 5,000 buildings, so we tile the polygon's bounding box into
-≤ 1.9 km squares and split a tile again if it comes back full. Answer: GML 3.2 in EPSG:25831, ISO-8859-1.
+Service: INSPIRE WFS of the Dirección General del Catastro, no login. Limits: the request box must be **≤ 1 km²** (else
+``Area of extension out of limits``; tested 14 Nov 2026: 1,000 m square OK, 1,100 m or 4,000 x 500 m refused) and holds
+at most 5,000 buildings, so we tile the polygon's bounding box into 990 m squares and split a tile again if it comes back full. Answer: GML 3.2 in EPSG:25831, ISO-8859-1.
 Construction date (``dateOfConstruction/beginning``) is **year precision** (stored as 1 January), so ``since`` is
 compared by year. ``beginLifespanVersion`` is the date the record was last edited, not a construction date.
 """
@@ -19,7 +19,7 @@ from ._common import UTM, fetch, safe, to_utm
 SOURCE = "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)"
 SERVICE = "https://ovc.catastro.meh.es/INSPIRE/wfsBU.aspx"
 VIEWER = "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx"
-TILE_M = 1900          # 1.9 km x 1.9 km = 3.61 km² < 4 km² limit
+TILE_M = 990           # 0.98 km² < 1 km² limit
 MAX_FEATURES = 5000
 NS = {"gml": "http://www.opengis.net/gml/3.2",
       "bu-core2d": "http://inspire.jrc.ec.europa.eu/schemas/bu-core2d/2.0",
@@ -37,9 +37,11 @@ def _parse(body: bytes) -> list[dict]:
             v = [float(t) for t in pl.text.split()]
             if len(v) >= 6:
                 parts.append(Polygon(list(zip(v[0::2], v[1::2]))))
+        use = b.find("bu-ext2d:currentUse", NS)
         out.append({
             "id": b.get(f"{{{NS['gml']}}}id"),
             "date": begin.text[:10] if begin is not None and begin.text else None,
+            "use": use.text if use is not None and use.text else None,
             "parts": parts,
         })
     return out
@@ -49,7 +51,7 @@ def _tile(x0: float, y0: float, x1: float, y1: float) -> list[dict]:
     body = fetch("cadastre", SERVICE, {
         "service": "WFS", "version": "2.0.0", "request": "GetFeature", "typeNames": "BU:Building",
         "srsName": "EPSG::25831", "bbox": f"{x0:.0f},{y0:.0f},{x1:.0f},{y1:.0f}",
-    })
+    }, timeout=90)  # dense urban tiles can take > 30 s
     feats = _parse(body)
     if len(feats) >= MAX_FEATURES:  # truncated: split in four
         xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
