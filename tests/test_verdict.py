@@ -737,3 +737,88 @@ def test_zoning_without_a_developable_share_is_not_a_planned_area_just_because_t
     assert "planned_sector" not in codes(reasons)
     alone = judge(change(area=12, ctype="earthworks"), records(zoning=ok(zone="developable")))  # no shares at all
     assert "planned_sector" in codes(alone[1])
+
+
+# ---- Barcelona: port and airport land, late starts ----
+
+
+def system_rec(kind="port", share=0.9):
+    return {"system": ok(system=kind, shares={kind: share})}
+
+
+def test_a_structure_on_port_land_is_expected_even_when_the_zoning_says_non_buildable():
+    verdict, reasons, _ = judge(change(area=23, ctype="structure"),
+                                {**records(zone="non_buildable"), **system_rec()})
+    assert verdict == "expected" and codes(reasons)[0] == "system_land"
+    assert reasons[0]["effect"] == "lowers" and "port system land" in reasons[0]["text"]
+    assert "zoning_non_buildable" in codes(reasons)  # still listed: the card shows both records
+    air = judge(change(area=9, ctype="earthworks"), {**records(zone="urban"), **system_rec("airport")})
+    assert air[0] == "expected" and "airport system land" in air[1][0]["text"]
+
+
+def test_port_land_does_not_hide_a_protected_area_or_a_buffer_zone():
+    assert judge(change(area=8), {**records(inside=True), **system_rec()})[0] == "high_concern"
+    buffer = {"protected": ok(inside=True, areas=[{"name": "Delta", "kind": "Natura 2000 buffer zone"}])}
+    assert judge(change(area=8), {**records(), **buffer, **system_rec()})[0] == "review"
+
+
+def test_port_land_needs_most_of_the_change_and_a_change_type_works_can_explain():
+    assert judge(change(area=8, ctype="structure"), {**records(zone="urban"), **system_rec(share=0.4)})[0] == "review"
+    assert judge(change(area=8, ctype="other"), {**records(zone="urban"), **system_rec()})[0] == "review"
+    assert judge(change(area=8), {**records(zone="urban"), "system": ok(system=None, shares={})})[0] == "review"
+    assert judge(change(area=8), records(zone="urban"))[0] == "review"  # no system record at all: as before
+
+
+def test_a_failed_port_lookup_is_reported_and_changes_nothing_else():
+    failed = {"system": {"source": "MUC", "url": None, "checked": False, "error": "boom"}}
+    verdict, reasons, _ = judge(change(area=8), {**records(zone="urban"), **failed})
+    assert verdict == "review" and any("port and airport land map could not be checked" in r["text"] for r in reasons)
+
+
+def late(**kw):
+    return {**change(**kw), "sources": [{"role": "late_start"}, {"role": "not_watching"}]}
+
+
+def test_a_late_start_counts_buildings_from_a_year_before_the_sensor_began_or_with_no_year():
+    old = {"cadastre": ok(buildings=3, built_since=0, undated=0)}  # three buildings, all older than that
+    dated = judge(change(area=8), {**records(zone="urban"), **old})
+    assert dated[0] == "review" and "No building registered since the change" in dated[1][0]["text"]
+    none = judge(late(area=8), {**records(zone="urban"), **old})
+    assert none[0] == "review" and none[1][0]["text"].startswith("No building registered here is from the years")
+    assert "since the change" not in none[1][0]["text"]
+    recent = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=3, built_since=1, undated=0)})
+    assert recent[0] == "expected" and codes(recent[1])[0] == "cadastre_building_found"
+    assert "date from 2025 or later" in recent[1][0]["text"]  # the change's first date is in 2026: one year of lead
+    undated = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=1, built_since=0, undated=1)})
+    assert undated[0] == "expected" and "have no year" in undated[1][0]["text"]
+    # a source that detected the change dates it: not a late start, the plain rule applies
+    dated_by_one = {**late(area=8), "sources": [{"role": "late_start"}, {"role": "detected"}]}
+    assert judge(dated_by_one, {**records(zone="urban"), **old})[0] == "review"
+
+
+def test_late_start_lookups_get_a_one_year_lead(monkeypatch):
+    from sarwatch import verdict
+
+    seen = {}
+    monkeypatch.setattr("sarwatch.context.lookup_all", lambda g, since=None, until=None: seen.update(since=since, until=until) or {})
+    verdict.run_lookups({"type": "Point", "coordinates": [0, 0]}, {**late(area=8), "first_date": "2016-06-05"})
+    assert seen == {"since": "2015-01-01", "until": "2016-06-05"}
+    verdict.run_lookups({"type": "Point", "coordinates": [0, 0]}, {**change(area=8), "first_date": "2016-06-05"})
+    assert seen == {"since": "2016-06-05", "until": "2016-06-05"}
+
+
+def test_port_land_needs_80_percent_and_hides_the_municipal_solar_plant():
+    assert judge(change(area=8), {**records(zone="urban"), **system_rec(share=0.7)})[0] == "review"
+    plants = [plant(ha=17.3)]
+    verdict, reasons, explain = judge(change(area=23), {**records(zone="non_buildable", plants=plants), **system_rec(share=0.97)})
+    assert verdict == "expected" and codes(reasons)[0] == "system_land" and "solar_plant_listed" not in codes(reasons)
+    assert "solar plant" not in explain
+    assert "solar_plant_listed" in codes(judge(change(area=23), {**records(zone="urban", plants=plants)})[1])  # elsewhere it stays
+
+
+def test_a_protected_area_is_named_once_and_a_missing_share_does_not_crash():
+    twin = {"protected": ok(inside=True, areas=[{"name": "Delta del Llobregat", "kind": "PEIN"},
+                                                {"name": "Delta del Llobregat", "kind": "Natura 2000"}])}
+    assert judge(change(area=8), {**records(), **twin})[1][0]["text"].count("Delta del Llobregat") == 1
+    nones = {"system": ok(system="port", shares={"port": None})}
+    assert judge(change(area=8), {**records(zone="urban"), **nones})[0] == "review"
