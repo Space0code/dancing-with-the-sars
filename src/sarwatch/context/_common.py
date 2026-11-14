@@ -14,9 +14,9 @@ import time
 from pathlib import Path
 
 import requests
+import shapely
 from pyproj import Transformer
 from shapely.geometry import shape
-from shapely.ops import transform
 
 _ROOT = Path(__file__).resolve().parents[3]
 CACHE_DIR = Path(os.environ.get("SARWATCH_CONTEXT_CACHE", _ROOT / "data" / "cache" / "context"))
@@ -82,7 +82,7 @@ def to_utm(geometry: dict):
     """GeoJSON Polygon / MultiPolygon in EPSG:4326 (lon, lat) -> shapely geometry in EPSG:25831 metres."""
     if not isinstance(geometry, dict) or geometry.get("type") not in ("Polygon", "MultiPolygon"):
         raise ValueError("geometry must be a GeoJSON Polygon or MultiPolygon")
-    g = transform(_to_utm, shape(geometry))
+    g = shapely.transform(shape(geometry), lambda x, y: _to_utm(x, y), interleaved=False)
     if g.is_empty:
         raise ValueError("empty geometry")
     return g if g.is_valid else g.buffer(0)
