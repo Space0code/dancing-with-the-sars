@@ -26,7 +26,7 @@ from rasterio.transform import Affine
 from scipy import ndimage
 from shapely.geometry import mapping, shape
 
-from sarwatch.pipeline import REPO_ROOT, SITES, load_stack
+from sarwatch.pipeline import REPO_ROOT, SITES, _skip_spans, load_stack
 
 SITE = SITES["muhos"]
 BARE_DB = -11.8  # HV dB (7 x 7 boxcar): standing forest here -10.5 .. -8.5, this summer's felling -12 .. -11.5
@@ -65,7 +65,8 @@ def main(argv=None) -> None:
     p.add_argument("--cache", default=str(REPO_ROOT / "data" / "stacks"))
     args = p.parse_args(argv)
     stack, dates, transform, epsg = load_stack(Path(args.cache) / "muhos" / "nisar", bbox=SITE.bbox)
-    keep = [i for i, d in enumerate(dates) if d.isoformat() not in SITE.skip_dates]
+    spans = _skip_spans(SITE)
+    keep = [i for i, d in enumerate(dates) if not any(lo <= d <= hi for lo, hi in spans)]
     hv = np.stack([smooth_db(stack["HV"][i]) for i in keep])
     dates = [dates[i] for i in keep]
     late = np.nanmedian(hv[-3:], axis=0)

@@ -418,3 +418,25 @@ def test_water_is_left_out_of_detection(fake, monkeypatch):
     site.nisar.water_db = -5.0  # everything is "water": nothing left to detect
     assert pipeline.main(["muhos", "--no-s1", "--offline", *fake.args]) == 0
     assert features(fake.data, "muhos") == []
+
+
+def test_water_mask_comes_from_the_baseline_passes():
+    hh = np.full((6, 20, 20), 0.1, dtype=np.float32)  # land at -10 dB
+    hh[:3, 2:6, 2:6] = 1e-3   # water (-30 dB) in the 3 baseline passes, land later (a drained pond)
+    hh[3:, 12:16, 12:16] = 1e-3  # land in the baseline, water later (a flooded field): a change, not masked
+    hh[4, 0, 19] = np.nan
+    valid = pipeline._water_mask({"HH": hh, "HV": hh}, "nisar", n_early=3, water_db=-16.0)
+    assert valid.shape == (20, 20)
+    assert not valid[2:6, 2:6].any() and not valid[1, 3] and valid[0, 3]  # the water, plus one pixel around it
+    assert valid[12:16, 12:16].all() and valid[0, 19]
+    # with only two dates, the baseline is the first one, as in detect_changes
+    assert pipeline._water_mask({"HH": hh[2:4]}, "nisar", n_early=3, water_db=-16.0)[3, 3] == False  # noqa: E712
+
+
+def test_bad_skip_dates_fail_before_any_fetch(fake, monkeypatch, capsys):
+    monkeypatch.setattr(pipeline.SITES["muhos"], "skip_dates", ("2026-08-01..2026-07-01",))
+    assert pipeline.main(["muhos", "--no-s1", *fake.args]) == 2
+    assert "ends before it starts" in capsys.readouterr().err and fake.nisar.reads == []
+    monkeypatch.setattr(pipeline.SITES["muhos"], "params", {"treshold_db": 2.0})
+    assert pipeline.main(["muhos", "--no-s1", "--skip-dates", "", *fake.args]) == 2
+    assert "treshold_db" in capsys.readouterr().err and fake.nisar.reads == []

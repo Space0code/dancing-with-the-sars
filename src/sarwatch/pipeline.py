@@ -102,7 +102,7 @@ class Site:
 # Nov 2026 (frozen, like NISAR's 4 Nov) are left out, so the felling is dated from the first spring pass that shows it
 # (from 30 Mar); May 2025 is before the baseline. The river is masked (summer VV below -16 dB), else its 2026 surface
 # reads as change. Minimum areas (NISAR 2 ha, Sentinel-1 3 ha) drop field-sized specks (tillage, wet ground).
-MUHOS_SKIP = ("2026-11-04", "2025-05-01..2025-05-31", "2025-10-01..2026-03-10", "2026-11-01..2026-11-30")
+MUHOS_SKIP = ("2025-05-01..2025-05-31", "2025-10-01..2026-03-10", "2026-11-01..2026-11-30")
 MUHOS_PARAMS: dict = {}  # all Muhos tuning is per sensor, below
 
 SITES = {
@@ -145,7 +145,10 @@ def _skip_spans(site: Site, skip_dates=None) -> list:
         for name in (str(n).strip() for n in names):
             if name:
                 lo, _, hi = name.partition("..")
-                spans.append((date.fromisoformat(lo.strip()), date.fromisoformat((hi or lo).strip())))
+                lo, hi = date.fromisoformat(lo.strip()), date.fromisoformat((hi or lo).strip())
+                if lo > hi:
+                    raise ValueError(f"{name!r} ends before it starts")
+                spans.append((lo, hi))
     except ValueError as exc:
         raise PipelineError(f"skip dates must be YYYY-MM-DD or YYYY-MM-DD..YYYY-MM-DD: {exc}") from None
     return spans
@@ -155,7 +158,8 @@ def _water_mask(stack: dict, sensor: str, n_early: int, water_db: float) -> np.n
     """valid mask for detect_changes: False on open water (co-pol baseline median below water_db), plus one pixel."""
     from scipy import ndimage
 
-    copol = np.nanmedian(stack[POLS[sensor][0]][:max(1, n_early)], axis=0)
+    arr = stack[POLS[sensor][0]]
+    copol = np.nanmedian(arr[:max(1, min(n_early, len(arr) - 1))], axis=0)  # the baseline, as detect_changes takes it
     with np.errstate(divide="ignore", invalid="ignore"):
         water = ndimage.median_filter(10 * np.log10(copol), size=3) < water_db  # NaN compares False
     return ~ndimage.binary_dilation(water)
@@ -462,6 +466,10 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     if valid is not None:
         log.info("%s: %.1f%% of the window is water (co-pol below %.0f dB), left out", sensor,
                  100 * (1 - valid.mean()), water_db)
+    n_early = max(1, min(params.n_early, len(dates) - 1))  # the windows detect_changes will use
+    n_late = max(1, min(params.n_late, len(dates) - n_early))
+    log.info("%s: baseline %s .. %s (%d passes), end state %s .. %s (%d passes)", sensor, dates[0],
+             dates[n_early - 1], n_early, dates[-n_late], dates[-1], n_late)
     result = detect_changes(stack, dates, pixel, params, valid=valid)
     log.info("%s: %d dates, %d change regions (threshold %.1f dB, min %.2f ha)", sensor, len(dates),
              len(result.regions), params.threshold_db, params.min_area_ha)
@@ -553,6 +561,8 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     if not use:
         raise PipelineError(f"{site_id}: no sensor left to run")
     entry = None if fetch_only else _site_entry(out / "sites.json", site_id)  # fail before spending data
+    spans = _skip_spans(site, skip_dates)  # typos in the settings fail here too, not after the downloads
+    params = {s: _params(site, s, threshold_db, min_area_ha) for s in use}
     token = None if offline else load_token()
     meter, days = Meter(), {}
     for sensor in use:
@@ -561,13 +571,6 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     if offline and not any(days.values()):
         raise PipelineError(f"--offline: nothing cached for {site_id} under {cache / site_id}; "
                             "run once without --offline to fetch the dates")
-    spans = _skip_spans(site, skip_dates)
-    for sensor in use:
-        left_out = [d for d in days[sensor] if any(lo <= d <= hi for lo, hi in spans)]
-        if left_out:
-            log.info("%s: left out %d date(s), %s (skip dates)", sensor, len(left_out),
-                     ", ".join(map(str, left_out)))
-            days[sensor] = [d for d in days[sensor] if d not in left_out]
 
     def summary(per_sensor=None) -> list:
         lines = [f"{site_id}: {'fetched' if fetch_only else 'done'}"]
@@ -583,7 +586,13 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         print("\n".join(summary()))
         return 0
 
-    runs = [r for r in (detect(s, site, cache, days[s], _params(site, s, threshold_db, min_area_ha)) for s in use) if r]
+    for sensor in use:  # skip dates stay cached; they are only left out of detection
+        left_out = [d for d in days[sensor] if any(lo <= d <= hi for lo, hi in spans)]
+        if left_out:
+            log.info("%s: left out %d date(s), %s (skip dates)", sensor, len(left_out),
+                     ", ".join(map(str, left_out)))
+            days[sensor] = [d for d in days[sensor] if d not in left_out]
+    runs = [r for r in (detect(s, site, cache, days[s], params[s]) for s in use) if r]
     if not runs:
         raise PipelineError(f"{site_id}: no sensor has two cached dates, nothing to detect")
     from .export import write_site

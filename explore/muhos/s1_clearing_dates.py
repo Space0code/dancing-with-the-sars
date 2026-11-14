@@ -60,11 +60,13 @@ def main(argv=None):
     dates = [dates[i] for i in keep]
     vh = np.stack([smooth_db(stack["VH"][i]) for i in keep])
     vh -= np.nanmedian(vh, axis=(1, 2))[:, None, None]
-    base = np.nanmedian(vh[[i for i, d in enumerate(dates) if d.year == 2025 and 6 <= d.month <= 9]], axis=0)
+    base_i = [i for i, d in enumerate(dates) if d.year == 2025 and 6 <= d.month <= 9]
+    base = np.nanmedian(vh[base_i], axis=0)
     late = np.nanmedian(vh[[i for i, d in enumerate(dates) if d.year == 2026 and 6 <= d.month <= 10]], axis=0)
     felled = late - base <= -DROP_DB
 
     drop = (vh - base) <= -DROP_DB / 2
+    drop[:max(base_i) + 1] = False  # date only after the baseline
     run = drop.copy()
     for k in range(1, PERSIST):
         run[:-k] &= drop[k:]
