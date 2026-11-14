@@ -1,16 +1,11 @@
-// Written by Claude. Side panel: the intro screen, the collapsible site story and the change card (reasons, signal chart).
+// Written by Claude. Side panel: the intro screen, the collapsible site story and the change card (the "why this label" checklist, signal chart).
 import { buildChart } from "./chart.js";
 import { loadJson } from "./data.js";
+import { buildChecklist } from "./checklist.js";
 import { h, APP, VERDICTS, verdictKey, changeLabel, sensorLabel, safeUrl } from "./format.js";
 import { whenText, sizeText, confidenceText, seenBy } from "./seen.js";
 
 const $ = (id) => document.getElementById(id);
-
-const EFFECT = {
-  raises: { mark: "▲", text: "Raises concern" },
-  lowers: { mark: "▼", text: "Lowers concern" },
-  neutral: { mark: "●", text: "Neutral" },
-};
 
 export function renderStory(story) {
   const box = $("story");
@@ -25,15 +20,6 @@ export function renderStory(story) {
     ? [h("p", { class: "sources" }, "Sources: ", sources.flatMap((s, i) => [i ? " · " : "", h("a", { href: s.url, target: "_blank", rel: "noopener" }, s.title)]))]
     : []; // an array, not null: replaceChildren(null) would print the word "null"
   box.replaceChildren(h("summary", {}, story.headline), ...story.story.map((p) => h("p", {}, p)), ...sourceLine);
-}
-
-function reasonItem(r) {
-  const effect = EFFECT[r.effect] ?? EFFECT.neutral;
-  const url = safeUrl(r.url);
-  return h("li", {},
-    h("span", { class: `mark ${r.effect}`, title: effect.text, role: "img", "aria-label": effect.text }, effect.mark),
-    h("div", {}, r.text, h("cite", {}, "Source: ", url ? h("a", { href: url, target: "_blank", rel: "noopener" }, r.source) : r.source))
-  );
 }
 
 /** The first screen, before any site is open: what the app is for, the tour, and the sites. */
@@ -97,9 +83,8 @@ export function showCard(feature, site, onClose) {
       seen ? h("h3", {}, "Seen by") : null,
       seen,
       p.explain ? h("p", { class: "explain" }, p.explain) : null,
-      p.reasons?.length ? h("h3", {}, "Why this verdict") : null,
-      p.reasons?.length ? h("ul", { class: "reasons" }, p.reasons.map(reasonItem)) : null,
-      p.verdict ? h("p", { class: "note" }, "A verdict says where a person should look first. It is not a finding about anyone.") : h("p", { class: "note" }, "This change has not been checked against public records yet."),
+      ...buildChecklist(p, site.site?.country),
+      p.verdict ? h("p", { class: "note" }, "A label says where a person should look first. It is not a finding about anyone.") : null,
       h("h3", {}, "Radar signal over time"),
       chartSlot
     )
