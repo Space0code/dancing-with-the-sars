@@ -1,6 +1,5 @@
-// Written by Claude. Side panel: the intro screen, the collapsible site story and the change card (the "why this label" checklist, before/after swipe, signal chart).
+// Written by Claude. Side panel: the intro screen, the collapsible site story (with its curve) and the change card (the "why this label" checklist, signal chart).
 import { buildChart, buildStoryChart } from "./chart.js";
-import { buildSwipe } from "./swipe.js";
 import { loadJson } from "./data.js";
 import { buildChecklist } from "./checklist.js";
 import { h, APP, VERDICTS, verdictKey, changeLabel, confidenceLabel, sensorLabel, formatDate, formatArea, safeUrl } from "./format.js";
@@ -54,18 +53,6 @@ function when(p) {
   return p.first_date === p.last_date ? formatDate(p.first_date) : `${formatDate(p.first_date)} to ${formatDate(p.last_date)}`;
 }
 
-// Picture dates: evidence.before_date / after_date when the exporter sets them, else the dates of the site's radar pictures (layers.json).
-function evidenceBlock(evidence, base, layers) {
-  const date = (id) => layers.find((l) => l.id === id)?.date;
-  const label = (name, d) => (d ? `${name} · ${formatDate(d)}` : name);
-  const before = evidence.before && { src: base + evidence.before, label: label("Before", evidence.before_date ?? date("radar_before")) };
-  const after = evidence.after && { src: base + evidence.after, label: label("After", evidence.after_date ?? date("radar_after")) };
-  if (before && after) return buildSwipe(before, after);
-  const single = before ?? after;
-  if (single) return h("figure", { class: "single" }, h("img", { src: single.src, alt: `${single.label} picture of this place` }), h("figcaption", {}, single.label));
-  return h("p", { class: "note" }, "No before and after pictures for this change yet.");
-}
-
 /** The first screen, before any site is open: what the app is for, the tour, and the sites. */
 export function renderIntro(sites, { onPick, onTour }) {
   $("story").hidden = true;
@@ -93,9 +80,9 @@ export function showHint() {
 
 let cardToken = 0; // guards against a slow chart arriving after another card was opened
 
-/** Show one change. `site` is the loaded site data ({base, layers}). */
+/** Show one change. `site` is the loaded site data ({base}). */
 export function showCard(feature, site, onClose) {
-  const { base, layers } = site;
+  const { base } = site;
   const token = ++cardToken;
   const p = feature.properties;
   const key = verdictKey(p.verdict);
@@ -126,8 +113,6 @@ export function showCard(feature, site, onClose) {
       p.explain ? h("p", { class: "explain" }, p.explain) : null,
       ...buildChecklist(p, site.site?.country),
       p.verdict ? h("p", { class: "note" }, "A label says where a person should look first. It is not a finding about anyone.") : null,
-      h("h3", {}, "Before and after"),
-      evidenceBlock(evidence, base, layers),
       h("h3", {}, "Radar signal over time"),
       chartSlot
     )

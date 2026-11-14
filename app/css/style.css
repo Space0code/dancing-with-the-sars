@@ -43,8 +43,7 @@ button:disabled { opacity: .5; cursor: default; }
   padding: 2px 8px; border-radius: 999px; background: #fff3c4; color: #5c4400;
   border: 1px solid #e0c04a; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
 }
-.basemap { display: flex; gap: 14px; margin-left: auto; }
-.basemap label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.topbar .actions { margin-left: auto; }
 
 /* Map + side panel */
 main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0; }
@@ -54,22 +53,53 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
   position: absolute; inset: 20% 10% auto; margin: 0; padding: 14px; background: #fff;
   border: 1px solid #c33; border-radius: var(--radius); color: #7a1c1c; z-index: 3;
 }
-.map-left {
-  position: absolute; left: 10px; top: 10px; z-index: 2; display: flex; flex-direction: column; gap: 8px;
-  align-items: flex-start; max-width: min(280px, calc(100% - 70px)); max-height: calc(100% - 20px); /* stays inside the map */
+.map-wrap { overflow: hidden; }
+.viewbox, .legend {
+  position: absolute; z-index: 2; left: 10px; background: rgba(255, 255, 255, .95); border: 1px solid var(--line);
+  border-radius: 8px; box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
 }
-.legend, .layer-box {
-  background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
-}
-.layer-box { font-size: 13px; min-height: 0; overflow: auto; } /* long captions scroll inside the box */
-.layer-box summary { cursor: pointer; font-weight: 700; }
-.layer-item { padding: 6px 0 2px; border-top: 1px solid var(--line); margin-top: 6px; }
-.layer-item label { display: flex; align-items: center; gap: 6px; font-weight: 600; }
-.layer-item input[type="range"] { width: 100%; margin: 4px 0 0; }
-.layer-item p { margin: 2px 0 0; color: var(--muted); }
-.layer-info summary { cursor: pointer; color: var(--accent); }
+/* What the big picture is: the Radar / Satellite switch, compare, one line on how to read it, the picture's date */
+.viewbox { top: 10px; padding: 8px 10px; max-width: min(430px, calc(100% - 64px)); }
+.viewbox[hidden] { display: none; }
+.view-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.switch { display: inline-flex; border: 1px solid var(--accent); border-radius: 999px; overflow: hidden; }
+.switch button { padding: 5px 14px; border: 0; background: #fff; color: var(--accent); font-weight: 700; cursor: pointer; }
+.switch button[aria-checked="true"] { background: var(--accent); color: #fff; }
+.switch button:disabled { color: var(--muted); }
+.compare { padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); cursor: pointer; }
+.compare[aria-pressed="true"] { background: #1d2327; border-color: #1d2327; color: #fff; }
+.view-caption { margin: 6px 0 0; font-size: 13px; line-height: 1.35; }
+.frame-label { margin: 3px 0 0; font-size: 13px; font-weight: 700; color: var(--muted); }
+.legend { bottom: 28px; padding: 5px 10px; }
+.legend-title { margin: 0 0 2px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .legend ul { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+/* Before/after line across the whole map (js/swipe.js). Only the line and its handle catch the pointer. */
+.swipe-line { position: absolute; top: 0; bottom: 0; z-index: 1; width: 0; pointer-events: none; }
+.swipe-line[hidden] { display: none; }
+.swipe-line::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -1.5px; width: 3px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .45);
+}
+.swipe-grip { position: absolute; top: 0; bottom: 0; left: -14px; width: 28px; pointer-events: auto; cursor: ew-resize; touch-action: none; }
+.swipe-handle {
+  position: absolute; top: 50%; left: 0; transform: translate(-50%, -50%); width: 40px; height: 40px; border-radius: 50%;
+  background: #fff; color: #222; display: grid; place-items: center; font-size: 13px; box-shadow: 0 1px 6px rgba(0, 0, 0, .55);
+  pointer-events: auto; cursor: ew-resize; touch-action: none;
+}
+.swipe-line.dragging .swipe-handle { cursor: grabbing; }
+.swipe-hint {
+  position: absolute; top: calc(50% - 74px); left: 0; transform: translateX(-50%); padding: 2px 10px; border-radius: 999px;
+  background: #fff; color: #222; font-size: 13px; font-weight: 700; pointer-events: none; box-shadow: 0 1px 4px rgba(0, 0, 0, .5);
+  animation: nudge 1.4s ease-in-out infinite;
+}
+.swipe-line.moved .swipe-hint { display: none; }
+@keyframes nudge { 50% { transform: translateX(calc(-50% + 8px)); } }
+.swipe-tag {
+  position: absolute; top: calc(50% + 28px); padding: 2px 9px; border-radius: 999px; white-space: nowrap; font-size: 13px;
+  font-weight: 700; background: rgba(0, 0, 0, .72); color: #fff; pointer-events: none;
+}
+.swipe-tag:empty { display: none; }
+.swipe-tag.left { right: 8px; top: calc(50% - 52px); } /* above the handle: the two tags never collide */
+.swipe-tag.right { left: 8px; }
 .legend li { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
 .swatch { width: 16px; height: 16px; border-radius: 3px; border: 2px solid #222; flex: none; }
 
@@ -83,11 +113,6 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
 .story .sources a { color: var(--accent); }
 .hint { color: var(--muted); margin: 4px 0; }
 
-/* Photo year label (under the legend) */
-.photo-label {
-  margin: 0; padding: 3px 10px; border-radius: 999px;
-  background: rgba(0, 0, 0, .68); color: #fff; font-size: 13px; font-weight: 600; pointer-events: none;
-}
 .narrow-only { display: none; }
 
 /* Guided tour box, floating over the map */
@@ -162,31 +187,6 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
 .mark.neutral { color: var(--muted); }
 .mark.unchecked { color: #7a5b00; }
 .checklist-key { font-size: 12px; }
-/* Before/after swipe */
-.swipe-frame {
-  position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--line); background: #eee;
-  aspect-ratio: 4 / 3; cursor: ew-resize; touch-action: pan-y; user-select: none;
-}
-.swipe-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; pointer-events: none; }
-.swipe-tag {
-  position: absolute; top: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700;
-  background: rgba(0, 0, 0, .65); color: #fff; pointer-events: none;
-}
-.swipe-tag.left { left: 6px; }
-.swipe-tag.right { right: 6px; }
-.swipe-handle {
-  position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, .45);
-}
-.swipe-handle span {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%;
-  background: #fff; color: #222; font-size: 12px; display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0, 0, 0, .5);
-}
-.swipe-frame.dragging { cursor: grabbing; }
-.single { margin: 0; }
-.single img { width: 100%; border-radius: 8px; border: 1px solid var(--line); image-rendering: pixelated; display: block; }
-.single figcaption { font-size: 13px; color: var(--muted); text-align: center; }
-
 /* Signal chart */
 .chart-svg { width: 100%; height: auto; display: block; }
 .chart-tick { font-size: 10px; fill: #5b6770; }
@@ -201,7 +201,9 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
 .timeline { background: var(--panel); border-top: 1px solid var(--line); padding: 8px 16px 10px; }
 .timeline-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
 .date-label { font-weight: 700; font-size: 17px; }
-.total { color: var(--ink); }
+.total { color: var(--ink); font-weight: 600; border-radius: 6px; padding: 0 4px; }
+.total.bump { animation: bump 1.2s ease-out; }
+@keyframes bump { from { background: #ffe066; } to { background: transparent; } }
 .timeline-row { display: flex; align-items: center; gap: 12px; }
 .play {
   width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1px solid var(--accent);
@@ -212,10 +214,22 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
 .events { position: relative; height: 14px; margin: -4px 9px 0; }
 .event-marker {
   position: absolute; top: 0; transform: translateX(-50%); border: 0; background: none; padding: 0 6px;
-  color: #b3261e; font-size: 14px; line-height: 14px; cursor: pointer;
+  color: #4a5560; font-size: 14px; line-height: 14px; cursor: pointer;
 }
+.gap-note { flex: 1 1 260px; font-size: 13px; font-weight: 600; color: #6b4b00; background: #fff3cd; border-radius: 6px; padding: 1px 8px; }
+.gap-note:empty { display: none; }
+.legend-btn, .help { display: none; }
+.date-sub { font-weight: 400; font-size: 13px; color: var(--muted); }
+/* One tick per snapshot, one red bar through the whole track where changes first show (not a verdict colour). */
+.ticks { position: absolute; top: 0; left: 9px; right: 9px; height: 28px; pointer-events: none; }
+.tick { position: absolute; bottom: 3px; width: 1px; height: 7px; background: #8b959c; transform: translateX(-50%); }
+.change-bar {
+  position: absolute; top: -5px; height: 38px; width: 13px; padding: 0; border: 0; cursor: pointer; transform: translateX(-50%);
+  pointer-events: auto; background: linear-gradient(#e0002a, #e0002a) center / 4px 100% no-repeat;
+}
+.change-bar:hover, .change-bar:focus-visible { background-size: 6px 100%; outline: none; }
 .range-ends { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
-.event-note { flex: 1; text-align: center; color: #b3261e; font-weight: 600; }
+.event-note { flex: 1; text-align: center; color: var(--ink); font-weight: 600; }
 
 /* Inbox (#34): tabs + change list */
 .tabs { display: flex; border-bottom: 1px solid var(--line); flex: none; }
@@ -263,11 +277,8 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
   .intro .phone-only { display: block; }
   .intro p { font-size: 15px; }
   .actions button { padding: 4px 10px; }
-  .basemap { margin-left: 0; }
   .wide-only { display: none; }
   .narrow-only { display: inline; }
-  .topbar .actions { order: 3; }
-  .topbar .basemap { order: 4; margin-left: auto; }
   /* on phones the tour sits at the top of the bottom sheet (js/main.js moves it), above the tabs, so the map stays visible */
   #panel > .tour {
     position: static; flex: none; transform: none; width: auto;
@@ -276,14 +287,24 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
   .tour { padding: 10px 12px; }
   .tour h2 { font-size: 15px; }
   .tour p { font-size: 14px; margin-bottom: 8px; }
-  .photo-label { font-size: 11px; padding: 2px 8px; }
   main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-  #panel { max-height: 42vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; }
+  #panel { max-height: 36vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; }
   .view { padding: 10px 12px 14px; }
   .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; } /* one row each: the sheet is short */
-  .map-left { left: 8px; top: 8px; }
   .map-error.notice { border-color: #b08900; background: #fff8dc; color: #4d3b00; }
-.legend { padding: 4px 8px; }
+  .maplibregl-ctrl-top-right { display: none; } /* pinch to zoom; the buttons would crowd the picture */
+  .viewbox { left: 8px; right: 8px; top: 8px; max-width: none; padding: 6px 8px; }
+  .switch button { padding: 4px 12px; }
+  .compare { padding: 4px 10px; margin-left: auto; }
+  .view-caption, .frame-label { font-size: 12px; }
+  .view-caption { margin-top: 4px; display: none; }
+  .view-caption.open { display: block; }
+  .frame-label { margin-top: 2px; }
+  .help { display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: #fff; font-weight: 700; color: var(--accent); }
+  .legend { left: 8px; bottom: 24px; padding: 3px 8px; }
+  .legend-btn { display: block; padding: 2px 4px; border: 0; background: none; font-weight: 700; color: var(--ink); }
+  .legend:not(.open) .legend-title, .legend:not(.open) ul { display: none; }
+  .legend-title { display: none; }
   .legend ul { display: grid; grid-template-columns: auto auto; gap: 0 12px; font-size: 12px; }
   .swatch { width: 12px; height: 12px; }
   .timeline { padding: 6px 12px 8px; }

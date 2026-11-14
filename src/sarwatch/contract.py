@@ -16,6 +16,9 @@ CHANGE_TYPES = {"clearing", "structure", "earthworks", "ground_motion", "fire", 
 VERDICTS = {"expected", "review", "high_concern"}
 CONFIDENCE = {"low", "medium", "high"}
 EFFECTS = {"raises", "lowers", "neutral"}
+SOURCE_KINDS = {"optical", "radar"}
+SOURCE_ROLES = {"detected", "late_start", "not_seen", "not_watching"}
+NO_DETECTION_ROLES = {"not_seen", "not_watching"}
 MAX_FILE_MB = 10
 
 
@@ -107,7 +110,154 @@ def _check_site_meta(site, i: int, errors: list[str]) -> bool:
     rng = site.get("time_range")
     if not (isinstance(rng, list) and len(rng) == 2 and all(_is_date(v) for v in rng) and rng[0] <= rng[1]):
         errors.append(f"{where}: time_range must be [start, end] dates")
+    if "hidden" in site and not isinstance(site["hidden"], bool):
+        errors.append(f"{where}: hidden must be true or false")
+    if "sources" in site:
+        _check_site_sources(site["sources"], where, errors)
+    if "snapshots" in site:
+        _check_snapshots(site["snapshots"], rng, where, errors)
     return True
+
+
+def _check_snapshots(snapshots, rng, where: str, errors: list[str]) -> None:
+    """Optional `snapshots`: [{"date", "sensor"}, ...], dates strictly increasing and inside time_range."""
+    if not isinstance(snapshots, list):
+        errors.append(f"{where}: snapshots must be a list")
+        return
+    previous = None
+    for j, snap in enumerate(snapshots):
+        at = f"{where}: snapshots[{j}]"
+        if not (isinstance(snap, dict) and _is_date(snap.get("date"))):
+            errors.append(f"{at}: must be an object with a YYYY-MM-DD date")
+            return
+        if not isinstance(snap.get("sensor"), str) or not snap["sensor"].strip():
+            errors.append(f"{at}: sensor must be a non-empty string")
+        if previous is not None and snap["date"] <= previous:
+            errors.append(f"{at}: dates must be sorted, one per date ({snap['date']} after {previous})")
+        previous = snap["date"]
+        if isinstance(rng, list) and len(rng) == 2 and all(_is_date(v) for v in rng) and not rng[0] <= snap["date"] <= rng[1]:
+            errors.append(f"{at}: {snap['date']} is outside time_range")
+
+
+def _is_date_or_null(value) -> bool:
+    return value is None or _is_date(value)
+
+
+def _check_site_sources(sources, where: str, errors: list[str]) -> None:
+    """Optional: which satellites watch this site, and when."""
+    if not isinstance(sources, list):
+        errors.append(f"{where}: sources must be a list")
+        return
+    for i, s in enumerate(sources):
+        w = f"{where}: sources[{i}]"
+        if not isinstance(s, dict):
+            errors.append(f"{w}: must be an object")
+            continue
+        if not isinstance(s.get("sensor"), str) or not s["sensor"]:
+            errors.append(f"{w}: sensor must be a non-empty string")
+        if s.get("kind") not in SOURCE_KINDS:
+            errors.append(f"{w}: kind must be one of {sorted(SOURCE_KINDS)}")
+        if not (_is_date(s.get("start")) and _is_date_or_null(s.get("end"))):
+            errors.append(f"{w}: start must be YYYY-MM-DD and end YYYY-MM-DD or null")
+        elif s["end"] is not None and s["start"] > s["end"]:
+            errors.append(f"{w}: start must not be after end")
+        if not (_is_num(s.get("revisit_days")) and s["revisit_days"] > 0):
+            errors.append(f"{w}: revisit_days must be a positive number")
+        sees = s.get("sees")
+        if not (isinstance(sees, list) and all(t in CHANGE_TYPES for t in sees)):
+            errors.append(f"{w}: sees must be a list of change types {sorted(CHANGE_TYPES)}")
+        months = s.get("risky_months")
+        if not (
+            isinstance(months, list)
+            and all(isinstance(m, int) and not isinstance(m, bool) and 1 <= m <= 12 for m in months)
+        ):
+            errors.append(f"{w}: risky_months must be a list of month numbers 1..12")
+
+
+def _check_change_sources(sources, where: str, errors: list[str]) -> None:
+    """Optional: what each satellite said about this change (kb/multi-sensor-design.md)."""
+    if not isinstance(sources, list):
+        errors.append(f"{where}: sources must be a list")
+        return
+    for i, s in enumerate(sources):
+        w = f"{where}: sources[{i}]"
+        if not isinstance(s, dict):
+            errors.append(f"{w}: must be an object")
+            continue
+        if not isinstance(s.get("sensor"), str) or not s["sensor"]:
+            errors.append(f"{w}: sensor must be a non-empty string")
+        if s.get("kind") not in SOURCE_KINDS:
+            errors.append(f"{w}: kind must be one of {sorted(SOURCE_KINDS)}")
+        role = s.get("role")
+        if role not in SOURCE_ROLES:
+            errors.append(f"{w}: role must be one of {sorted(SOURCE_ROLES)}")
+        dates = [s.get(k) for k in ("first_date", "last_date", "not_before")]
+        if not all(_is_date_or_null(d) for d in dates):
+            errors.append(f"{w}: first_date, last_date and not_before must be YYYY-MM-DD or null")
+        elif role in NO_DETECTION_ROLES and any(d is not None for d in dates):
+            errors.append(f"{w}: dates must be null for role {role}")
+        elif None not in dates[:2] and dates[0] > dates[1]:
+            errors.append(f"{w}: first_date must not be after last_date")
+        elif dates[2] is not None and dates[0] is not None and dates[2] > dates[0]:
+            errors.append(f"{w}: not_before must not be after first_date")
+        conf = s.get("confidence")
+        if conf is not None and conf not in CONFIDENCE:
+            errors.append(f"{w}: confidence must be null or one of {sorted(CONFIDENCE)}")
+        elif conf is not None and role in NO_DETECTION_ROLES:
+            errors.append(f"{w}: confidence must be null for role {role}")
+        if s.get("area_ha") is not None and not (_is_num(s["area_ha"]) and s["area_ha"] > 0):
+            errors.append(f"{w}: area_ha must be null or a positive number")
+        if s.get("share") is not None and not (_is_num(s["share"]) and 0 <= s["share"] <= 1):
+            errors.append(f"{w}: share must be null or a number from 0 to 1")
+        if not isinstance(s.get("note"), str):
+            errors.append(f"{w}: note must be a string")
+
+
+def _check_stages(site_dir: Path, change_ids: set, errors: list[str]) -> None:
+    """stages.geojson (optional): the growing outline of a group of changes."""
+    path = site_dir / "stages.geojson"
+    if not path.is_file():
+        return
+    doc = _load(path, errors)
+    if doc is None:
+        return
+    features = doc.get("features")
+    if doc.get("type") != "FeatureCollection" or not isinstance(features, list):
+        errors.append(f"{path}: must be a FeatureCollection")
+        return
+    last: dict = {}  # per group: (date, area_ha)
+    for i, f in enumerate(features):
+        where = f"{path}: features[{i}]"
+        p = f.get("properties") if isinstance(f, dict) else None
+        if not isinstance(p, dict):
+            errors.append(f"{where}: needs properties")
+            continue
+        _check_geometry(f.get("geometry"), where, errors)
+        for key in ("group", "title"):
+            if not isinstance(p.get(key), str) or not p[key]:
+                errors.append(f"{where}: {key} must be a non-empty string")
+        ok = _is_date(p.get("date")) and _is_num(p.get("area_ha"))
+        if not _is_date(p.get("date")):
+            errors.append(f"{where}: date must be YYYY-MM-DD")
+        if not _is_num(p.get("area_ha")) or p["area_ha"] <= 0:
+            errors.append(f"{where}: area_ha must be a positive number")
+        if p.get("verdict") is not None and p["verdict"] not in VERDICTS:
+            errors.append(f"{where}: verdict must be null or one of {sorted(VERDICTS)}")
+        members = p.get("members")
+        if not (isinstance(members, list) and members and all(isinstance(m, str) for m in members)):
+            errors.append(f"{where}: members must be a non-empty list of change ids")
+        else:
+            unknown = sorted(set(members) - change_ids)
+            if unknown:
+                errors.append(f"{where}: members {unknown} are not in changes.geojson")
+        group = p.get("group")
+        if ok and group in last:
+            if p["date"] <= last[group][0]:
+                errors.append(f"{where}: dates must be strictly increasing within group {group}")
+            if p["area_ha"] < last[group][1]:
+                errors.append(f"{where}: area_ha must not decrease within group {group}")
+        if ok:
+            last[group] = (p["date"], p["area_ha"])
 
 
 def _check_story(site_dir: Path, errors: list[str]) -> None:
@@ -186,6 +336,53 @@ def _check_layers(site_dir: Path, errors: list[str]) -> None:
         _check_rel_file(site_dir, layer.get("url"), f"{where}: url", errors, required=True)
 
 
+def _check_frames(site_dir: Path, errors: list[str]) -> None:
+    """frames.json (optional): one picture per satellite pass or clear day, all on the same four corners."""
+    path = site_dir / "frames.json"
+    if not path.is_file():
+        return
+    data = _load(path, errors)
+    if data is None:
+        return
+    coords = data.get("coordinates")
+    if not (isinstance(coords, list) and len(coords) == 4 and all(_is_lonlat(c) for c in coords)):
+        errors.append(f"{path}: coordinates must be 4 [lon, lat] corners (top-left, top-right, bottom-right, "
+                      "bottom-left)")
+    sets = data.get("sets")
+    if not isinstance(sets, list) or not sets:
+        errors.append(f"{path}: sets must be a non-empty list")
+        return
+    seen = set()
+    for i, fset in enumerate(sets):
+        where = f"{path}: sets[{i}]"
+        if not isinstance(fset, dict):
+            errors.append(f"{where}: must be an object")
+            continue
+        sid = fset.get("id")
+        if not isinstance(sid, str) or not sid or sid in seen:
+            errors.append(f"{where}: id must be a unique non-empty string")
+        seen.add(sid)
+        for key in ("title", "caption"):
+            if not isinstance(fset.get(key), str) or not fset[key]:
+                errors.append(f"{where}: {key} must be a non-empty string")
+        frames = fset.get("frames")
+        if not isinstance(frames, list) or not frames:
+            errors.append(f"{where}: frames must be a non-empty list")
+            continue
+        last = None
+        for j, frame in enumerate(frames):
+            fw = f"{where}: frames[{j}]"
+            if not isinstance(frame, dict) or not _is_date(frame.get("date")):
+                errors.append(f"{fw}: needs date (YYYY-MM-DD)")
+                continue
+            if not isinstance(frame.get("sensor"), str) or not frame["sensor"]:
+                errors.append(f"{fw}: sensor must be a non-empty string")
+            if last is not None and frame["date"] <= last:
+                errors.append(f"{fw}: frames must be sorted by date, strictly increasing ({frame['date']})")
+            last = frame["date"]
+            _check_rel_file(site_dir, frame.get("url"), f"{fw}: url", errors, required=True)
+
+
 def _check_geometry(geom, where: str, errors: list[str]) -> None:
     if not isinstance(geom, dict) or geom.get("type") not in ("Polygon", "MultiPolygon"):
         errors.append(f"{where}: geometry must be a Polygon or MultiPolygon")
@@ -227,6 +424,13 @@ def _check_change(feature, site_id: str, site_dir: Path, seen: set, where: str, 
         errors.append(f"{where}: area_ha must be a positive number")
     if not isinstance(p.get("sensor"), str) or not p["sensor"]:
         errors.append(f"{where}: sensor must be a non-empty string")
+    not_before = p.get("not_before")
+    if not _is_date_or_null(not_before):
+        errors.append(f"{where}: not_before must be YYYY-MM-DD or null")
+    elif not_before is not None and _is_date(first) and not_before > first:
+        errors.append(f"{where}: not_before must not be after first_date")
+    if "sources" in p:
+        _check_change_sources(p["sources"], where, errors)
     signal = p.get("signal")
     if signal is not None:
         ok = isinstance(signal, dict) and isinstance(signal.get("metric"), str)
@@ -293,6 +497,7 @@ def validate(data_dir) -> list[str]:
         site_dir = data_dir / sid
         _check_story(site_dir, errors)
         _check_layers(site_dir, errors)
+        _check_frames(site_dir, errors)
         changes = _load(site_dir / "changes.geojson", errors)
         if changes is None:
             continue
@@ -303,6 +508,7 @@ def validate(data_dir) -> list[str]:
         seen: set = set()
         for j, feature in enumerate(features):
             _check_change(feature, sid, site_dir, seen, f"{sid}/changes.geojson: features[{j}]", errors)
+        _check_stages(site_dir, {f.get("properties", {}).get("id") for f in features if isinstance(f, dict)}, errors)
     return errors
 
 

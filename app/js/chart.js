@@ -11,7 +11,7 @@ const SENSOR_COLORS = { nisar: "#7B3FA0", sentinel: "#00826A", optical: "#9A6A00
 const DASHES = ["", "7 3", "2 3"];
 const DOT_MAX = 15; // lines with at most this many points get a dot per measurement
 const sensorKey = (sensor) =>
-  /nisar/i.test(sensor) ? "nisar" : /sentinel-?1|^s1/i.test(sensor) ? "sentinel" : /optic|dist|hls|landsat|sentinel-?2/i.test(sensor) ? "optical" : "other";
+  /nisar/i.test(sensor) ? "nisar" : /sentinel[- ]?1|^s1\b/i.test(sensor) ? "sentinel" : /optic|dist|hls|landsat|sentinel-?2/i.test(sensor) ? "optical" : "other";
 
 // What a regulator should see in the chart, by kind of change.
 const HINTS = {
@@ -109,12 +109,13 @@ function draw(series, data, { mark = null, zero = false, axis }) {
     el("text", { x: 0, y: 0, transform: `translate(11 ${(M.t + H - M.b) / 2}) rotate(-90)`, "text-anchor": "middle", class: "chart-axis" }, axis),
     cursor
   );
-  // The slider line: follows a date inside the chart's span, hidden outside it.
+  // The slider line: follows the date, hidden before the chart starts, pinned to the right edge after it ends
+  // (the slider opens on and play stops at the site's last day, usually after the last measurement).
   const setCursor = (iso) => {
     const day = iso ? toDay(iso) : NaN;
-    const inside = day >= startDay && day <= endDay;
-    cursor.setAttribute("visibility", inside ? "visible" : "hidden");
-    if (inside) for (const k of ["x1", "x2"]) cursor.setAttribute(k, x(day).toFixed(1));
+    const shown = day >= startDay;
+    cursor.setAttribute("visibility", shown ? "visible" : "hidden");
+    if (shown) for (const k of ["x1", "x2"]) cursor.setAttribute(k, x(Math.min(day, endDay)).toFixed(1));
   };
   return { svg, lines, events, setCursor };
 }
@@ -143,7 +144,7 @@ export function buildChart(data, change) {
 /** A site story's curve (story.chart): y from 0, series names as the legend, `note` as the caption, a slider line. */
 export function buildStoryChart(data, chart) {
   const series = usable(data);
-  if (!series.length) return null;
+  if (!series.some((s) => s.values?.some((v) => v != null))) return null; // nothing to draw: no chart at all
   const { svg, lines, events, setCursor } = draw(series, data, { zero: true, axis: series[0].unit });
   const node = h("figure", { class: "story-chart" },
     chart.title ? h("figcaption", { class: "story-chart-title" }, chart.title) : null,

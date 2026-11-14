@@ -21,9 +21,10 @@ BIG_HA = 5.0  # clearing / earthworks at least this big, on non-buildable land, 
 MID_HA = 2.0  # at least this big with no matching record -> needs review
 NON_BUILDABLE_SHARE = 0.25  # share of the polygon on non-buildable land that makes the zoning count as non-buildable
 PLANNED_SHARE = 0.5  # share on developable land needed to count as a planned development area
-EDGE_SHARE = 0.01  # a protected-area overlap smaller than this share (when the lookup says how big) is an edge touch
-SOLAR_MIN_SHARE = 0.5  # a listed solar plant explains a change only if it covers at least this share of its area
-SOLAR_NOT_COUNTED = ("no autoritzat", "desistit")  # plant statuses that do not count as a record
+EDGE_SHARE = 0.10  # a protected-area overlap below this share (when the lookup says how big) only borders the area
+SOLAR_MIN_SHARE = 0.5  # a listed solar plant matters only if it covers at least this share of the change's area
+SOLAR_AUTHORISED = ("autoritzat", "en servei", "aprovat")  # plant statuses that count as a record
+SOLAR_PENDING = ("en tramitaci",)  # "En tramitació": an application still being processed is not an authorisation
 RECORD_TYPES = ("clearing", "earthworks", "structure")  # change types a solar-plant listing can explain
 FIRE_TYPES = ("fire", "clearing", "other")  # change types a recorded wildfire can explain
 KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official")
@@ -103,18 +104,41 @@ def _zoning(zon) -> tuple[str | None, bool]:
     return zone, planned
 
 
-def _solar(sol, area: float, ctype) -> tuple[list, list]:
-    """(plants that explain the change, plants listed but not matching): authorised and at least half as large."""
+def _plant_ha(plant: dict) -> float | None:
+    """Area of a listed plant: the part in this municipality if given, else the total; None if unknown or not a number
+    (the list stores numbers as text; ``0`` is a value, not "missing")."""
+    for key in ("ha_in_municipality", "ha"):
+        try:
+            value = float(plant[key])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if value == value:  # not NaN
+            return value
+    return None
+
+
+def _solar(sol, area: float, ctype) -> tuple[list, list, list]:
+    """(authorised plants that explain the change, pending applications of a matching size, every other listed
+    plant). Only plants with a known area of at least half the change count; refused, withdrawn and unknown statuses
+    fall in the last list."""
     if not _ok(sol) or ctype not in RECORD_TYPES:
-        return [], []
-    good, other = [], []
+        return [], [], []
+    good, pending, other = [], [], []
     for plant in sol.get("plants") or []:
         status = str(plant.get("status") or "").strip().lower()
-        ha = plant.get("ha_in_municipality")
-        ha = plant.get("ha") if ha is None else ha
-        refused = status.startswith(SOLAR_NOT_COUNTED)
-        (other if refused or ha is None or ha < SOLAR_MIN_SHARE * area else good).append(plant)
-    return good, other
+        ha = _plant_ha(plant)
+        fits = ha is not None and ha >= SOLAR_MIN_SHARE * area
+        if fits and status.startswith(SOLAR_AUTHORISED):
+            good.append(plant)
+        elif fits and status.startswith(SOLAR_PENDING):
+            pending.append(plant)
+        else:
+            other.append(plant)
+    return good, pending, other
+
+
+def _action_code(kind) -> str:
+    return {"stop_order": "official_stop_order", "investigation": "official_investigation"}.get(kind, "official_action")
 
 
 def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
@@ -123,35 +147,46 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     returned by ``sarwatch.context`` or a hand-entered records file). Returns ``(verdict, reasons, explain)`` with the
     reason that decides the label first. No network."""
     records = records or {}
-    area = float(change["area_ha"])
+    try:
+        area = float(change["area_ha"])
+    except (KeyError, TypeError, ValueError):
+        area = float("nan")
+    if not area > 0:  # also catches NaN
+        raise ValueError(f"change {change.get('id')!r}: area_ha must be a positive number")
     ctype = change.get("type")
     prot, cad, zon, sol, fire, off = (records.get(k) for k in KEYS)
 
     # ---- facts
     areas = list(prot.get("areas") or []) if _ok(prot) else []
     inside = _ok(prot) and bool(prot.get("inside"))
-    names = ", ".join(_area_name(a) for a in areas[:2]) or "a protected nature area"
-    soft = inside and (
-        (bool(areas) and all(str(a.get("kind", "")).endswith("buffer zone") for a in areas))
-        or (prot.get("overlap_share") is not None and prot["overlap_share"] < EDGE_SHARE)
-    )
+    core_areas = [a for a in areas if not str(a.get("kind", "")).endswith("buffer zone")]
+    names = ", ".join(_area_name(a) for a in (core_areas or areas)[:2]) or "a protected nature area"
+    # only a buffer zone raises; a thin overlap (a share below EDGE_SHARE) just borders the area and stays neutral. A
+    # buffer zone is not a protected area, so it never counts toward the share (``core_overlap_share``). An overlap
+    # whose size is unknown (no outline from the service) counts as a real one: the safe side.
+    buffer_only = inside and bool(areas) and not core_areas
+    share = prot.get("core_overlap_share", prot.get("overlap_share")) if inside else None
+    edge = inside and not buffer_only and share is not None and share < EDGE_SHARE
+    real_inside = inside and not buffer_only and not edge
     zone, planned = _zoning(zon)
     built = int(cad.get("built_since") or 0) if _ok(cad) else 0
-    solar_good, solar_other = _solar(sol, area, ctype)
+    solar_good, solar_pending, solar_other = _solar(sol, area, ctype)
     matching = built > 0 or planned or bool(solar_good)
     fire_recorded = _ok(fire) and bool(fire.get("recorded"))
     fire_explains = fire_recorded and ctype in FIRE_TYPES
     assessment_missing = _ok(off) and bool(off.get("assessment_required")) and not off.get("assessment_completed")
-    actions = list(off.get("actions") or []) if _ok(off) else []
+    actions = [a for a in (off.get("actions") or []) if isinstance(a, dict)] if _ok(off) else []
+    action_keys = [f"{_action_code(a.get('kind'))}:{i}" for i, a in enumerate(actions)]
+    small_uncertain = area < MID_HA and change.get("confidence") == "low"
 
     # ---- the verdict, and the code of the reason that decides it
     if fire_explains:
         verdict, decisive = "expected", "fire_recorded"
-    elif inside and not soft:
+    elif real_inside:
         verdict, decisive = "high_concern", "protected_area"
     elif assessment_missing and area >= BIG_HA and ctype in ("clearing", "earthworks"):
         verdict, decisive = "high_concern", "assessment_missing"
-    elif zone == "non_buildable":
+    elif zone == "non_buildable" and not small_uncertain:
         big = area >= BIG_HA and ctype in ("clearing", "earthworks") and not matching
         verdict, decisive = ("high_concern" if big else "review"), "zoning_non_buildable"
     elif assessment_missing and area >= MID_HA:
@@ -160,11 +195,19 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         verdict = "expected"
         decisive = "cadastre_building_found" if built > 0 else "planned_sector" if planned else "solar_plant_listed"
     elif area >= MID_HA:
-        verdict, decisive = "review", ("no_record_found" if _ok(cad) else "size_only")
+        verdict = "review"
+        decisive = "solar_application_pending" if solar_pending else ("no_record_found" if _ok(cad) else "size_only")
     else:
-        verdict, decisive = "expected", "small_area"
-    if soft and verdict == "expected" and not fire_explains:
-        verdict, decisive = "review", "protected_buffer"
+        verdict, decisive = "expected", ("small_uncertain" if small_uncertain else "small_area")
+    # something that should be looked at lifts an "expected" to "needs review" (a fire that explains the change
+    # stays expected): the buffer zone of a protected area, an application still being processed, an official step
+    if verdict == "expected" and not fire_explains:
+        if buffer_only:
+            verdict, decisive = "review", "protected_buffer"
+        elif solar_pending and not matching:
+            verdict, decisive = "review", "solar_application_pending"
+        elif actions:
+            verdict, decisive = "review", action_keys[0]
 
     # ---- every reason that applies, then the deciding one goes first
     facts: dict[str, dict] = {}
@@ -172,20 +215,25 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         facts["fire_recorded"] = _reason(
             "fire_recorded", _fire_text(fire, fire_explains),
             "lowers" if fire_explains else "neutral", fire, source="Wildfire records")
-    if inside and not soft:
+    if real_inside:
         facts["protected_area"] = _reason(
             "protected_area",
             f"The place lies inside a protected area ({names})." if not fire_explains
             else f"The place lies inside {names}; a recorded wildfire burned here.",
             "neutral" if fire_explains else "raises", prot)
-    elif soft:
+    elif buffer_only:
         facts["protected_buffer"] = _reason(
-            "protected_buffer", f"The place only touches the edge or buffer zone of a protected area ({names}).",
+            "protected_buffer", f"The place only touches the buffer zone of a protected area ({names}).",
             "neutral" if fire_explains else "raises", prot)
+    elif edge:
+        facts["protected_edge"] = _reason(
+            "protected_edge", f"The place borders a protected area ({names}).", "neutral", prot)
     if assessment_missing:
+        noun = {"clearing": "this clearing", "earthworks": "these earthworks"}.get(ctype, "this change")
         facts["assessment_missing"] = _reason(
             "assessment_missing",
-            "No completed environmental assessment is on record for this site, although one is required.",
+            f"The required environmental assessment was not finished when {noun} happened."
+            + (" This record covers the whole site, not only this spot." if off.get("site_wide") else ""),
             "raises", off, source="Official records")
     if zone == "non_buildable":
         facts["zoning_non_buildable"] = _reason(
@@ -199,12 +247,16 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         facts["cadastre_building_found"] = _reason(
             "cadastre_building_found", f"{built} new building(s) are registered here since the change.", "lowers", cad)
     if solar_good:
-        ha = solar_good[0].get("ha_in_municipality") or solar_good[0].get("ha")
+        ha = _plant_ha(solar_good[0])
         facts["solar_plant_listed"] = _reason(
             "solar_plant_listed",
             f"A solar plant of about {ha:g} ha is listed for this municipality (the list gives no exact location).",
             "lowers", sol)
-    elif solar_other:
+    if solar_pending and not matching:
+        facts["solar_application_pending"] = _reason(
+            "solar_application_pending",
+            "An application for a solar plant here is being processed; it is not authorised yet.", "raises", sol)
+    if solar_other and not solar_good:
         facts["solar_plant_other"] = _reason(
             "solar_plant_other",
             "Solar plants are listed for this municipality, but none is authorised and about as large as this "
@@ -215,17 +267,25 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
             "No registered building, listed solar plant or planned development area matches this change.",
             "raises", cad)
     if decisive == "size_only":
+        no_records = (cad or {}).get("not_applicable")  # outside Spain the Catalan registry does not apply
         facts["size_only"] = _reason(
-            "size_only", "The land registry could not be checked, so a change of this size is flagged for review.",
+            "size_only",
+            "No public land records are connected for this country yet, so a change of this size is flagged for review."
+            if no_records
+            else "The land registry could not be checked, so a change of this size is flagged for review.",
             "raises", source="Radar detection")
-    if area < MID_HA and verdict != "high_concern":
-        facts["small_area"] = _reason(
-            "small_area", f"The change is small ({area:g} ha).", "lowers", source="Radar detection")
-    for action in actions:
-        kind = action.get("kind")
-        code = {"stop_order": "official_stop_order", "investigation": "official_investigation"}.get(kind, "official_action")
-        facts[f"{code}:{action.get('date')}"] = _reason(
-            code, f"{_day(action.get('date'))}: {action.get('text', 'An official step is on record.')}", "raises",
+    if verdict != "high_concern":
+        if small_uncertain:
+            facts["small_uncertain"] = _reason(
+                "small_uncertain", f"The change is too small ({area:g} ha) and too uncertain to flag on its own.",
+                "lowers", source="Radar detection")
+        elif area < MID_HA:
+            facts["small_area"] = _reason(
+                "small_area", f"The change is small ({area:g} ha).", "lowers", source="Radar detection")
+    for key, action in zip(action_keys, actions):
+        facts[key] = _reason(
+            _action_code(action.get("kind")),
+            f"{_day(action.get('date'))}: {action.get('text', 'An official step is on record.')}", "raises",
             action, source=(off or {}).get("source"), url=(off or {}).get("url"))
     unavailable = [
         _reason(
@@ -254,10 +314,14 @@ def _explain(change: dict, verdict: str, reasons: list[dict]) -> str:
     direction = "lowers" if verdict == "expected" else "raises"
     texts = [reasons[0]["text"]]
     for r in reasons[1:]:
-        if r["effect"] == direction and r["code"] not in ("small_area", "records_unavailable"):
+        if r["effect"] == direction and r["code"] not in ("small_area", "small_uncertain", "records_unavailable"):
             texts.append(r["text"])
             break
-    return " ".join([_first_sentence(change.get("explain"))] + texts).strip()
+    base = _first_sentence(change.get("explain"))
+    previous = [r.get("text") for r in change.get("reasons") or [] if isinstance(r, dict)]
+    if base in previous:  # a change judged before that had no radar sentence: its explain is our own text, not radar
+        base = ""
+    return " ".join([base] + texts).strip()
 
 
 # ---- hand-entered records (sites outside Catalonia, offline runs, tests) ----------------------------------------
@@ -278,19 +342,29 @@ def _in_scope(geometry: dict, scope: dict) -> bool:
         from shapely.geometry import shape
     except ImportError as exc:  # pragma: no cover - shapely is in the "verdict" extra
         raise SystemExit("records with a 'scope' need shapely: pip install -e '.[verdict]'") from exc
-    return shape(geometry).intersects(shape(scope))
+    if not isinstance(scope, dict) or scope.get("type") not in ("Polygon", "MultiPolygon"):
+        raise ValueError("a record's scope must be a GeoJSON Polygon or MultiPolygon")
+    try:
+        g, s = shape(geometry), shape(scope)
+    except (ValueError, TypeError, KeyError, IndexError) as exc:
+        raise ValueError(f"a record's scope is not a valid GeoJSON polygon: {exc}") from exc
+    return g.intersects(s) and not g.touches(s)  # sharing only a border is outside
 
 
 def records_for(doc: dict, change_id: str, geometry: dict | None = None) -> dict:
     """The hand-entered records that apply to one change (``default`` overridden by the change's own entries; a
-    record whose ``scope`` does not touch ``geometry`` is left out)."""
-    merged = {**doc.get("default", {}), **doc.get("changes", {}).get(change_id, {})}
+    record whose ``scope`` does not reach ``geometry`` is left out). A record from ``default`` without a ``scope``
+    gets ``site_wide: true``, so the reason can say it covers the whole site."""
+    default, own = doc.get("default", {}), doc.get("changes", {}).get(change_id, {})
     out = {}
-    for key, rec in merged.items():
+    for key in {**default, **own}:
+        rec = own[key] if key in own else default[key]
         scope = rec.get("scope")
         if scope and geometry is not None and not _in_scope(geometry, scope):
             continue
+        site_wide = key not in own and not scope
         out[key] = {"checked": True, "source": "Hand-entered records", "url": None,
+                    **({"site_wide": True} if site_wide else {}),
                     **{k: v for k, v in rec.items() if k != "scope"}}
     return out
 
@@ -358,7 +432,20 @@ def apply_file(
         )
     if not dry_run:
         path.write_text(json.dumps(doc, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        _refresh_stages(path.parent / "stages.geojson", doc)
     return before, after, failed
+
+
+def _refresh_stages(path: Path, changes: dict) -> None:
+    """Give every stage of a growing outline (stages.geojson, if the site has one) the strongest verdict of its members."""
+    if not path.is_file():
+        return
+    rank = {None: 0, "expected": 1, "review": 2, "high_concern": 3}
+    verdicts = {f["properties"]["id"]: f["properties"].get("verdict") for f in changes["features"]}
+    stages = json.loads(path.read_text(encoding="utf-8"))
+    for stage in stages["features"]:
+        stage["properties"]["verdict"] = max((verdicts.get(i) for i in stage["properties"]["members"]), key=rank.get)
+    path.write_text(json.dumps(stages, separators=(",", ":")) + "\n", encoding="utf-8")
 
 
 def main(argv=None) -> int:
@@ -367,7 +454,13 @@ def main(argv=None) -> int:
     parser.add_argument("--records", help="hand-entered records file (skips the live lookups)")
     parser.add_argument("--dry-run", action="store_true", help="print the label counts, write nothing")
     parser.add_argument("--allow-unchecked", action="store_true", help="write labels even if every lookup failed")
+    parser.add_argument("--offline", action="store_true",
+                        help="answer the lookups from the on-disk cache only (a miss counts as a failed lookup)")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    if args.offline:
+        from sarwatch.context import _common
+
+        _common.OFFLINE = True
     before, after, failed = apply_file(args.changes, args.records, args.dry_run, allow_unchecked=args.allow_unchecked)
     fmt = lambda c: ", ".join(f"{k} {v}" for k, v in sorted(c.items())) or "none"  # noqa: E731
     print(f"labels before: {fmt(before)}\nlabels after:  {fmt(after)}" + ("  (dry run, nothing written)" if args.dry_run else ""))

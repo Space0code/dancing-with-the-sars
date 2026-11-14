@@ -1,0 +1,14 @@
+{
+ "coordinates": [[1.8, 41.48], [1.9, 41.48], [1.9, 41.42], [1.8, 41.42]],
+ "sets": [
+  {
+   "id": "radar",
+   "title": "Radar",
+   "caption": "Made-up radar picture. Olive = plants, purple = bare ground, pink = buildings.",
+   "frames": [
+    {"date": "2024-01-15", "sensor": "Sentinel-1", "url": "layers/radar_before.png"},
+    {"date": "2026-11-02", "sensor": "NISAR", "url": "layers/radar_after.png"}
+   ]
+  }
+ ]
+}
