@@ -1,7 +1,10 @@
 # AGENTS.md: rules for every agent in this repo
 
-**Project:** NASA Space Apps 2026, "Dancing with the SARs". Interactive app using NISAR radar data to show surface change;
-our angle is the datacenter buildout. Deadline: submission by end of **15 Nov 2026**. Background: `kb/project-context.md`.
+**Project:** NASA Space Apps 2026, "Dancing with the SARs". Interactive app that uses radar (NISAR + Sentinel-1) to
+**detect land-surface changes** (forest clearing, new buildings, earthworks, ground motion) and **flag which look
+expected vs. need a regulator's review**, in plain language with clear visuals. Pilot: **Catalonia** (+ Google's Finland
+clear-cut as test case). Deadline: submission by end of **15 Nov 2026**. What we build: `kb/product.md` · background:
+`kb/project-context.md`.
 
 ## Team
 | Human | GitHub | Role of their Claude |
@@ -24,6 +27,9 @@ explain earth-science terms in engineering language (signals, noise, dB, phase, 
   issue assigned to them. Never wait idly: if blocked, set `status:blocked`, say on what, and take other work.
 - Need a human decision / credential / access: add `needs-human`, ask one precise question with options + your
   recommendation, stop that thread.
+- **Geoscience specialist:** an expert we met at the event answers questions through the humans (WhatsApp). Agents:
+  add questions to the open `needs-human` issue "Questions for the specialist" (one line each, answerable quickly); never
+  put their contact details in the repo.
 - Finish: final comment = what was done, where (paths, PR), key findings, open questions. Keep it skimmable.
 
 ## Git
