@@ -78,8 +78,17 @@ class S1Settings:
     end: date | None = None
     max_dates: int | None = None     # thin to at most this many dates, spread over the period
     min_gap_days: int | None = None  # or keep scenes at least this far apart
+    months: tuple | None = None      # keep only scenes from these months (1-12) of every year: the same season is
+                                     # compared across years, so farmland's yearly wet / dry cycle cancels out
     params: ChangeParams = field(default_factory=lambda: ChangeParams(boxcar=3))  # 30 m pixels: smaller window
     water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
+    drop_baseline_dated: bool = False  # drop regions dated inside the baseline passes: for a short baseline that
+                                       # defines "before" (Muhos), such a date is an artefact, not a change
+
+    def __post_init__(self):
+        if self.months is not None and (not self.months or not all(isinstance(m, int) and 1 <= m <= 12
+                                                                   for m in self.months)):
+            raise ValueError(f"S1Settings.months must be a non-empty tuple of months 1-12, got {self.months!r}")
 
 
 @dataclass
@@ -111,19 +120,23 @@ SITES = {
         id="muhos", bbox=(25.94, 64.80, 26.15, 64.89),
         nisar=NisarSettings(start=date(2026, 6, 1), track=157, frame=35, direction="ASCENDING",
                             params=ChangeParams(boxcar=7, threshold_db=2.5, min_area_ha=2.0)),
-        s1=S1Settings(start=date(2025, 5, 1), end=date(2026, 11, 10), water_db=-16.0,
+        s1=S1Settings(start=date(2025, 5, 1), end=date(2026, 11, 10), water_db=-16.0, drop_baseline_dated=True,
                       params=ChangeParams(boxcar=5, n_early=19, n_late=10, threshold_db=2.0, persist=3,
                                           min_area_ha=3.0)),
         skip_dates=MUHOS_SKIP, params=MUHOS_PARAMS,
     ),
-    # Agroparc Penedes earthworks; Sentinel-1 gives the years before NISAR, about one scene a month.
+    # Agroparc Penedes; farmland and vineyards all round, so both sensors run with the seasonal guards (#36).
+    # NISAR: Jun -> Nov 2026, the late passes include October rain: normalize + hold.
+    # Sentinel-1: about one scene a month since 2016, compared summer (Jun-Sep) against summer: the first two
+    # summers are the baseline (2016: 3 passes, 2017: 4), the 2026 summer (4) the end state; a change is dated from
+    # the pass after which it holds to the end (persist larger than the stack), so a dry year cannot date it early.
     "agroparc": Site(
         id="agroparc", bbox=(1.79, 41.41, 1.91, 41.49),
-        # NISAR (#36): two rain passes (9 and 21 Oct) add ~3 dB on fields, so each pass is levelled to the scene
-        # (normalize) and a change must hold in every late pass (hold); 1 ha minimum keeps the farmland quiet.
         nisar=NisarSettings(start=date(2026, 6, 1), track=130, frame=22, direction="ASCENDING",
                             params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True)),
-        s1=S1Settings(start=date(2024, 1, 1), min_gap_days=28),
+        s1=S1Settings(start=date(2016, 4, 1), min_gap_days=28, months=(6, 7, 8, 9),
+                      params=ChangeParams(boxcar=3, n_early=7, n_late=4, persist=99, threshold_db=3.0,
+                                          min_area_ha=1.0, normalize=True, hold=True)),
     ),
 }
 
@@ -340,7 +353,11 @@ def _s1_items(site: Site) -> list:
 
     s = site.s1
     found = s1.search(site.bbox, s.start, s.end)
-    burst = s1.pick_burst(found, site.bbox)
+    on_burst = s1.pick_burst(found, site.bbox)
+    burst = [sc for sc in on_burst if s.months is None or _day_of(sc).month in s.months]
+    if s.months is not None and len(burst) < 2 <= len(on_burst):
+        raise PipelineError(f"{site.id}: s1 months {s.months} keep {len(burst)} of {len(on_burst)} dates; "
+                            "nothing to compare")
     picked = s1.thin(burst, max_dates=s.max_dates, min_gap_days=s.min_gap_days)
     log.info("s1: %d scenes found, %d on the chosen burst, %d after thinning", len(found), len(burst), len(picked))
     return [(_day_of(scene), scene) for scene in picked]
@@ -358,6 +375,12 @@ def _s1_fetch(scene, bbox, token) -> Frame:
     return Frame(day=_day_of(scene), data={p: a[0] for p, a in stack.items()}, transform=tuple(transform),
                  epsg=int(epsg), bbox=tuple(bbox), source=_name_of(scene),
                  mb=None if nbytes is None else nbytes / 1e6, seconds=time.perf_counter() - t0)
+
+
+def _in_season(site: Site, sensor: str, days: list) -> list:
+    """The cache can hold more dates than the site compares (offline reads them all): keep the S1 months."""
+    months = site.s1.months if sensor == S1 and site.s1 else None
+    return days if months is None else [d for d in days if d.month in months]
 
 
 ITEMS = {NISAR: _nisar_items, S1: _s1_items}
@@ -492,7 +515,7 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     log.info("%s: baseline %s .. %s (%d passes), end state %s .. %s (%d passes)", sensor, dates[0],
              dates[n_early - 1], n_early, dates[-n_late], dates[-1], n_late)
     result = detect_changes(stack, dates, pixel, params, valid=valid)
-    if sensor == S1:
+    if sensor == S1 and site.s1.drop_baseline_dated:
         result = _drop_baseline_dated(result, dates[n_early - 1])
     log.info("%s: %d dates, %d change regions (threshold %.1f dB, min %.2f ha)", sensor, len(dates),
              len(result.regions), params.threshold_db, params.min_area_ha)
@@ -596,7 +619,11 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     meter, days = Meter(), {}
     for sensor in use:
         left = None if max_new is None else max_new - meter.dates
-        days[sensor] = collect(sensor, site, cache, offline=offline, max_new=left, token=token, meter=meter)
+        found = collect(sensor, site, cache, offline=offline, max_new=left, token=token, meter=meter)
+        days[sensor] = _in_season(site, sensor, found)
+        if len(found) >= 2 and len(days[sensor]) < 2:
+            raise PipelineError(f"{site_id}: {sensor} months {site.s1.months} keep {len(days[sensor])} of "
+                                f"{len(found)} dates; nothing to compare")
     if offline and not any(days.values()):
         raise PipelineError(f"--offline: nothing cached for {site_id} under {cache / site_id}; "
                             "run once without --offline to fetch the dates")
