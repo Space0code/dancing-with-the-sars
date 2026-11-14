@@ -3,8 +3,11 @@
     "allow": [
       "Bash(gh issue:*)", "Bash(gh pr:*)", "Bash(gh search:*)", "Bash(gh label list:*)", "Bash(gh api user:*)",
       "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git pull:*)", "Bash(git switch:*)",
-      "Bash(git add:*)", "Bash(git commit:*)"
+      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git push:*)"
     ],
-    "deny": ["Bash(git push --force:*)", "Bash(git push -f:*)", "Read(~/.netrc)"]
+    "deny": [
+      "Bash(git push --force:*)", "Bash(git push -f:*)", "Bash(git push origin main:*)", "Bash(git push -u origin main:*)",
+      "Read(~/.netrc)"
+    ]
   }
 }
