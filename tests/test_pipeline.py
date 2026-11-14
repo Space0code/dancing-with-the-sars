@@ -1,8 +1,8 @@
 """Site runner (sarwatch.pipeline) end to end on fake readers: no network, no token, no data cost.
 
-The NISAR and Sentinel-1 readers are replaced by fakes that serve a speckled stack with one injected
-clearing. sarwatch.export and sarwatch.s1 are used for real when importable (their functions that touch
-the network are faked either way); until they exist, small stand-ins take their place.
+The NISAR and Sentinel-1 readers' network functions are replaced by fakes that serve a speckled stack
+with one injected clearing; change detection, export and the contract check are the real ones. Until
+sarwatch.s1 is merged, an empty stand-in module carries the Sentinel-1 fakes.
 """
 import importlib
 import json
@@ -81,7 +81,7 @@ class Scene:
 
 class FakeS1:
     def __init__(self):
-        self.reads, self.thin_args = [], None
+        self.reads, self.thin_args, self.stats = [], None, {}  # stats: the reader's last_read_stats
 
     def search(self, bbox, start=None, end=None):
         return [Scene(f"OPERA_RTC_S1_{d:%Y%m%d}", at(d)) for d in S_DAYS]
@@ -99,38 +99,8 @@ class FakeS1:
         self.reads.append(day)
         i = S_DAYS.index(day)
         data = image(100 + i, S_SHAPE, pols, "VH", i >= S_CHANGE, S_RECT)
+        self.stats.update(bytes=3_000_000, dates=1)
         return {p: a[None] for p, a in data.items()}, [day], S_TRANSFORM, S_EPSG
-
-
-def stand_in_export():
-    """Until sarwatch.export lands: same Run fields, write_site writes a minimal contract-valid folder."""
-    mod = types.ModuleType("sarwatch.export")
-
-    @dataclass
-    class Run:
-        sensor: str
-        result: object
-        dates: list
-        stack: dict
-        transform: tuple
-        epsg: int
-
-    def write_site(site_dir, site_id, runs, n_before=3, n_after=3):
-        site_dir = Path(site_dir)
-        site_dir.mkdir(parents=True, exist_ok=True)
-        ring = [[26.04, 64.84], [26.05, 64.84], [26.05, 64.85], [26.04, 64.84]]
-        feats = [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [ring]}, "properties": {
-            "id": f"{site_id}-{n:04d}", "site": site_id, "type": r.type, "first_date": str(r.first_date),
-            "last_date": str(r.last_date), "area_ha": round(r.area_ha, 2), "sensor": run.sensor, "signal": None,
-            "confidence": r.confidence, "verdict": None, "reasons": [], "explain": None,
-            "evidence": {"before": None, "after": None, "series": None}}}
-            for n, (run, r) in enumerate(((run, r) for run in runs for r in run.result.regions), 1)]
-        (site_dir / "changes.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}))
-        (site_dir / "layers.json").write_text(json.dumps({"layers": []}))
-        return {"changes": len(feats)}
-
-    mod.Run, mod.write_site = Run, write_site
-    return mod
 
 
 @pytest.fixture
@@ -141,18 +111,13 @@ def fake(monkeypatch, tmp_path):
     monkeypatch.setattr(nisar, "read_crop", n.read_crop)
     try:
         s1mod = importlib.import_module("sarwatch.s1")
-    except ImportError:
+    except ImportError:  # until the Sentinel-1 reader is merged: an empty module the fakes fill in
         s1mod = types.ModuleType("sarwatch.s1")
         monkeypatch.setitem(sys.modules, "sarwatch.s1", s1mod)
         monkeypatch.setattr(sarwatch, "s1", s1mod, raising=False)
     for name in ("search", "pick_burst", "thin", "read_stack"):
         monkeypatch.setattr(s1mod, name, getattr(s, name), raising=False)
-    try:
-        importlib.import_module("sarwatch.export")  # the real exporter, once merged
-    except ImportError:
-        mod = stand_in_export()
-        monkeypatch.setitem(sys.modules, "sarwatch.export", mod)
-        monkeypatch.setattr(sarwatch, "export", mod, raising=False)
+    monkeypatch.setattr(s1mod, "last_read_stats", s.stats, raising=False)
 
     monkeypatch.setenv("EARTHDATA_TOKEN", SECRET)
     monkeypatch.setattr(pipeline, "REPO_ROOT", tmp_path)  # .env lookups land in tmp_path, never the real repo
@@ -206,8 +171,9 @@ def test_run_builds_a_valid_site_and_a_rerun_fetches_nothing(fake, capsys):
     assert fake.nisar.searches == searches and len(fake.nisar.reads) == len(N_DAYS)
 
 
-def test_s1_history_runs_alongside_nisar(fake):
+def test_s1_history_runs_alongside_nisar(fake, capsys):
     assert pipeline.main(["muhos", *fake.args]) == 0
+    assert "fetched this run: 18 dates, 230.0 MB" in capsys.readouterr().out  # 8 x 25 MB + 10 x 3 MB
 
     assert fake.s1.thin_args == (30, None)  # the site's Sentinel-1 settings reach thin()
     assert sorted(fake.s1.reads) == S_DAYS

@@ -26,7 +26,7 @@ import os
 import re
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -263,8 +263,9 @@ def _nisar_items(site: Site) -> list:
     picked = nisar.pick_track(keep, s.min_maturity)
     if picked:
         g = picked[0]
-        log.info("nisar: %d granules found, %d on the chosen stack; track %d / frame %d %s, %d dates",
-                 len(found), len(keep), g.track, g.frame, g.direction.lower(), len(picked))
+        mix = Counter(x.maturity for x in picked)  # a maturity switch inside a stack can fake a step
+        log.info("nisar: %d granules found, %d on track %d / frame %d %s -> %d dates (%s)", len(found), len(keep),
+                 g.track, g.frame, g.direction.lower(), len(picked), ", ".join(f"{n} {m}" for m, n in mix.items()))
     return [(g.start.date(), g) for g in picked]
 
 
@@ -290,11 +291,15 @@ def _s1_items(site: Site) -> list:
 def _s1_fetch(scene, bbox, token) -> Frame:
     from . import s1
 
+    stats = getattr(s1, "last_read_stats", None)  # the reader's own byte estimate for its last read
+    if isinstance(stats, dict):
+        stats.clear()
     t0 = time.perf_counter()
     stack, dates, transform, epsg = s1.read_stack([scene], bbox, pols=POLS[S1], token=token)
+    nbytes = stats.get("bytes") if isinstance(stats, dict) else None
     return Frame(day=_day_of(scene), data={p: a[0] for p, a in stack.items()}, transform=tuple(transform),
-                 epsg=int(epsg), bbox=tuple(bbox), source=_name_of(scene), mb=None,  # size not reported
-                 seconds=time.perf_counter() - t0)
+                 epsg=int(epsg), bbox=tuple(bbox), source=_name_of(scene),
+                 mb=None if nbytes is None else nbytes / 1e6, seconds=time.perf_counter() - t0)
 
 
 ITEMS = {NISAR: _nisar_items, S1: _s1_items}
