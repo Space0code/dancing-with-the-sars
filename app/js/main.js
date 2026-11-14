@@ -7,6 +7,7 @@ import { renderIntro, renderStory, showCard, showHint } from "./panel.js";
 import { createInbox } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
+import { createRecords } from "./records.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -94,6 +95,7 @@ async function main() {
   }
   const map = createChangeMap($("map"), { onSelect: select, bounds: overview });
   await map.ready;
+  const records = createRecords(map.maplibre, $("records-box"));
 
   const picture = createPicture(map, document.querySelector(".map-wrap"));
 
@@ -124,6 +126,7 @@ async function main() {
       map.setDate(iso);
       map.flash(fresh);
       picture.setDate(iso);
+      records.setDate(iso);
       inbox.setDate(iso);
       refreshTotal();
       if (fresh.length) bump($("total"));
@@ -168,6 +171,7 @@ async function main() {
     inbox.showTab("details");
     $("panel-tabs").hidden = true;
     picture.setSite(null);
+    records.setSite(null);
     map.showOverview(overview);
     timeline.clear();
   }
@@ -188,6 +192,7 @@ async function main() {
     map.setExtraFilter(null);
     map.showSite(site, current.changes, current.stages);
     picture.setSite(current);
+    records.setSite(current.base);
     timeline.setRange(site, current.changes.features, current.story?.events);
   }
 
