@@ -7,14 +7,15 @@ const QUESTIONS = [
   { key: "protected", q: "Protected natural area?", codes: ["protected_area", "protected_buffer"], none: "Not inside a protected area.", spain: true },
   { key: "zoning", q: "What does the zoning say?", codes: ["zoning_non_buildable", "zoning_urban", "planned_sector"], none: "Nothing in the zoning changes the label.", spain: true },
   { key: "cadastre", q: "On the land registry?", codes: ["cadastre_building_found", "no_record_found"], none: "No new building on record.", spain: true },
-  { key: "solar", q: "A listed solar plant?", codes: ["solar_plant_listed", "solar_plant_other"], none: "No solar plant listed in this municipality.", spain: true },
-  { key: "fire", q: "A recorded wildfire?", codes: ["fire_recorded"], none: "No wildfire found in the records." },
-  { key: "official", q: "Any official action?", codes: ["assessment_missing", "official_stop_order", "official_investigation", "official_action"], none: "No official action on record." },
+  { key: "solar", q: "A listed solar plant?", codes: ["solar_plant_listed", "solar_plant_other"], none: "No listed solar plant explains this change.", spain: true },
+  { key: "fire", q: "A recorded wildfire?", codes: ["fire_recorded"], none: "No wildfire in the records we have." },
+  { key: "official", q: "Any official record (assessment, orders)?", codes: ["assessment_missing", "official_stop_order", "official_investigation", "official_action"], none: "None in the records we have (official records are entered by hand)." },
   { key: "size", q: "How big?", codes: ["small_area", "size_only"], none: null },
 ];
 
-// `records_unavailable` reasons name the service in `source` ("Land registry", …): send each to its question.
-const UNAVAILABLE = [["protected", "protected"], ["land registry", "cadastre"], ["urban-planning", "zoning"], ["solar", "solar"]];
+// `records_unavailable` reasons: verdict.py writes "The <service> could not be checked…" ("land registry", …),
+// while `source` is the service's own name, so match on both. Each goes to its question's row.
+const UNAVAILABLE = [["protected", "protected"], ["land registry", "cadastre"], ["urban-planning", "zoning"], ["solar", "solar"], ["wildfire", "fire"]];
 
 const MARKS = {
   lowers: { mark: "✓", text: "Points to expected" },
@@ -25,8 +26,8 @@ const MARKS = {
 
 const questionFor = (r) => {
   if (r.code === "records_unavailable") {
-    const src = String(r.source ?? "").toLowerCase();
-    return UNAVAILABLE.find(([word]) => src.includes(word))?.[1] ?? null;
+    const said = `${r.text ?? ""} ${r.source ?? ""}`.toLowerCase();
+    return UNAVAILABLE.find(([word]) => said.includes(word))?.[1] ?? null;
   }
   return QUESTIONS.find((q) => q.codes.includes(r.code))?.key ?? null;
 };
