@@ -10,7 +10,7 @@ export const APP = {
 export const VERDICTS = {
   expected: { label: "Expected", color: "#0072B2" },
   review: { label: "Needs review", color: "#F0E442" },
-  high_concern: { label: "High concern", color: "#CC79A7" }, // not orange: radar frames tint lost vegetation orange-red
+  high_concern: { label: "High concern", color: "#D55E00" }, // orange; the radar frames are tinted magenta-pink (214, 40, 160), so the two stay apart
   none: { label: "Not judged yet", color: "#9AA3A8" },
 };
 export const verdictKey = (verdict) => (Object.hasOwn(VERDICTS, verdict) ? verdict : "none"); // null or unknown = not judged yet
