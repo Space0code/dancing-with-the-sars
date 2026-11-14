@@ -1,7 +1,7 @@
 # Data sources
 
 Which datasets help **detect** a land change or **judge** it (allowed? expected?), for Catalonia + the Finland test case.
-Last updated 2026-11-14 (web research + live catalog checks + live service queries for #14). EDL = free NASA Earthdata Login. Effort L/M/H.
+Last updated 2026-11-14 (web research + live catalog checks + live service queries for #14; DIST-ALERT reads for #44). EDL = free NASA Earthdata Login. Effort L/M/H.
 
 ## Coverage checks we ran (ASF search API, 14 Nov 2026)
 - NISAR GCOV over Catalonia since 2026-06-17: **147 granules, ~185 GB, 13 track/frame footprints**, median 1.5 GB each,
@@ -137,6 +137,48 @@ source of ASF's download gateway (TEA, `asfadmin/thin-egress-app`). No pixel rea
   `thin(scenes, min_gap_days=30)` keeps about one date per month (~120 over ten years).
 - Tests: `python -m pytest tests/test_s1.py`; live search `SARWATCH_LIVE=1 python -m pytest tests/test_s1.py -k live_search -s`;
   live read `EARTHDATA_TOKEN=… python -m pytest tests/test_s1.py -k live_read -s`.
+
+## OPERA DIST-ALERT-HLS: how to read it
+Reader: `src/sarwatch/distalert.py` (`search` → `pick_tile` → `latest` / `month_ends` → `read_window` → `combine` →
+`hectares_by_month`); site numbers: `explore/optical-alerts/site_by_month.py <site>`. Checked 14 Nov 2026 against the
+[product spec](https://lpdaac.usgs.gov/documents/1766/OPERA_DIST_HLS_Product_Specification_V1.pdf) (JPL D-108277 v1.0,
+Feb 2024), the [ATBD](https://lpdaac.usgs.gov/documents/1835/OPERA_DIST_ATBD__V1.pdf), CMR records and live reads.
+- **Granule** = one MGRS tile (109.8 km, UTM, fixed 3660 × 3660 grid of 30 m) × one HLS scene (Landsat 8/9, Sentinel-2A/B/C).
+  Name `OPERA_L3_DIST-ALERT-HLS_T35WMM_<acq>_<produced>_<sensor>_30_v1`; 19 single-band COGs `<name>_<LAYER>.tif`,
+  DEFLATE, 512 px tiles (DATA-MASK 256), overviews 2/4/8. V1 from 1 Jan 2023. Tiles overlap 4.9 km: Muhos is in
+  35WMM and 35WMN, Agroparc in 31TCF/TDF/TCG/TDG; `pick_tile` keeps one that covers the whole window.
+- **VEG-DIST-STATUS** (uint8): 0 none · 1 first <50% · 2 provisional <50% · 3 confirmed <50% · 4 first ≥50% ·
+  5 provisional ≥50% · 6 confirmed ≥50% · 7 / 8 confirmed <50% / ≥50%, finished · 255 no data. "First" = one anomalous
+  look; "provisional" = two or more, not yet sure; "confirmed" = confidence ≥ 400 (confidence = mean loss × number of
+  loss looks²); "finished" = a confirmed alert followed by two normal looks, or one normal look ≥ 15 days after the last
+  loss. <50% / ≥50% = largest vegetation-cover loss (VEG-ANOM-MAX, percent of cover).
+- **VEG-DIST-DATE** (int16): day of the first loss look of the pixel's **most recent** alert, counted from 2020-12-31
+  (2122 = 23 Oct 2026, checked against VEG-LAST-DATE of that day's granule); 0 none in the last year; -1 no data. Also
+  VEG-DIST-CONF / -COUNT / -DUR (≤ 1 year), VEG-ANOM(-MAX), VEG-IND (current cover %), VEG-HIST, VEG-LAST-DATE,
+  DATA-MASK (0 no data or masked: cloud, shadow, snow · 1 land · 2 water), and the same GEN-* set for spectral change.
+- **Running state:** every granule carries the whole tile's state (all pixels, also those under cloud); tags
+  `Input_DIST-ALERT_granule` (the previous state; since 21 Jul 2026 possibly several) and `Percent_Updated`. The newest
+  granule holds about a year of alerts (oldest date in the 23 Oct 2026 Muhos state: 16 Oct 2025). Baseline: the same
+  ±15 days in the 3 previous calendar years, so crop cycles shifted by > 15 days and drought years (Catalonia 2023)
+  raise alerts on farmland. **Gotcha:** a new alert overwrites a finished one, so the newest state can date an April
+  clearing in September (176 ha at Muhos): read month-end states and keep the earliest confirmed date (`combine`).
+- **Winter at 65° N:** no granules from late Oct to late Feb (the Muhos state of 21 Oct 2025 is unchanged on 25 Feb
+  2026). Clearing under snow shows when the snow melts: April alerts = cut any time in winter or early spring.
+- **Annual summary** `OPERA_L3_DIST-ANN-HLS_V1`: one granule per tile and year, confirmed alerts only (status 9 / 10 =
+  confirmed, first seen the previous year). Exists for 2023, 2024, 2025 at both sites (2025 produced 9 Jan 2026); 2026
+  comes ~Jan 2027. Good for the Catalonia overview of past years.
+- **Search, no login:** CMR `cmr.earthdata.nasa.gov/search/granules.umm_json?short_name=OPERA_L3_DIST-ALERT-HLS_V1&bounding_box=W,S,E,N&temporal=…&page_size=2000`,
+  paging with the `CMR-Search-After` header. Fields: `MGRS_TILE_ID`, `SPATIAL_COVERAGE`, `HORIZONTAL_CS_CODE`,
+  `CloudCover`, footprint polygon, per-layer `GET DATA` links.
+- **Access (worked first time, no app approval asked):** `https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/…`
+  with `Authorization: Bearer <token>` → **303 to a signed CloudFront URL** (`*.cloudfront.net`), range-read with no
+  header (`s1.resolve_url` + GDAL `/vsicurl/`). No token → 302 to `urs.earthdata.nasa.gov`. `s3://` links work only
+  inside AWS us-west-2 (unverified). Browse PNGs are public under `lp-prod-public`.
+- **Measured cost (14 Nov 2026, home wifi):** whole VEG-DIST-STATUS file 1.2 MB. A 10 × 10 km window (Muhos, 341 ×
+  338 px) reads 24–61 KB per layer (status 24, date 32, anom-max 40, conf 61), ~70 KB and ~6 s per state (status +
+  date; ~3 s per layer, mostly the redirect and the GDAL open). Muhos, 10 monthly states: 0.69 MB, 16 s with 4 states
+  in parallel; Agroparc, 47 monthly states 2023→: 3.5 MB, 63 s. CMR search: 3–5 s (461 granules) to 12–17 s (3,686).
+- Tests: `python -m pytest tests/test_distalert.py`; live `SARWATCH_LIVE=1 python -m pytest tests/test_distalert.py -k live -s`.
 
 ## Where processing runs
 The team is on mobile data: **never download NISAR to a laptop.** Radar processing runs in a GitHub Codespace
