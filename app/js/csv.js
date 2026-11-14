@@ -31,7 +31,7 @@ export function changesCsv(features, kindName) {
     const [lon, lat] = centre(f.geometry);
     return [
       p.id, p.site, kindName(p.type), Math.round(p.area_ha * 100) / 100, p.first_date, VERDICTS[verdictKey(p.verdict)].label,
-      reason?.text ?? "", safeUrl(reason?.url) ?? "", lon == null ? null : lon.toFixed(5), lat == null ? null : lat.toFixed(5),
+      reason?.text ?? "", safeUrl(reason?.url) ?? "", lon == null ? null : Number(lon.toFixed(5)), lat == null ? null : Number(lat.toFixed(5)), // numbers, not text: the formula guard must not touch a negative coordinate
     ];
   });
   return "﻿" + [COLUMNS, ...rows].map((row) => row.map(cell).join(",")).join("\r\n") + "\r\n";

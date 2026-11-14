@@ -66,6 +66,7 @@ export function createInbox({ onOpen, onFilters }) {
     minHa = value;
     sizeSlider.value = String(Math.max(sizeSteps.indexOf(value), 0));
     sizeValue.textContent = value ? `${value} ha or more` : "any size";
+    sizeSlider.setAttribute("aria-valuetext", value ? `${value} hectares or more` : "any size"); // screen readers say hectares, not a step number
   }
   /** Slider stops for a site: round hectare values below its largest change (a site of 1 to 5 ha gets no slider). */
   function setSizeSteps() {

@@ -87,10 +87,11 @@ async function main() {
   // --- shareable view: #site=…&date=…&change=… follows the user (replaceState: the back button is not flooded) ---
   let selectedId = null;
   let hashTimer = null;
+  let loading = false; // a site is being opened: `current` is still the old one
   function writeHash() {
     clearTimeout(hashTimer);
     hashTimer = setTimeout(() => { // debounced: the time-lapse changes the date many times a second
-      if (!current) return;
+      if (!current || loading) return;
       const params = new URLSearchParams({ site: current.site.id });
       if (lastDate) params.set("date", lastDate);
       if (selectedId) params.set("change", selectedId);
@@ -200,16 +201,22 @@ async function main() {
     $("fake-badge").hidden = !site.fixture;
     $("panel-tabs").hidden = false;
     history.replaceState(null, "", `#site=${site.id}`);
-    current = await loadSite(site);
-    lastDate = null; // no flash for the changes already there when the site opens
+    clearTimeout(hashTimer); // a pending write still describes the old site: drop it, and write nothing while this one loads
     selectedId = null;
-    renderStory(current.story); // first: it changes the map's size on phones
-    showHint();
-    inbox.setSite(current.changes.features);
-    map.setExtraFilter(null);
-    map.showSite(site, current.changes, current.stages);
-    picture.setSite(current);
-    timeline.setRange(site, current.changes.features, current.story?.events);
+    lastDate = null; // no flash for the changes already there when the site opens
+    loading = true;
+    try {
+      current = await loadSite(site);
+      renderStory(current.story); // first: it changes the map's size on phones
+      showHint();
+      inbox.setSite(current.changes.features);
+      map.setExtraFilter(null);
+      map.showSite(site, current.changes, current.stages);
+      picture.setSite(current);
+      timeline.setRange(site, current.changes.features, current.story?.events);
+    } finally {
+      loading = false;
+    }
   }
 
   $("site").addEventListener("change", (e) => {
