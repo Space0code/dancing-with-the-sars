@@ -4,12 +4,14 @@ import { loadSites, loadSite } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
 import { renderStory, showCard, showHint } from "./panel.js";
+import { renderLayerControl } from "./overlays.js";
 
 const $ = (id) => document.getElementById(id);
 
-function showError(message) {
+function showError(message, isNotice = false) {
   const box = $("map-error");
   box.textContent = message;
+  box.classList.toggle("notice", isNotice);
   box.hidden = false;
 }
 
@@ -56,6 +58,7 @@ async function main() {
   async function openSite(id) {
     const site = sites.find((s) => s.id === id && s.ready);
     if (!site) return;
+    $("map-error").hidden = true;
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
     history.replaceState(null, "", `#site=${site.id}`);
@@ -63,6 +66,8 @@ async function main() {
     renderStory(current.story); // first: it changes the map's size on phones
     showHint();
     map.showSite(site, current.changes);
+    map.setOverlays(current.base, current.layers);
+    renderLayerControl(current.layers, map);
     timeline.setRange(site.time_range, current.story?.events);
   }
 
@@ -73,8 +78,10 @@ async function main() {
 
   const wanted = new URLSearchParams(location.hash.slice(1)).get("site");
   const first = sites.find((s) => s.id === wanted && s.ready) ?? sites.find((s) => s.ready);
-  if (first) await openSite(first.id);
-  else showError("No site is ready yet.");
+  if (!first) return showError("No site is ready yet.");
+  await openSite(first.id);
+  const asked = sites.find((s) => s.id === wanted);
+  if (asked && !asked.ready) showError(`${asked.name} is coming soon. Showing ${first.name} instead.`, true);
 }
 
 main().catch((err) => showError(err.message));

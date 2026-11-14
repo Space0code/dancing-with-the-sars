@@ -26,8 +26,14 @@
   <main>
     <div class="map-wrap">
       <div id="map" aria-label="Map of detected land changes"></div>
-      <div class="legend" aria-label="Legend">
-        <ul id="legend"></ul>
+      <div class="map-left">
+        <div class="legend" aria-label="Legend">
+          <ul id="legend"></ul>
+        </div>
+        <details id="layers" class="layer-box">
+          <summary>Radar pictures</summary>
+          <div id="layer-list"></div>
+        </details>
       </div>
       <p id="map-error" class="map-error" hidden></p>
     </div>

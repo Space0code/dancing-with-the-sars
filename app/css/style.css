@@ -46,11 +46,20 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
   position: absolute; inset: 20% 10% auto; margin: 0; padding: 14px; background: #fff;
   border: 1px solid #c33; border-radius: var(--radius); color: #7a1c1c; z-index: 3;
 }
-.legend {
-  position: absolute; left: 10px; bottom: 28px; z-index: 2;
+.map-left {
+  position: absolute; left: 10px; top: 10px; z-index: 2; display: flex; flex-direction: column; gap: 8px;
+  align-items: flex-start; max-width: min(280px, calc(100% - 70px));
+}
+.legend, .layer-box {
   background: rgba(255, 255, 255, .94); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
 }
+.layer-box { font-size: 13px; }
+.layer-box summary { cursor: pointer; font-weight: 700; }
+.layer-item { padding: 6px 0 2px; border-top: 1px solid var(--line); margin-top: 6px; }
+.layer-item label { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.layer-item input[type="range"] { width: 100%; margin: 4px 0 0; }
+.layer-item p { margin: 2px 0 0; color: var(--muted); }
 .legend ul { list-style: none; margin: 0; padding: 0; font-size: 13px; }
 .legend li { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
 .swatch { width: 16px; height: 16px; border-radius: 3px; border: 2px solid #222; flex: none; }
@@ -150,7 +159,9 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
   .basemap { margin-left: 0; }
   main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
   #panel { max-height: 42vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 10px 12px 14px; }
-  .legend { bottom: auto; top: 8px; padding: 4px 8px; }
+  .map-left { left: 8px; top: 8px; }
+  .map-error.notice { border-color: #b08900; background: #fff8dc; color: #4d3b00; }
+.legend { padding: 4px 8px; }
   .legend ul { display: grid; grid-template-columns: auto auto; gap: 0 12px; font-size: 12px; }
   .swatch { width: 12px; height: 12px; }
   .timeline { padding: 6px 12px 8px; }
