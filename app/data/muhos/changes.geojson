@@ -3678,7 +3678,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (3.24 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -4042,7 +4042,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -4310,7 +4310,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (2.88 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -4538,7 +4538,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (2.7 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -4774,7 +4774,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (2.61 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -4936,7 +4936,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (2.43 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -5140,7 +5140,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (2.34 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -12714,7 +12714,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (2.07 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -17943,7 +17943,7 @@
      {
       "code": "size_only",
       "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "raises"
      }
@@ -18113,7 +18113,7 @@
      {
       "code": "small_no_records",
       "text": "The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
      }
@@ -25136,7 +25136,7 @@
      {
       "code": "size_only",
       "text": "No public land records are connected for this country yet, so a change of this size is flagged for review.",
-      "source": "NASA optical alerts (Landsat + Sentinel-2)",
+      "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "raises"
      }

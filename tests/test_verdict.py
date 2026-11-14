@@ -669,7 +669,7 @@ def test_inside_the_records_scope_the_size_floor_does_not_apply():
 def test_the_size_reason_names_the_changes_own_sensor():
     na = _no_records()
     optical = {**change(area=9, ctype="other"), "sensor": "OPERA DIST-ALERT"}
-    assert judge(optical, na)[1][0]["source"] == "NASA optical alerts (Landsat + Sentinel-2)"
+    assert judge(optical, na)[1][0]["source"] == "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)"
     assert judge({**change(area=9, ctype="other"), "sensor": "Sentinel-1 C-band"}, na)[1][0]["source"] == "Sentinel-1 C-band"
     assert judge(change(area=9, ctype="other"), na)[1][0]["source"] == "Satellite detection"
     small = judge({**change(area=0.5), "sensor": "NISAR L-band"}, records(zone="urban"))

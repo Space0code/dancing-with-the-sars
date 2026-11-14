@@ -1,7 +1,7 @@
 // Written by Claude. The change card's "when / seen by / how sure" wording, built from `not_before` and `sources`
 // (kb/multi-sensor-design.md sections 2-4). A change without `sources` keeps the old single-sensor wording.
 // Never says "verified", "proved" or "exact date"; "also saw it" / "confirms" only for a second detecting source.
-import { h, formatDate, formatArea, toDay, sensorLabel, confidenceLabel } from "./format.js";
+import { h, formatDate, formatArea, toDay, sensorLabel, sensorCredit, confidenceLabel } from "./format.js";
 
 const part = (iso, month, year) =>
   new Intl.DateTimeFormat("en-GB", { day: "numeric", ...(month && { month: "short" }), ...(year && { year: "numeric" }), timeZone: "UTC" }).format(new Date(iso));
@@ -117,7 +117,8 @@ export function seenBy(p) {
           h("span", { class: "seen-name" }, sensorLabel(s.sensor)),
           dates(s) ? h("span", { class: "seen-dates" }, dates(s)) : null),
         h("span", { class: "seen-role" }, roleWord(s)),
-        s.note ? h("span", { class: "seen-note" }, s.note) : null);
+        s.note ? h("span", { class: "seen-note" }, s.note) : null,
+        sensorCredit(s.sensor) ? h("span", { class: "seen-note seen-credit" }, sensorCredit(s.sensor)) : null);
     });
   return h("ul", { class: "seen" }, rows);
 }
