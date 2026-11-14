@@ -26,7 +26,7 @@
     {"date": "2026-09-29", "sensor": "NISAR L-band"}, {"date": "2026-10-03", "sensor": "Sentinel-1 C-band"}, {"date": "2026-10-09", "sensor": "Sentinel-1 C-band"},
     {"date": "2026-10-11", "sensor": "NISAR L-band"}, {"date": "2026-10-15", "sensor": "Sentinel-1 C-band"}, {"date": "2026-10-21", "sensor": "Sentinel-1 C-band"},
     {"date": "2026-10-23", "sensor": "NISAR L-band"}]},
-  {"id": "agroparc", "name": "Agroparc Penedès, Catalonia", "country": "ES", "ready": true,
+  {"id": "agroparc", "name": "Agroparc Penedès, Catalonia", "country": "ES", "ready": true, "hidden": true,
    "center": [1.85, 41.45], "zoom": 13, "bbox": [1.7858, 41.407, 1.914, 41.4931],
    "time_range": ["2016-06-29", "2026-11-02"],
    "snapshots": [
@@ -51,7 +51,7 @@
   {"id": "catalonia", "name": "Catalonia overview", "country": "ES", "ready": false,
    "center": [1.6, 41.8], "zoom": 7.5, "bbox": [0.16, 40.52, 3.33, 42.86],
    "time_range": ["2023-01-01", "2026-11-05"]},
-  {"id": "fixture", "name": "Fake example (not real data)", "country": "ES", "ready": true, "fixture": true,
+  {"id": "fixture", "name": "Fake example (not real data)", "country": "ES", "ready": true, "hidden": true, "fixture": true,
    "center": [1.85, 41.45], "zoom": 13, "bbox": [1.80, 41.42, 1.90, 41.48],
    "time_range": ["2024-01-01", "2026-11-02"],
    "snapshots": [

@@ -10,6 +10,7 @@ app only reads it. Last updated 2026-11-14. Living example: `app/data/fixture/` 
 | `sites.json` | radar | list of sites; `ready: false` sites have no files yet |
 | `<site>/changes.geojson` | radar, then verdict | one polygon per detected change |
 | `<site>/layers.json` + pictures | radar | pictures laid over the map (radar before / after) |
+| `<site>/frames.json` + `frames/` (optional) | radar | picture frames for the time-lapse and the before / after swipe |
 | `<site>/evidence/*.png` | radar | small before / after pictures per change, for the card |
 | `<site>/series/<change id>.json` | radar | the signal over time per change, for the chart |
 | `<site>/story.json` | verdict | plain-language story of the site, dated events, sources |
@@ -20,6 +21,9 @@ app only reads it. Last updated 2026-11-14. Living example: `app/data/fixture/` 
 `id` (lowercase slug = folder name) · `name` · `country` (2 letters) · `ready` (bool) · `fixture` (optional bool: fake
 data, the app shows a badge) · `center` `[lon, lat]` · `zoom` · `bbox` `[west, south, east, north]` ·
 `time_range` `[start, end]` (the timeline's ends).
+
+**`hidden`** (optional bool): a `ready` site that stays out of the app's site menu (kept as a worked example, e.g.
+`agroparc`, `fixture`). Files are still checked.
 
 **`snapshots`** (optional, per site): the timeline's stops, `[{"date": "YYYY-MM-DD", "sensor": "<name>"}, ...]`, one per
 image date actually used, strictly sorted by date (a date two sensors share is one stop, sensor `"A + B"`), every date
@@ -53,6 +57,14 @@ the fixture uses `protected_area`, `zoning_non_buildable`, `no_record_found`, `p
 `{"layers": [{id, title, date, url, coordinates, caption}]}`. `coordinates` are the picture's four corners as
 `[lon, lat]`, in the order top-left, top-right, bottom-right, bottom-left (exactly what a MapLibre `image` source
 takes). `date` is `YYYY-MM-DD` or null. `caption` says in plain words what the picture shows.
+
+## `frames.json` (optional)
+`{"coordinates": [4 corners], "sets": [{id, title, caption, frames: [{date, sensor, url}]}]}`. `coordinates` are the
+four corners `[lon, lat]` (top-left, top-right, bottom-right, bottom-left) shared by every frame of the site; all
+frames are north-up and the same size. Each set (`radar`, `photo`) is one picture per satellite pass or clear day,
+`frames` strictly sorted by date; `url` is a path inside the site folder that must exist. The app shows the latest
+frame at or before the slider date. Written by `python -m sarwatch.frames <site>` (radar: VH dB, one fixed grey
+stretch; photo: HLS true colour, cloud-free days). A site without `frames.json` is valid.
 
 ## `series/<change id>.json`
 `{"series": [{name, unit, sensor, dates[], values[]}], "events": [{date, label}]}`. Each series has its own dates
