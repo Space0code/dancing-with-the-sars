@@ -71,6 +71,7 @@ class NisarSettings:
     params: ChangeParams = field(default_factory=ChangeParams)  # 20 m pixels: the change-core defaults
     water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
     water_grow: int = 1            # pixels of shore masked around the water
+    drop_baseline_dated: bool = False  # as S1Settings: a region dated inside the baseline passes is left out
 
 
 @dataclass
@@ -129,7 +130,8 @@ class OpticalSettings:
 # NISAR's 4 Nov) are left out: the clearing outline is unchanged against its surroundings up to 23 Mar and darkens from
 # 4 Apr, so everything cut over the winter is dated "between 30 Sep 2025 and 4 Apr 2026", never to one March day.
 # normalize removes the scene-wide wet-snow drop of April (window VH -18 dB on 4 Apr); 1.5 dB finds the felling, which
-# lowers C-band VH by only 1.5-3 dB. The river is masked (summer VV below -16 dB).
+# lowers C-band VH by only 1.5-3 dB. The river is masked (summer VV below -16 dB). Regions under 5 ha were VV rises on
+# farm fields at the window's south edge (summer 2026 against summer 2025), so 5 ha; the optical alerts carry the small cuts.
 # Both: no building is expected here, so only a co-pol rise of 6 dB or more is called a structure (harvested fields
 # and logging slash raise it by 2-5 dB); regions are cut into dated parts (NISAR by pass, Sentinel-1 by month).
 MUHOS_SKIP = ("2025-05-01..2025-05-31", "2025-10-01..2026-03-31", "2026-11-01..2026-11-30")
@@ -140,12 +142,12 @@ SITES = {
     "muhos": Site(
         id="muhos", bbox=(26.02, 64.795, 26.20, 64.875),
         nisar=NisarSettings(start=date(2026, 6, 1), track=157, frame=35, direction="ASCENDING",
-                            water_db=-11.0, water_grow=3,
+                            water_db=-11.0, water_grow=3, drop_baseline_dated=True,
                             params=ChangeParams(boxcar=7, threshold_db=2.5, min_area_ha=2.0, normalize=True,
                                                 hold=True, split="pass", structure_db=6.0)),
         s1=S1Settings(start=date(2025, 5, 1), end=date(2026, 11, 10), water_db=-16.0, drop_baseline_dated=True,
                       params=ChangeParams(boxcar=5, n_early=21, n_late=10, threshold_db=1.5, persist=3,
-                                          min_area_ha=3.0, normalize=True, split="month", structure_db=6.0)),
+                                          min_area_ha=5.0, normalize=True, split="month", structure_db=6.0)),
         skip_dates=MUHOS_SKIP, params=MUHOS_PARAMS,
         optical=OpticalSettings(start=date(2025, 10, 1), since=date(2026, 1, 1), min_ha=2.0,
                                 blind=("2025-11-01..2026-03-31",)),
@@ -555,7 +557,7 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     log.info("%s: baseline %s .. %s (%d passes), end state %s .. %s (%d passes)", sensor, dates[0],
              dates[n_early - 1], n_early, dates[-n_late], dates[-1], n_late)
     result = detect_changes(stack, dates, pixel, params, valid=valid)
-    if sensor == S1 and site.s1.drop_baseline_dated:
+    if settings.drop_baseline_dated:
         result = _drop_baseline_dated(result, dates[n_early - 1])
     log.info("%s: %d dates, %d change regions (threshold %.1f dB, min %.2f ha)", sensor, len(dates),
              len(result.regions), params.threshold_db, params.min_area_ha)
