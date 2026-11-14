@@ -45,6 +45,7 @@ export function createRecords(map, box) {
       if (map.getSource(`rec-${layer.id}`)) map.removeSource(`rec-${layer.id}`);
     }
     layers = [];
+    map.getCanvas().style.cursor = ""; // a pointer set by a record hover must not outlive its layer
     box.replaceChildren();
     box.hidden = true;
   }
@@ -53,6 +54,7 @@ export function createRecords(map, box) {
   const buildingFill = (kind) => ["case", [">", ["coalesce", ["get", "year"], 0], year], 0, kind.fill];
 
   function add(layer, data) {
+    layers.push(layer); // registered first: if adding fails halfway, clear() still removes what was added
     const kind = kindOf(layer);
     const color = colorBy(kind);
     map.addSource(`rec-${layer.id}`, { type: "geojson", data });
@@ -123,13 +125,15 @@ export function createRecords(map, box) {
       const usable = index.layers.filter((l) => l && typeof l.id === "string" && l.id && l.file && !seen.has(l.id) && seen.add(l.id));
       const files = await Promise.all(usable.map((l) => loadJson(`${base}context/${l.file}`).then((d) => [l, d]).catch(() => [l, null])));
       if (mine !== token) return;
-      const loaded = files.filter(([, d]) => d?.features?.length).map(([l, d]) => add(l, d));
-      layers = loaded.map((x) => x.layer);
+      // a layer that fails to draw is skipped, the others stay
+      const loaded = files.filter(([, d]) => d?.features?.length).flatMap(([l, d]) => {
+        try { return [add(l, d)]; } catch { return []; }
+      });
       control(loaded);
     },
     setDate(iso) {
       year = Number(iso.slice(0, 4));
-      for (const layer of layers) if (layer.kind === "buildings") map.setPaintProperty(ids(layer)[0], "fill-opacity", buildingFill(KINDS.buildings));
+      for (const layer of layers) if (layer.kind === "buildings" && map.getLayer(ids(layer)[0])) map.setPaintProperty(ids(layer)[0], "fill-opacity", buildingFill(KINDS.buildings));
     },
   };
 }
