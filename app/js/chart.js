@@ -8,6 +8,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 // One color per satellite (Okabe-Ito purple / bluish green, distinct from the verdict colors); line style tells the series apart.
 const SENSOR_COLORS = { nisar: "#7B3FA0", sentinel: "#00826A", other: "#555555" };
 const DASHES = ["", "7 3", "2 3"];
+const DOT_MAX = 15; // lines with at most this many points get a dot per measurement
 const sensorKey = (sensor) => (/nisar/i.test(sensor) ? "nisar" : /sentinel/i.test(sensor) ? "sentinel" : "other");
 
 // What a regulator should see in the chart, by kind of change.
@@ -98,6 +99,9 @@ export function buildChart(data, change) {
     el("line", { x1: changeX, x2: changeX, y1: M.t - 4, y2: H - M.b, stroke: "#B3261E", "stroke-width": 1.6, "stroke-dasharray": "5 3" }),
     el("text", { x: changeX + (changeX > W * 0.6 ? -4 : 4), y: M.t - 8, "text-anchor": changeX > W * 0.6 ? "end" : "start", class: "chart-flag" }, "Change first seen"),
     ...lines.map((l) => el("path", { d: l.path, fill: "none", stroke: l.color, "stroke-width": 2, "stroke-dasharray": l.dash || null, "stroke-linejoin": "round" })),
+    // Few satellite passes (e.g. 2): show each measurement as a dot, so a straight line is not read as a continuous trend.
+    ...lines.filter((l) => l.s.dates.length <= DOT_MAX).flatMap((l) =>
+      l.s.dates.flatMap((d, i) => (l.s.values[i] == null ? [] : [el("circle", { cx: x(toDay(d)), cy: y(l.s.values[i]), r: 3, fill: l.color, stroke: "#fff", "stroke-width": 1 })]))),
     el("text", { x: 0, y: 0, transform: `translate(11 ${(M.t + H - M.b) / 2}) rotate(-90)`, "text-anchor": "middle", class: "chart-axis" }, `Signal strength (${unit})`)
   );
 

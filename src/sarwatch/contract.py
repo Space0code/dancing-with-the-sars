@@ -16,6 +16,9 @@ CHANGE_TYPES = {"clearing", "structure", "earthworks", "ground_motion", "fire", 
 VERDICTS = {"expected", "review", "high_concern"}
 CONFIDENCE = {"low", "medium", "high"}
 EFFECTS = {"raises", "lowers", "neutral"}
+SOURCE_KINDS = {"optical", "radar"}
+SOURCE_ROLES = {"detected", "late_start", "not_seen", "not_watching"}
+NO_DETECTION_ROLES = {"not_seen", "not_watching"}
 MAX_FILE_MB = 10
 
 
@@ -107,7 +110,83 @@ def _check_site_meta(site, i: int, errors: list[str]) -> bool:
     rng = site.get("time_range")
     if not (isinstance(rng, list) and len(rng) == 2 and all(_is_date(v) for v in rng) and rng[0] <= rng[1]):
         errors.append(f"{where}: time_range must be [start, end] dates")
+    if "sources" in site:
+        _check_site_sources(site["sources"], where, errors)
     return True
+
+
+def _is_date_or_null(value) -> bool:
+    return value is None or _is_date(value)
+
+
+def _check_site_sources(sources, where: str, errors: list[str]) -> None:
+    """Optional: which satellites watch this site, and when."""
+    if not isinstance(sources, list):
+        errors.append(f"{where}: sources must be a list")
+        return
+    for i, s in enumerate(sources):
+        w = f"{where}: sources[{i}]"
+        if not isinstance(s, dict):
+            errors.append(f"{w}: must be an object")
+            continue
+        if not isinstance(s.get("sensor"), str) or not s["sensor"]:
+            errors.append(f"{w}: sensor must be a non-empty string")
+        if s.get("kind") not in SOURCE_KINDS:
+            errors.append(f"{w}: kind must be one of {sorted(SOURCE_KINDS)}")
+        if not (_is_date(s.get("start")) and _is_date_or_null(s.get("end"))):
+            errors.append(f"{w}: start must be YYYY-MM-DD and end YYYY-MM-DD or null")
+        elif s["end"] is not None and s["start"] > s["end"]:
+            errors.append(f"{w}: start must not be after end")
+        if not (_is_num(s.get("revisit_days")) and s["revisit_days"] > 0):
+            errors.append(f"{w}: revisit_days must be a positive number")
+        sees = s.get("sees")
+        if not (isinstance(sees, list) and all(t in CHANGE_TYPES for t in sees)):
+            errors.append(f"{w}: sees must be a list of change types {sorted(CHANGE_TYPES)}")
+        months = s.get("risky_months")
+        if not (
+            isinstance(months, list)
+            and all(isinstance(m, int) and not isinstance(m, bool) and 1 <= m <= 12 for m in months)
+        ):
+            errors.append(f"{w}: risky_months must be a list of month numbers 1..12")
+
+
+def _check_change_sources(sources, where: str, errors: list[str]) -> None:
+    """Optional: what each satellite said about this change (kb/multi-sensor-design.md)."""
+    if not isinstance(sources, list):
+        errors.append(f"{where}: sources must be a list")
+        return
+    for i, s in enumerate(sources):
+        w = f"{where}: sources[{i}]"
+        if not isinstance(s, dict):
+            errors.append(f"{w}: must be an object")
+            continue
+        if not isinstance(s.get("sensor"), str) or not s["sensor"]:
+            errors.append(f"{w}: sensor must be a non-empty string")
+        if s.get("kind") not in SOURCE_KINDS:
+            errors.append(f"{w}: kind must be one of {sorted(SOURCE_KINDS)}")
+        role = s.get("role")
+        if role not in SOURCE_ROLES:
+            errors.append(f"{w}: role must be one of {sorted(SOURCE_ROLES)}")
+        dates = [s.get(k) for k in ("first_date", "last_date", "not_before")]
+        if not all(_is_date_or_null(d) for d in dates):
+            errors.append(f"{w}: first_date, last_date and not_before must be YYYY-MM-DD or null")
+        elif role in NO_DETECTION_ROLES and any(d is not None for d in dates):
+            errors.append(f"{w}: dates must be null for role {role}")
+        elif None not in dates[:2] and dates[0] > dates[1]:
+            errors.append(f"{w}: first_date must not be after last_date")
+        elif dates[2] is not None and dates[0] is not None and dates[2] > dates[0]:
+            errors.append(f"{w}: not_before must not be after first_date")
+        conf = s.get("confidence")
+        if conf is not None and conf not in CONFIDENCE:
+            errors.append(f"{w}: confidence must be null or one of {sorted(CONFIDENCE)}")
+        elif conf is not None and role in NO_DETECTION_ROLES:
+            errors.append(f"{w}: confidence must be null for role {role}")
+        if s.get("area_ha") is not None and not (_is_num(s["area_ha"]) and s["area_ha"] > 0):
+            errors.append(f"{w}: area_ha must be null or a positive number")
+        if s.get("share") is not None and not (_is_num(s["share"]) and 0 <= s["share"] <= 1):
+            errors.append(f"{w}: share must be null or a number from 0 to 1")
+        if not isinstance(s.get("note"), str):
+            errors.append(f"{w}: note must be a string")
 
 
 def _check_story(site_dir: Path, errors: list[str]) -> None:
@@ -227,6 +306,13 @@ def _check_change(feature, site_id: str, site_dir: Path, seen: set, where: str, 
         errors.append(f"{where}: area_ha must be a positive number")
     if not isinstance(p.get("sensor"), str) or not p["sensor"]:
         errors.append(f"{where}: sensor must be a non-empty string")
+    not_before = p.get("not_before")
+    if not _is_date_or_null(not_before):
+        errors.append(f"{where}: not_before must be YYYY-MM-DD or null")
+    elif not_before is not None and _is_date(first) and not_before > first:
+        errors.append(f"{where}: not_before must not be after first_date")
+    if "sources" in p:
+        _check_change_sources(p["sources"], where, errors)
     signal = p.get("signal")
     if signal is not None:
         ok = isinstance(signal, dict) and isinstance(signal.get("metric"), str)

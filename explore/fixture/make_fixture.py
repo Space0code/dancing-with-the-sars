@@ -57,15 +57,47 @@ CHANGES = [
      (1.868, 41.441), [(-90, -80), (100, -90), (110, 70), (-80, 90)]),
     (3, "clearing", "2026-08-10", "2026-09-03", "NISAR L-band", "high", "high_concern", [R_PROTECTED, R_NORECORD],
      (1.822, 41.468), [(-220, -150), (160, -200), (260, 40), (90, 220), (-240, 130)]),
-    (4, "clearing", "2026-06-23", "2026-06-23", "NISAR L-band", "low", "review", [R_NONBUILD, R_SMALL],
+    (4, "clearing", "2026-06-25", "2026-06-25", "NISAR L-band", "low", "review", [R_NONBUILD, R_SMALL],
      (1.885, 41.463), [(-60, -50), (55, -60), (70, 45), (-50, 55)]),
-    (5, "fire", "2025-07-15", "2025-07-15", "Sentinel-1 C-band", "medium", "expected", [R_FIRE],
+    (5, "fire", "2025-07-15", "2025-07-15", "OPERA DIST-ALERT", "medium", "expected", [R_FIRE],
      (1.815, 41.432), [(-450, -300), (300, -380), (520, -40), (380, 330), (-150, 400), (-520, 120)]),
     (6, "earthworks", "2026-10-09", "2026-11-02", "NISAR L-band", "medium", "review", [R_NONBUILD, R_NORECORD],
      (1.858, 41.472), [(-150, -110), (140, -130), (170, 90), (-20, 150), (-170, 60)]),
     (7, "structure", "2024-05-15", "2024-08-15", "Sentinel-1 C-band", "medium", "expected", [R_SECTOR, R_BUILDING],
      (1.878, 41.428), [(-70, -70), (80, -75), (85, 65), (-65, 70)]),
 ]
+
+# Optional multi-sensor fields (kb/multi-sensor-design.md). Changes not listed here carry none of them.
+# The site-level `sources` live in app/data/sites.json (written by hand).
+def _src(sensor, kind, role, first=None, last=None, before=None, conf=None, area=None, share=None, note=""):
+    return {"sensor": sensor, "kind": kind, "role": role, "first_date": first, "last_date": last,
+            "not_before": before, "confidence": conf, "area_ha": area, "share": share, "note": note}
+
+
+OPT, S1, NISAR = "OPERA DIST-ALERT", "Sentinel-1 C-band", "NISAR L-band"
+# change number -> (not_before, sources)
+MULTI = {
+    5: ("2025-07-05", [  # seen by three sources
+        _src(OPT, "optical", "detected", "2025-07-15", "2025-07-15", "2025-07-05", "medium", None, 1.0,
+             "An optical alert found vegetation loss here between 5 and 15 July 2025."),
+        _src(S1, "radar", "detected", "2025-07-21", "2025-07-21", None, "medium", None, 0.9,
+             "Sentinel-1 radar saw the same change, through clouds, on 21 July."),
+        _src(NISAR, "radar", "late_start", "2026-06-25", "2026-06-25", None, "medium", None, 0.95,
+             "NISAR began watching on 25 Jun 2026 and shows the change already under way."),
+    ]),
+    7: ("2024-04-15", [  # one source: Sentinel-1 only
+        _src(OPT, "optical", "not_seen", note="The optical alerts did not flag it. They only see vegetation loss."),
+        _src(S1, "radar", "detected", "2024-05-15", "2024-08-15", "2024-04-15", "medium", None, 1.0,
+             "Sentinel-1 radar saw a new structure here between 15 Apr and 15 May 2024."),
+        _src(NISAR, "radar", "not_watching", note="NISAR was not flying yet."),
+    ]),
+    4: (None, [  # only NISAR, which began watching just as the change shows
+        _src(OPT, "optical", "not_seen", note="The optical alerts did not flag it."),
+        _src(S1, "radar", "not_seen", note="Sentinel-1 radar did not flag it."),
+        _src(NISAR, "radar", "late_start", "2026-06-25", "2026-06-25", None, "low", None, 1.0,
+             "NISAR began watching on 25 Jun 2026 and shows the change already under way."),
+    ]),
+}
 
 EXPLAIN = {
     "clearing": "Radar saw the tree signal drop by {d:.0f} dB here, the pattern left when forest is cut.",
@@ -183,6 +215,13 @@ def main() -> None:
         ], "events": [{"date": first, "label": "Change first seen"}]}
         (OUT / "series").mkdir(parents=True, exist_ok=True)
         (OUT / "series" / f"{cid}.json").write_text(json.dumps(series, indent=1), encoding="utf-8")
+        multi = {}
+        if num in MULTI:
+            not_before, sources = MULTI[num]
+            total = area_ha(offsets)
+            sources = [{**src, "area_ha": None if src["share"] is None or src["role"] in ("not_seen", "not_watching")
+                        else round(total * src["share"], 1)} for src in sources]
+            multi = {"not_before": not_before, "sources": sources}
         features.append({
             "type": "Feature",
             "geometry": {"type": "Polygon", "coordinates": [polys[num]]},
@@ -194,6 +233,7 @@ def main() -> None:
                 "explain": EXPLAIN[kind].format(d=delta),
                 "evidence": {"before": f"evidence/{cid}_before.png", "after": f"evidence/{cid}_after.png",
                              "series": f"series/{cid}.json", "before_date": BEFORE_DATE, "after_date": AFTER_DATE},
+                **multi,
             },
         })
     collection = {"type": "FeatureCollection", "features": features}

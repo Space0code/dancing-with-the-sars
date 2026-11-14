@@ -156,6 +156,9 @@ def test_run_builds_a_valid_site_and_a_rerun_fetches_nothing(fake, capsys):
     assert 25 <= clearing[0]["area_ha"] <= 45  # 875 px of 0.04 ha = 35 ha on the grid
     entry = site_entry(fake.data, "muhos")
     assert entry["ready"] is True and entry["time_range"] == [str(N_DAYS[0]), str(N_DAYS[-1])]
+    layer_lons = [pt[0] for layer in json.loads((fake.data / "muhos" / "layers.json").read_text(encoding="utf-8"))[
+        "layers"] for pt in layer["coordinates"]]
+    assert entry["bbox"][0] < min(layer_lons) and entry["bbox"][2] > max(layer_lons)  # the rotated picture fits
     story = json.loads((fake.data / "muhos" / "story.json").read_text(encoding="utf-8"))
     assert story["headline"] == "Muhos, Finland"
     assert validate(fake.data) == []
@@ -171,7 +174,10 @@ def test_run_builds_a_valid_site_and_a_rerun_fetches_nothing(fake, capsys):
     assert fake.nisar.searches == searches and len(fake.nisar.reads) == len(N_DAYS)
 
 
-def test_s1_history_runs_alongside_nisar(fake, capsys):
+def test_s1_history_runs_alongside_nisar(fake, monkeypatch, capsys):
+    site = pipeline.SITES["muhos"]  # the machinery, not the Muhos tuning (its skip dates and baseline length)
+    monkeypatch.setattr(site, "skip_dates", ())
+    monkeypatch.setattr(site, "s1", pipeline.S1Settings(start=date(2026, 1, 1), max_dates=30))
     assert pipeline.main(["muhos", *fake.args]) == 0
     assert "fetched this run: 18 dates, 230.0 MB" in capsys.readouterr().out  # 8 x 25 MB + 10 x 3 MB
 
@@ -267,6 +273,18 @@ def test_sites_json_update_keeps_other_sites_untouched(tmp_path):
     assert len(old_lines) == len(new_lines) and changed  # same layout and line endings, edited in place
     start = next(i for i, line in enumerate(old_lines) if '"id": "agroparc"' in line)
     assert all(start <= i < start + 3 for i in changed)
+
+
+def test_sites_json_bbox_is_edited_in_place(tmp_path):
+    path = tmp_path / "sites.json"
+    original = (REPO / "app" / "data" / "sites.json").read_bytes()
+    path.write_bytes(original)
+
+    pipeline.update_sites_index(path, "muhos", ("2026-06-25", "2026-11-04"), [25.8813, 64.7802, 26.2201, 64.9102])
+
+    entry = site_entry(tmp_path, "muhos")
+    assert entry["bbox"] == [25.8813, 64.7802, 26.2201, 64.9102] and entry["time_range"] == ["2026-06-25", "2026-11-04"]
+    assert len(original.decode().splitlines()) == len(path.read_bytes().decode().splitlines())  # layout kept
 
 
 def test_sites_json_falls_back_to_the_house_style_when_it_cannot_edit_in_place(tmp_path):
@@ -367,3 +385,92 @@ def test_sensor_defaults_and_overrides():
     p = pipeline._params(site, "s1", threshold_db=4.0, min_area_ha=1.0)
     assert (p.boxcar, p.threshold_db, p.min_area_ha) == (3, 4.0, 1.0)
     assert site.s1.params.threshold_db == 3.0  # the site definition is not modified
+
+
+def test_site_overrides_then_command_line_overrides(monkeypatch):
+    site = pipeline.SITES["agroparc"]
+    monkeypatch.setattr(site, "params", {"boxcar": 7, "threshold_db": 2.5})
+    p = pipeline._params(site, "nisar")
+    assert (p.boxcar, p.threshold_db, p.min_area_ha) == (7, 2.5, 0.5)
+    assert pipeline._params(site, "nisar", threshold_db=4.0).threshold_db == 4.0  # the command line wins
+    assert site.nisar.params.boxcar == 5  # the sensor defaults are not modified
+    monkeypatch.setattr(site, "params", {"treshold_db": 2.5})
+    with pytest.raises(pipeline.PipelineError, match="treshold_db"):
+        pipeline._params(site, "nisar")
+
+
+def test_skip_dates_from_the_site_or_the_command_line(fake, monkeypatch, capsys, caplog):
+    caplog.set_level("INFO", logger="sarwatch.pipeline")
+    monkeypatch.setattr(pipeline.SITES["muhos"], "skip_dates", (str(N_DAYS[-1]),))
+    assert pipeline.main(["muhos", "--no-s1", *fake.args]) == 0
+    assert sorted(fake.nisar.reads) == N_DAYS  # a skipped date is still fetched and cached, only not used
+    assert site_entry(fake.data, "muhos")["time_range"] == [str(N_DAYS[0]), str(N_DAYS[-2])]
+    assert f"{len(N_DAYS) - 1} dates" in capsys.readouterr().out
+
+    skip = f"{N_DAYS[0]},{N_DAYS[-1]}"  # the flag replaces the site's list
+    assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", skip, *fake.args]) == 0
+    assert site_entry(fake.data, "muhos")["time_range"] == [str(N_DAYS[1]), str(N_DAYS[-2])]
+    assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", "", *fake.args]) == 0  # '' = all dates
+    assert site_entry(fake.data, "muhos")["time_range"] == [str(N_DAYS[0]), str(N_DAYS[-1])]
+    span = f"{N_DAYS[1]}..{N_DAYS[3]}"  # an inclusive range
+    assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", span, *fake.args]) == 0
+    assert f"left out 3 date(s), {N_DAYS[1]}, {N_DAYS[2]}, {N_DAYS[3]}" in caplog.text
+    assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", "4 Nov", *fake.args]) == 2
+    assert "YYYY-MM-DD" in capsys.readouterr().err
+
+
+def test_water_is_left_out_of_detection(fake, monkeypatch):
+    site = pipeline.SITES["muhos"]
+    monkeypatch.setattr(site, "skip_dates", ())
+    monkeypatch.setattr(site, "params", {})
+    monkeypatch.setattr(site, "nisar", pipeline.NisarSettings(start=date(2026, 6, 1), track=157, frame=35))
+    assert pipeline.main(["muhos", "--no-s1", *fake.args]) == 0
+    assert any(f["properties"]["type"] == "clearing" for f in features(fake.data, "muhos"))
+    # the changed rectangle is dark in HH (-10 dB) but brighter than -12 dB: land, still found
+    site.nisar.water_db = -12.0
+    assert pipeline.main(["muhos", "--no-s1", "--offline", *fake.args]) == 0
+    assert any(f["properties"]["type"] == "clearing" for f in features(fake.data, "muhos"))
+    site.nisar.water_db = -5.0  # everything is "water": nothing left to detect
+    assert pipeline.main(["muhos", "--no-s1", "--offline", *fake.args]) == 0
+    assert features(fake.data, "muhos") == []
+
+
+def test_water_mask_comes_from_the_baseline_passes():
+    hh = np.full((6, 20, 20), 0.1, dtype=np.float32)  # land at -10 dB
+    hh[:3, 2:6, 2:6] = 1e-3   # water (-30 dB) in the 3 baseline passes, land later (a drained pond)
+    hh[3:, 12:16, 12:16] = 1e-3  # land in the baseline, water later (a flooded field): a change, not masked
+    hh[4, 0, 19] = np.nan
+    valid = pipeline._water_mask({"HH": hh, "HV": hh}, "nisar", n_early=3, water_db=-16.0)
+    assert valid.shape == (20, 20)
+    assert not valid[2:6, 2:6].any() and not valid[1, 3] and valid[0, 3]  # the water, plus one pixel around it
+    assert valid[12:16, 12:16].all() and valid[0, 19]
+    # with only two dates, the baseline is the first one, as in detect_changes
+    assert pipeline._water_mask({"HH": hh[2:4]}, "nisar", n_early=3, water_db=-16.0)[3, 3] == False  # noqa: E712
+
+
+def test_bad_skip_dates_fail_before_any_fetch(fake, monkeypatch, capsys):
+    monkeypatch.setattr(pipeline.SITES["muhos"], "skip_dates", ("2026-08-01..2026-07-01",))
+    assert pipeline.main(["muhos", "--no-s1", *fake.args]) == 2
+    assert "ends before it starts" in capsys.readouterr().err and fake.nisar.reads == []
+    monkeypatch.setattr(pipeline.SITES["muhos"], "params", {"treshold_db": 2.0})
+    assert pipeline.main(["muhos", "--no-s1", "--skip-dates", "", *fake.args]) == 2
+    assert "treshold_db" in capsys.readouterr().err and fake.nisar.reads == []
+
+
+def test_regions_dated_inside_the_baseline_are_dropped():
+    from sarwatch.change import ChangeResult, Region
+
+    def region(label, first):
+        return Region(label=label, type="structure", area_ha=3.0 - label, first_date=first, last_date=first,
+                      signal={}, confidence="low", series={}, bbox=(0, 0, 1, 1))
+
+    labels = np.zeros((4, 4), dtype=np.int32)
+    labels[0, 0], labels[1, 1], labels[2, 2] = 1, 2, 3
+    result = ChangeResult(delta_db={}, first_change_idx=np.full((4, 4), 5, dtype=np.int16), labels=labels,
+                          regions=[region(1, date(2025, 6, 9)), region(2, date(2026, 3, 30)),
+                                   region(3, date(2025, 9, 25))])
+    out = pipeline._drop_baseline_dated(result, date(2025, 9, 25))  # the last baseline pass itself is baseline
+    assert [(r.label, r.first_date) for r in out.regions] == [(1, date(2026, 3, 30))]
+    assert out.labels[1, 1] == 1 and out.labels[0, 0] == 0 and out.labels[2, 2] == 0 and out.labels.max() == 1
+    assert out.first_change_idx[1, 1] == 5 and out.first_change_idx[0, 0] == -1
+    assert pipeline._drop_baseline_dated(result, date(2025, 6, 1)) is result
