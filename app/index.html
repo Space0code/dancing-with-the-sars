@@ -11,6 +11,7 @@
   <link rel="preload" href="fonts/funnel-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
 </head>
 <body>
   <header class="topbar">
@@ -26,6 +27,11 @@
       <select id="site"></select>
       <span id="fake-badge" class="fake-badge" hidden>Fake data</span>
     </div>
+    <nav class="site-links" aria-label="Pages">
+      <a href="./" aria-current="page">Map</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
     <div class="actions">
       <button id="changes-btn" type="button" hidden>Changes</button>
       <button id="tour-btn" type="button" class="primary">Tour</button>
