@@ -119,6 +119,7 @@ export function createChangeMap(container, { onSelect, bounds }) {
 
   return {
     ready,
+    maplibre: map, // for layers drawn by other modules (records.js)
     /** Zoom out to show every site (the intro view). */
     showOverview(bbox) {
       map.resize(); // measure the container now, so the box fits the final size
@@ -173,7 +174,7 @@ export function createChangeMap(container, { onSelect, bounds }) {
           map.removeSource("frame");
         }
         map.addSource("frame", { type: "canvas", canvas, coordinates, animate: false });
-        map.addLayer({ id: "frame", type: "raster", source: "frame", paint: { "raster-fade-duration": 0 } }, "stage-fill");
+        map.addLayer({ id: "frame", type: "raster", source: "frame", paint: { "raster-fade-duration": 0 } }, map.getStyle().layers[1]?.id); // right above the satellite, so record layers (records.js) and change shapes stay on top
       } else {
         if (JSON.stringify(source.coordinates) !== JSON.stringify(coordinates)) source.setCoordinates(coordinates);
         source.play(); // play + pause = copy the canvas to the map once
