@@ -71,6 +71,11 @@ All Catalan / Spanish services answer in **EPSG:25831** (ETRS89 / UTM 31N, metre
   `CODI_CLAS_MUC` has 5 values across Catalonia: SUC / SNC (urban), SUD / SND (developable), SNU (non-buildable).
   Polygons can be big (a municipality's whole SNU area: ~200 kB for a 500 m box). Same server: WMS
   `…/PLANEJAMENT/wms` and other layers (qualifications, sectors, municipal boundaries).
+- **Port and airport land** (`system.py`, verified 15 Nov 2026): same server, layer `PLANEJAMENT:MUC_QUALIFICACIONS`
+  (what each piece of land is for). `CODI_QUAL_MUC` `SP` = "Sistemes, Portuari", `SA` = "Sistemes, Aeroportuari"
+  (others seen: `A1` industrial, `A3` logistics, `SX1` / `SX2` roads, `SV` open spaces, `N2` / `N3` non-urbanisable
+  protection). The port is often classed SNU in the classification layer above, so the plain zoning rule would flag its
+  yards and terminals; the verdict step reads this layer instead.
 - **Wildfires** (`fire.py`, verified 14 Nov 2026): EFFIS WFS 2.0.0 `maps.effis.emergency.copernicus.eu/effis`, layer
   `ms:modis.ba.poly` (burnt areas from MODIS, 2016 → a few days ago; yearly layers `…ba.poly.2016`…`.2025` exist too).
   Fields: `FIREDATE` / `FINALDATE` (`YYYY-MM-DD HH:MM:SS`, FINALDATE can be null), `AREA_HA` (a whole number *as a
