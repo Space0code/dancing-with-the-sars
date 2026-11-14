@@ -470,15 +470,14 @@ def ensure_story(site_dir, headline: str) -> bool:
     return True
 
 
-def _changes_by_type(site_dir: Path) -> dict:
+def _tally(site_dir: Path, key: str) -> dict:
+    """{value of property `key`: [changes, hectares]} over the site's changes.geojson."""
     path = site_dir / "changes.geojson"
-    if not path.is_file():
-        return {}
     out = defaultdict(lambda: [0, 0.0])
-    for feature in json.loads(path.read_text(encoding="utf-8")).get("features", []):
+    for feature in json.loads(path.read_text(encoding="utf-8")).get("features", []) if path.is_file() else []:
         p = feature.get("properties", {})
-        out[p.get("type", "?")][0] += 1
-        out[p.get("type", "?")][1] += float(p.get("area_ha") or 0)
+        out[p.get(key, "?")][0] += 1
+        out[p.get(key, "?")][1] += float(p.get("area_ha") or 0)
     return dict(sorted(out.items()))
 
 
@@ -503,15 +502,18 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         raise PipelineError(f"--offline: nothing cached for {site_id} under {cache / site_id}; "
                             "run once without --offline to fetch the dates")
 
-    lines = [f"{site_id}: {'fetched' if fetch_only else 'done'}"]
-    for sensor in use:
-        d = days[sensor]
-        span = f"{d[0]} .. {d[-1]}" if d else "-"
-        lines.append(f"  {SENSOR_NAMES[sensor]:<18} {len(d):>3} dates  {span}")
-    unsized = f" (+{meter.unsized} dates whose size the reader does not report)" if meter.unsized else ""
-    fetched = f"  fetched this run: {meter.dates} dates, {meter.mb:.1f} MB, {meter.seconds:.0f} s{unsized}"
+    def summary(per_sensor=None) -> list:
+        lines = [f"{site_id}: {'fetched' if fetch_only else 'done'}"]
+        for sensor in use:
+            d, name = days[sensor], SENSOR_NAMES[sensor]
+            span = f"{d[0]} .. {d[-1]}" if d else "-"
+            found = "" if per_sensor is None else f"  {per_sensor.get(name, [0])[0]} changes"
+            lines.append(f"  {name:<18} {len(d):>3} dates  {span}{found}")
+        unsized = f" ({meter.unsized} of them not in the MB: their reader does not report size)" if meter.unsized else ""
+        return lines + [f"  fetched this run: {meter.dates} dates, {meter.mb:.1f} MB, {meter.seconds:.0f} s{unsized}"]
+
     if fetch_only:
-        print("\n".join(lines + [fetched]))
+        print("\n".join(summary()))
         return 0
 
     runs = [r for r in (detect(s, site, cache, days[s], _params(site, s, threshold_db, min_area_ha)) for s in use) if r]
@@ -527,11 +529,11 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         log.info("wrote a placeholder %s", site_dir / "story.json")
     problems = validate(out)
 
-    by_type = _changes_by_type(site_dir)
+    by_type = _tally(site_dir, "type")
     total = sum(n for n, _ in by_type.values())
     kinds = ", ".join(f"{k} {n} = {ha:.1f} ha" for k, (n, ha) in by_type.items())
+    lines = summary(_tally(site_dir, "sensor"))
     lines.append(f"  changes: {total}" + (f"  ({kinds})" if kinds else ""))
-    lines.append(fetched)
     lines.append(f"  sites.json: {site_id} ready, time_range {first} .. {last}")
     lines.append("  contract: OK" if not problems else f"  contract: {len(problems)} problem(s)")
     lines += [f"    {p}" for p in problems]
