@@ -31,6 +31,7 @@ export const confidenceLabel = (c) => CONFIDENCE[c] ?? "Unknown";
 export function sensorLabel(sensor) {
   if (/nisar/i.test(sensor)) return "NISAR radar satellite";
   if (/sentinel-1/i.test(sensor)) return "Sentinel-1 radar satellite";
+  if (/dist-alert/i.test(sensor)) return "NASA optical alerts (Landsat + Sentinel-2)";
   if (/sentinel-2|optical|hls/i.test(sensor)) return "Optical satellite";
   return sensor;
 }
