@@ -91,8 +91,10 @@ that are too long for the legend; the app shows each one as a line of small text
 `YYYY-MM-DD`; `title` (≤ 60 chars) and `note` (≤ 160 chars) are plain language. Feature properties: `label` (always:
 the text shown on click) and, where they apply, `class` (zoning: `buildable` · `non_buildable` · `planned`;
 protected: `natura2000` · `pein` · `other`), `year` (buildings: construction year), `name`, `status`, `area_ha`.
-A site without the folder has no record layers. Each file ≤ 1 MB. Made in #45, shown in #52; the validator does not
-check this folder yet.
+Records without map positions (the solar-plant list only names municipalities) are not a layer but an entry in an
+optional `"notes": [{kind, source, url, checked, note}]` next to `layers`, e.g. the plants filed in the box's towns.
+A site without the folder has no record layers. Each file ≤ 1 MB. Made in #45 (`python -m sarwatch.context.layers
+<site>`), shown in #52; the validator does not check this folder yet.
 
 ## Several sensors (optional fields)
 Added for changes seen by more than one satellite; design and wording in `multi-sensor-design.md`. All optional, the

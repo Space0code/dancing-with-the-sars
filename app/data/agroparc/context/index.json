@@ -1,0 +1,43 @@
+{
+ "layers": [
+  {
+   "id": "protected",
+   "title": "Protected nature areas",
+   "kind": "protected",
+   "source": "PEIN + Natura 2000 (Generalitat de Catalunya, via Diputació de Barcelona)",
+   "url": "https://sig.gencat.cat/visors/hipermapa.html",
+   "note": "Inside the box: Muntanyes de l'Ordal; Serres del Litoral central",
+   "file": "protected.geojson",
+   "checked": "2026-11-14"
+  },
+  {
+   "id": "zoning",
+   "title": "Zoning: where building is allowed",
+   "kind": "zoning",
+   "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
+   "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
+   "note": "Share of the box: non-buildable land 83 %, land planned for development 6 %, urban land 11 %",
+   "file": "zoning.geojson",
+   "checked": "2026-11-14"
+  },
+  {
+   "id": "buildings",
+   "title": "Buildings on the land registry",
+   "kind": "buildings",
+   "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
+   "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx",
+   "note": "6537 buildings on the land registry; 150 built in 2016 or later, newest 2026. Construction year only, no exact date.",
+   "file": "buildings.geojson",
+   "checked": "2026-11-14"
+  }
+ ],
+ "notes": [
+  {
+   "kind": "solar",
+   "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
+   "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
+   "checked": "2026-11-14",
+   "note": "3 solar plants filed in these towns (no map positions): PSFV Gelida, Gelida, 3 ha, pending; PSFV Martorell, Martorell, 3.68 ha, pending; +1 more"
+  }
+ ]
+}

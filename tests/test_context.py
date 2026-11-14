@@ -249,7 +249,7 @@ def test_never_raises(fn, monkeypatch, tmp_path):
         assert r["checked"] is False and r["error"] and r["source"] and r["url"]
 
 
-def test_cadastre_tiles_stay_under_the_4km2_limit(monkeypatch):
+def test_cadastre_tiles_stay_under_the_1km2_limit(monkeypatch):
     boxes = []
     empty = b'<?xml version="1.0"?><gml:FeatureCollection xmlns:gml="http://www.opengis.net/gml/3.2"/>'
 
@@ -260,8 +260,8 @@ def test_cadastre_tiles_stay_under_the_4km2_limit(monkeypatch):
     monkeypatch.setattr(cadastre, "fetch", fake)
     r = cadastre.lookup(square(1.85, 41.45, 2600))  # 5.2 km square, 27 km²
     assert r["checked"] and r["buildings"] == 0
-    assert len(boxes) == 9
-    assert all((x1 - x0) * (y1 - y0) <= 4e6 for x0, y0, x1, y1 in boxes)
+    assert len(boxes) == 36
+    assert all((x1 - x0) * (y1 - y0) <= 1e6 for x0, y0, x1, y1 in boxes)
 
 
 def test_cadastre_since_compares_years(monkeypatch):
@@ -290,7 +290,24 @@ def test_port_and_airport_land_are_found_from_the_qualification_layer():
     assert "Sistemes, Portuari" in port["classes"]
 
 
-def test_a_malformed_construction_date_is_dropped_not_fatal():
-    assert cadastre._date("1-01-01") is None  # a placeholder some records carry: the building counts, with no year
+def test_cadastre_splits_a_slow_tile(monkeypatch):
+    import requests
+    calls = []
+
+    def fake(source, url, params, **kw):
+        x0, y0, x1, y1 = (float(v) for v in params["bbox"].split(","))
+        calls.append(x1 - x0)
+        if x1 - x0 > 600:  # the big tile is too slow; its quarters answer
+            raise requests.ReadTimeout("slow")
+        return b'<?xml version="1.0"?><gml:FeatureCollection xmlns:gml="http://www.opengis.net/gml/3.2"/>'
+
+    monkeypatch.setattr(cadastre, "fetch", fake)
+    r = cadastre.lookup(square(1.85, 41.45, 400))  # one 800 m tile
+    assert r["checked"] and r["buildings"] == 0
+    assert len(calls) == 5 and all(c <= 600 for c in calls[1:])
+
+
+def test_cadastre_ignores_malformed_dates():
+    assert cadastre._date("1975-01-01T00:00:00") == "1975-01-01"
+    assert cadastre._date("0-01-01T00:00:00") is None
     assert cadastre._date(None) is None and cadastre._date("") is None
-    assert cadastre._date("2019-01-01T00:00:00") == "2019-01-01"
