@@ -1,56 +1,58 @@
-// Written by Claude. Before/after picture swipe: drag (mouse, touch) or use the arrow keys on the handle.
+// Written by Claude. Before/after divider over the map: a full-height line with a handle and a date tag on each side.
+// Drag it (mouse or touch) or use the arrow keys on the handle; the map itself still pans and zooms around it.
 import { h } from "./format.js";
 
-/** `before` / `after`: {src, label}. Returns a DOM element. */
-export function buildSwipe(before, after) {
-  const imgBefore = h("img", { src: before.src, alt: `${before.label} picture of this place`, draggable: "false" });
-  const imgAfter = h("img", { src: after.src, alt: `${after.label} picture of this place`, class: "swipe-after", draggable: "false" });
+/** `onMove()` runs whenever the line moves. Returns {show(on), x(), setLabels(left, right)}. */
+export function createSwipe(container, { onMove }) {
+  const left = h("span", { class: "swipe-tag left" });
+  const right = h("span", { class: "swipe-tag right" });
   const handle = h("div", {
-    class: "swipe-handle", tabindex: "0", role: "slider", "aria-label": "Compare before and after",
-    "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuetext": "",
+    class: "swipe-handle", tabindex: "0", role: "slider", "aria-label": "Move the line between before and after",
+    "aria-valuemin": "0", "aria-valuemax": "100",
   }, h("span", { "aria-hidden": "true" }, "◂▸"));
-  const frame = h("div", { class: "swipe-frame" },
-    imgBefore, imgAfter,
-    h("span", { class: "swipe-tag left" }, before.label),
-    h("span", { class: "swipe-tag right" }, after.label),
-    handle
-  );
-  const box = h("div", { class: "swipe" }, frame, h("p", { class: "note" }, "Drag the handle (or use the arrow keys) to compare."));
+  const line = h("div", { class: "swipe-line", hidden: true }, h("div", { class: "swipe-grip" }), handle, left, right);
+  container.append(line);
 
-  let pos = 50;
+  let frac = 0.5; // position as a fraction of the map width, so a resize keeps it in place
+  const width = () => container.clientWidth || 1;
+
   function set(next) {
-    pos = Math.min(100, Math.max(0, next));
-    imgAfter.style.clipPath = `inset(0 0 0 ${pos}%)`;
-    handle.style.left = `${pos}%`;
-    handle.setAttribute("aria-valuenow", String(Math.round(pos)));
-    handle.setAttribute("aria-valuetext", `${Math.round(pos)}% ${before.label}, ${Math.round(100 - pos)}% ${after.label}`);
+    frac = Math.min(1, Math.max(0, next));
+    line.style.left = `${frac * 100}%`;
+    handle.setAttribute("aria-valuenow", String(Math.round(frac * 100)));
+    handle.setAttribute("aria-valuetext", `${Math.round(frac * 100)}% before, ${Math.round(100 - frac * 100)}% after`);
+    onMove();
   }
-  const fromEvent = (e) => {
-    const r = frame.getBoundingClientRect();
-    set(((e.clientX - r.left) / r.width) * 100);
-  };
+  const fromEvent = (e) => set((e.clientX - container.getBoundingClientRect().left) / width());
 
-  frame.addEventListener("pointerdown", (e) => {
-    frame.setPointerCapture(e.pointerId);
-    frame.classList.add("dragging");
-    fromEvent(e);
-  });
-  frame.addEventListener("pointermove", (e) => frame.classList.contains("dragging") && fromEvent(e));
-  for (const type of ["pointerup", "pointercancel"]) frame.addEventListener(type, () => frame.classList.remove("dragging"));
-  handle.addEventListener("keydown", (e) => {
-    const step = { ArrowLeft: -5, ArrowDown: -5, ArrowRight: 5, ArrowUp: 5 }[e.key];
-    if (step) set(pos + step);
-    else if (e.key === "Home") set(0);
-    else if (e.key === "End") set(100);
-    else return;
+  line.addEventListener("pointerdown", (e) => {
+    if (!e.target.closest(".swipe-grip, .swipe-handle")) return;
+    line.setPointerCapture(e.pointerId);
+    line.classList.add("dragging");
     e.preventDefault();
   });
+  line.addEventListener("pointermove", (e) => line.classList.contains("dragging") && fromEvent(e));
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) line.addEventListener(type, () => line.classList.remove("dragging"));
+  handle.addEventListener("keydown", (e) => {
+    const step = { ArrowLeft: -0.05, ArrowDown: -0.05, ArrowRight: 0.05, ArrowUp: 0.05 }[e.key];
+    if (step) set(frac + step);
+    else if (e.key === "Home") set(0);
+    else if (e.key === "End") set(1);
+    else return;
+    e.preventDefault();
+    e.stopPropagation(); // the timeline also listens to arrow keys
+  });
 
-  imgBefore.addEventListener("load", () => (frame.style.aspectRatio = `${imgBefore.naturalWidth} / ${imgBefore.naturalHeight}`));
-  const broken = () => box.replaceChildren(h("p", { class: "note" }, "The before and after pictures could not be loaded."));
-  imgBefore.addEventListener("error", broken);
-  imgAfter.addEventListener("error", broken);
-
-  set(50);
-  return box;
+  return {
+    show(on) {
+      line.hidden = !on;
+      if (on) set(frac);
+    },
+    /** The line's position in px from the map's left edge. */
+    x: () => frac * width(),
+    setLabels(leftText, rightText) {
+      left.textContent = leftText;
+      right.textContent = rightText;
+    },
+  };
 }

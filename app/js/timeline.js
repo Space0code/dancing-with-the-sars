@@ -18,7 +18,8 @@ function snapshotsOf(site, features) {
 const satelliteNames = (sensor) =>
   sensor ? sensor.split(" + ").map((s) => sensorLabel(s).replace(/ satellite$/, "")).join(" + ") : "";
 
-export function createTimeline({ onDate }) {
+/** `onDate(iso)`: the slider moved to a snapshot. `onPlay()`: playing starts (before the first step). */
+export function createTimeline({ onDate, onPlay }) {
   const $ = (id) => document.getElementById(id);
   const slider = $("slider");
   const playBtn = $("play");
@@ -69,6 +70,7 @@ export function createTimeline({ onDate }) {
     if (index() >= until) slider.value = 0;
     stopAt = until;
     playing = true;
+    onPlay?.();
     playBtn.textContent = "❚❚";
     playBtn.setAttribute("aria-label", "Pause timeline");
     emit();
