@@ -29,5 +29,14 @@ One line each: `date · decision · why · issue`. Newest at the bottom.
 - 2026-11-14 · OPERA DIST-ALERT optical alerts also date the Muhos clearing before NISAR's first calibrated pass (25 Jun) · most of the ~330 ha was cut earlier, and Sentinel-1 reads wait for an account approval · #44
 - 2026-11-14 · Record layers live in `<site>/context/` (`index.json` + one GeoJSON per layer) · the data side and the app side can build in parallel · #45 #52
 - 2026-11-14 · A second orchestrator-level agent plans and hands out work; the main one reviews, merges and runs the radar sub-agents · keeps teammates supplied with work · #9
+- 2026-11-14 · Every agent reviews its own PRs with its own Opus reviewer sub-agent and merges them itself; Tomi's agents review the orchestrator's radar PRs · removes the review queue in front of the orchestrator · #64 #70
+- 2026-11-14 · Licence: MIT for the code · Tian's answer · #48
+- 2026-11-14 · The repo is public since 16:49 (Tomi); GitHub Pages becomes the shared preview · one link for humans and jury; from now on nothing personal in commits, issues or comments · #48
+- 2026-11-14 · Thinking tasks (design, demo strategy, evidence check) go to Tomi's Fable session; implementation stays on Opus / Sonnet · Tomi has Fable quota · #60 #78
+- 2026-11-14 · Several sensors, one change: mutual 30 % overlap plus overlapping time windows; date = first positive sighting, with that source's window; a silent source never lowers confidence; format additions optional · no duplicates, no overclaimed dates · #60 #65 #66 #77
+- 2026-11-14 · Demo: the claim is "a short, explained list of land changes a regulator should look at first"; the 30 s video shows Muhos only; the Muhos cleared-area curve is the first build request · `demo-strategy.md` · #49 #73
+- 2026-11-14 · Verdict rules: inside a recorded wildfire perimeter → expected; a protected-area overlap below 10 % of the change is a neutral "borders" reason; a pending solar application → needs review; small low-confidence changes are not flagged on their own · rule decisions on #9 · #46 #47
+- 2026-11-14 · The Muhos `scope` polygon is the outline of the 358 ha optical-alert patch; the site centre moves 3.3 km east-southeast · the alerts match the reported ~330 ha · #44
+- 2026-11-14 · `story.json` may carry a chart (`chart` → a file in the `series/` format) · the Muhos cleared-area curve in the story panel · #73
 
 <sub>Written by Claude</sub>

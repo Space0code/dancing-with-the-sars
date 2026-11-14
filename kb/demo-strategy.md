@@ -2,6 +2,8 @@
 
 The claim, the 30-second video, the 3-minute live pitch, the project page and what we leave out. Last updated 2026-11-14 (#49). Rules and form fields: `submission.md` §1. Numbers marked `[check]` come from PR #55 and must be re-read from the final data before recording.
 
+**Wording check (#78):** `evidence-check.md` overrides the wording here where they differ. In short: no NISAR hectares in speech (not "385 ha already bare", not "+53 ha"), say "the cleared block kept growing in July and August"; "through cloud", never "snow" or "winter"; not "nobody was looking" (the regulator knew in May); Agroparc only as a small spring-2026 clearing that needs review.
+
 ## 1. What decides the score
 - Five criteria, 1–5 each, equal weight: Impact, Creativity, Validity, Relevance, Presentation. Global judges see **the project page and a ≤ 30 s video**, among hundreds of projects. The page carries most of the score; the video decides whether the page gets read.
 - Every team in this challenge shows a NISAR change map. **A change map is the entry ticket, not the win.** Our difference is the step after it: a short, explained list for one named user (a regulator), with the public record checked and the uncertainty said out loud.
