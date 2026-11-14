@@ -178,3 +178,12 @@ def test_structure_not_flagged_by_optical_says_why_and_type_tiebreak():
 def test_unknown_not_before_reads_on_or_before():
     d = det("Sentinel-1", "radar", sq(0, 0, 0.01), D(2026, 7, 1))
     assert merge_detections([d], SITE)[0].when == "on or before 1 Jul 2026"
+
+
+def test_late_start_only_dated_to_the_sensors_first_pass():
+    # the change shows up on the 3rd pass of the record, inside the baseline: the date and the sentence both say
+    # "under way when the sensor began watching", not the later pass
+    d = det("Sentinel-1", "radar", sq(0, 0, 0.01), D(2016, 8, 16), late=True)
+    (c,) = merge_detections([d], SITE)
+    assert c.late_start_only and c.first_date == D(2016, 1, 1) and c.not_before is None
+    assert c.when == "already under way on 1 Jan 2016, when Sentinel-1 began watching; the start date is not known"

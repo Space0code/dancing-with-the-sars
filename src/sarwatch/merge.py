@@ -191,9 +191,11 @@ def _build(group: list, all_dets: list, site_list: list, sites: dict) -> MergedC
         when = _when(first, not_before)
     else:
         setter = min(group, key=lambda d: d.first_date)
-        first, not_before = setter.first_date, None
         site = sites.get(setter.source)
-        began = site.start if site else first
+        # a late start: the record cannot date it, so the date shown is the sensor's first pass (never a later
+        # date inside the baseline, which would contradict "already under way when it began watching")
+        began = site.start if site else setter.first_date
+        first, not_before = began, None
         when = f"already under way on {_day(began)}, when {setter.source} began watching; the start date is not known"
 
     # nested detections: other sources overlapping the outline without merging; cite them with their share

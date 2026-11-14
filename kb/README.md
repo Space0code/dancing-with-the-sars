@@ -12,6 +12,7 @@ What we know, written for engineers (CS / math / EE), not geologists. One line p
 | [multi-sensor-design.md](multi-sensor-design.md) | **Proposal:** how optical alerts, Sentinel-1 and NISAR detections become one change: merging, dating, confidence, card wording, contract additions, task split |
 | [data-sources.md](data-sources.md) | NASA / Copernicus / Catalan datasets: coverage, access, what each is good for |
 | [data-nisar-gcov.md](data-nisar-gcov.md) | NISAR GCOV files: HDF5 layout, units, grid, masks, finding granules, reading a window over HTTPS, gotchas |
+| [site-barcelona.md](site-barcelona.md) | Barcelona site: window, Sentinel-1 track and bursts read as one mosaic, NISAR frame, dates, measured cost |
 | [sar-primer.md](sar-primer.md) | How radar imaging works: backscatter, polarization, speckle, InSAR, L vs C band, products |
 | [glossary.md](glossary.md) | Remote-sensing jargon → engineering meaning |
 | [submission.md](submission.md) | Space Apps submission: form checklist, demo rules (≤30 s / ≤7 slides), judging criteria, drafts of every field |

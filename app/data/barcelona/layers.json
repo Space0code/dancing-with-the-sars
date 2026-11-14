@@ -1,0 +1,104 @@
+{
+ "layers": [
+  {
+   "id": "nisar_l_band_before",
+   "title": "NISAR radar, before",
+   "date": "2026-07-05",
+   "url": "layers/nisar_l_band_before.png",
+   "coordinates": [
+    [
+     1.843701,
+     41.600074
+    ],
+    [
+     2.450368,
+     41.604575
+    ],
+    [
+     2.453353,
+     41.249693
+    ],
+    [
+     1.849979,
+     41.245247
+    ]
+   ],
+   "caption": "3 passes, 23 Jun to 17 Jul 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "nisar_l_band_after",
+   "title": "NISAR radar, after",
+   "date": "2026-10-21",
+   "url": "layers/nisar_l_band_after.png",
+   "coordinates": [
+    [
+     1.843701,
+     41.600074
+    ],
+    [
+     2.450368,
+     41.604575
+    ],
+    [
+     2.453353,
+     41.249693
+    ],
+    [
+     1.849979,
+     41.245247
+    ]
+   ],
+   "caption": "3 passes, 9 Oct to 2 Nov 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "sentinel_1_c_band_before",
+   "title": "Sentinel-1 radar, before",
+   "date": "2016-06-29",
+   "url": "layers/sentinel_1_c_band_before.png",
+   "coordinates": [
+    [
+     1.843461,
+     41.600071
+    ],
+    [
+     2.450008,
+     41.604573
+    ],
+    [
+     2.452994,
+     41.249781
+    ],
+    [
+     1.849739,
+     41.245335
+    ]
+   ],
+   "caption": "3 passes, 5 Jun to 23 Jul 2016. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "sentinel_1_c_band_after",
+   "title": "Sentinel-1 radar, after",
+   "date": "2026-09-06",
+   "url": "layers/sentinel_1_c_band_after.png",
+   "coordinates": [
+    [
+     1.843461,
+     41.600071
+    ],
+    [
+     2.450008,
+     41.604573
+    ],
+    [
+     2.452994,
+     41.249781
+    ],
+    [
+     1.849739,
+     41.245335
+    ]
+   ],
+   "caption": "3 passes, 13 Aug to 30 Sep 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  }
+ ]
+}

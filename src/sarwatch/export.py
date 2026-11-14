@@ -333,14 +333,14 @@ def _pictures(run: Run, n_before: int, n_after: int) -> _Pictures:
     return _Pictures(_band(run), power, dates)
 
 
-def _site_picture(power: dict, band: str, run: Run, path: Path) -> list:
+def _site_picture(power: dict, band: str, run: Run, path: Path, max_bytes: int | None = None) -> list:
     """Write the site picture; return its corners [lon, lat]: top-left, top-right, bottom-right, bottom-left."""
     ny, nx = next(iter(power.values())).shape
     k = max(1, math.ceil(max(ny, nx) / MAX_LAYER_PX))
     if k > 1:
         power = {p: _block_mean(v, k) for p, v in power.items()}
     rgba = _colour({p: _db(v) for p, v in power.items()}, band)
-    _save_png(rgba, path, MAX_PNG_BYTES)
+    _save_png(rgba, path, MAX_PNG_BYTES if max_bytes is None else max_bytes)
     h, w = rgba.shape[:2]
     cols, rows = w * k, h * k  # the picture's extent in grid pixels (includes any padding)
     a, b, c, d, e, f = run.transform
@@ -559,12 +559,13 @@ def _layer_ids(runs: list) -> list:
 
 
 def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: int = 3,
-               merged: list | None = None) -> dict:
+               merged: list | None = None, layer_bytes: int | None = None) -> dict:
     """Write changes.geojson, layers.json + layers/*.png, evidence/*.png, series/*.json under site_dir.
 
     Every region of every run becomes one change, ids `<site_id>-0001`... ordered by first_date, then
     area descending. With `merged` (a list of Merged), those are the changes instead, with their `not_before`
-    and `sources`. Files left in layers/, evidence/ and series/ by an earlier export are removed;
+    and `sources`. A site picture above `layer_bytes` (default MAX_PNG_BYTES) is saved with a 256-colour palette. Files left in layers/,
+    evidence/ and series/ by an earlier export are removed;
     story.json and anything else in site_dir are left alone. Returns {"changes", "area_ha", "by_type",
     "bbox", "time_range"}, the last two for sites.json: the bbox holds every change and site picture, the
     time range runs from the first to the last pass of all runs.
@@ -579,7 +580,7 @@ def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: i
     for run, pics, base in zip(runs, pictures, _layer_ids(runs)):
         for when in ("before", "after"):
             rel = f"layers/{base}_{when}.png"
-            corners = _site_picture(pics.power[when], pics.band, run, site_dir / rel)
+            corners = _site_picture(pics.power[when], pics.band, run, site_dir / rel, layer_bytes)
             written.add(rel)
             title, caption = _layer_text(run, pics, when)
             layers.append({"id": f"{base}_{when}", "title": title, "date": pics.date(when),

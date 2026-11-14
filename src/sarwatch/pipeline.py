@@ -71,7 +71,10 @@ class NisarSettings:
     params: ChangeParams = field(default_factory=ChangeParams)  # 20 m pixels: the change-core defaults
     water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
     water_grow: int = 1            # pixels of shore masked around the water
+    water_pol: str | None = None   # the polarization water_db applies to (None = co-pol)
     drop_baseline_dated: bool = False  # as S1Settings: a region dated inside the baseline passes is left out
+    keep_types: tuple | None = None    # keep only regions of these types (None = all), e.g. without "other" where
+                                       # the short NISAR record mostly sees the crop cycle on farm fields
 
 
 @dataclass
@@ -85,8 +88,14 @@ class S1Settings:
     params: ChangeParams = field(default_factory=lambda: ChangeParams(boxcar=3))  # 30 m pixels: smaller window
     water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
     water_grow: int = 1            # pixels of shore masked around the water
+    water_pol: str | None = None   # the polarization water_db applies to (None = co-pol). Cross-pol for the sea:
+                                   # wind lifts the sea's VV to land levels, its VH stays near the noise floor
     drop_baseline_dated: bool = False  # drop regions dated inside the baseline passes: for a short baseline that
                                        # defines "before" (Muhos), such a date is an artefact, not a change
+    keep_types: tuple | None = None  # as NisarSettings
+    mosaic: bool = False             # window larger than one burst: read the bursts of ONE track that cover it as one
+                                     # mosaic per date (s1.pick_bursts / s1.read_mosaic) instead of one burst
+    track: int | None = None         # with mosaic: fix the track instead of letting pick_bursts choose
 
     def __post_init__(self):
         if self.months is not None and (not self.months or not all(isinstance(m, int) and 1 <= m <= 12
@@ -108,6 +117,12 @@ class Site:
     sources: tuple = ()           # merge.SiteSource per source: with them, detections become one change per place
     primary_scope: str | None = None  # GeoJSON outline (repo path): inside it the optical alerts are the primary
                                       # source, one change per month of first detection, radar attached as sources
+    layer_bytes: int | None = None  # a large window: site pictures above this many bytes get a 256-colour palette
+                                    # (None = export.MAX_PNG_BYTES)
+    exclude_points: tuple = ()    # (lon, lat) per merged change to drop (a known false alarm, e.g. a moored ship);
+                                  # a change is dropped when its outline contains the point; applied before max_changes
+    max_changes: int | None = None  # a large window: keep only this many changes (largest first, low confidence
+                                    # counted at half its area); needs `sources` (applies to the merged changes)
 
 
 @dataclass
@@ -176,6 +191,30 @@ SITES = {
                       params=ChangeParams(boxcar=3, n_early=7, n_late=4, persist=99, threshold_db=3.0,
                                           min_area_ha=1.0, normalize=True, hold=True)),
     ),
+    # Barcelona and its region (#44, kb/site-barcelona.md): 50 x 39 km, larger than one Sentinel-1 burst, so
+    # Sentinel-1 reads the three IW2 bursts of track 132 ascending (Agroparc's track) as one mosaic per date.
+    # NISAR track 130 / frame 22 ascending covers the whole window. Settings start from Agroparc's.
+    "barcelona": Site(
+        id="barcelona", bbox=(1.85, 41.25, 2.45, 41.60),
+        nisar=NisarSettings(start=date(2026, 6, 1), track=130, frame=22, direction="ASCENDING",
+                            water_db=-23.0, water_pol="HV", water_grow=3,
+                            keep_types=("clearing", "structure", "earthworks"),
+                            params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True,
+                                                noise_k=2.0, structure_db=6.0)),
+        s1=S1Settings(start=date(2016, 4, 1), min_gap_days=20, months=(6, 7, 8, 9), mosaic=True, track=132,
+                      water_db=-24.0, water_pol="VH", water_grow=2,
+                      params=ChangeParams(boxcar=3, n_early=5, n_late=6, persist=99, threshold_db=3.0,
+                                          min_area_ha=1.0, normalize=True, hold=True, noise_k=2.0)),
+        sources=(
+            ("Sentinel-1 C-band", "radar", "2016-06-05", None, 12, ("clearing", "structure", "earthworks", "other"),
+             ()),
+            # NISAR's "other" class is dropped for this site (NisarSettings.keep_types), so it does not claim it
+            ("NISAR L-band", "radar", "2026-06-23", None, 12, ("clearing", "structure", "earthworks"), ()),
+        ),
+        # Port of Barcelona, a berth: NISAR's "earthworks" there is most likely a moored ship, not ground works
+        exclude_points=((2.1705, 41.3525),),
+        max_changes=100, layer_bytes=2_000_000,
+    ),
 }
 
 
@@ -209,12 +248,13 @@ def _skip_spans(site: Site, skip_dates=None) -> list:
     return spans
 
 
-def _water_mask(stack: dict, sensor: str, n_early: int, water_db: float, grow: int = 1) -> np.ndarray:
-    """valid mask for detect_changes: False on open water (co-pol baseline median below water_db), plus `grow`
-    pixels around it (the shore, where the boxcar mixes water into land)."""
+def _water_mask(stack: dict, sensor: str, n_early: int, water_db: float, grow: int = 1, pol: str | None = None
+                ) -> np.ndarray:
+    """valid mask for detect_changes: False on open water (baseline median of `pol`, default the co-pol, below
+    water_db), plus `grow` pixels around it (the shore, where the boxcar mixes water into land)."""
     from scipy import ndimage
 
-    arr = stack[POLS[sensor][0]]
+    arr = stack[pol or POLS[sensor][0]]
     copol = np.nanmedian(arr[:max(1, min(n_early, len(arr) - 1))], axis=0)  # the baseline, as detect_changes takes it
     with np.errstate(divide="ignore", invalid="ignore"):
         water = ndimage.median_filter(10 * np.log10(copol), size=3) < water_db  # NaN compares False
@@ -394,7 +434,13 @@ def _s1_items(site: Site) -> list:
 
     s = site.s1
     found = s1.search(site.bbox, s.start, s.end)
-    on_burst = s1.pick_burst(found, site.bbox)
+    if s.mosaic:  # one BurstSet per date: the bursts of one track, read as one mosaic
+        on_burst = s1.pick_bursts(found, site.bbox, track=s.track)
+        if on_burst:
+            log.info("s1: mosaic of %d bursts on track %d %s: %s", len(on_burst[0].scenes), on_burst[0].track,
+                     on_burst[0].direction.lower(), ", ".join(on_burst[0].burst_ids))
+    else:
+        on_burst = s1.pick_burst(found, site.bbox)
     burst = [sc for sc in on_burst if s.months is None or _day_of(sc).month in s.months]
     if s.months is not None and len(burst) < 2 <= len(on_burst):
         raise PipelineError(f"{site.id}: s1 months {s.months} keep {len(burst)} of {len(on_burst)} dates; "
@@ -411,9 +457,13 @@ def _s1_fetch(scene, bbox, token) -> Frame:
     if isinstance(stats, dict):
         stats.clear()
     t0 = time.perf_counter()
-    stack, dates, transform, epsg = s1.read_stack([scene], bbox, pols=POLS[S1], token=token)
+    if isinstance(scene, s1.BurstSet):
+        data, transform, epsg = s1.read_mosaic(scene, bbox, pols=POLS[S1], token=token)
+    else:
+        stack, dates, transform, epsg = s1.read_stack([scene], bbox, pols=POLS[S1], token=token)
+        data = {p: a[0] for p, a in stack.items()}
     nbytes = stats.get("bytes") if isinstance(stats, dict) else None
-    return Frame(day=_day_of(scene), data={p: a[0] for p, a in stack.items()}, transform=tuple(transform),
+    return Frame(day=_day_of(scene), data=data, transform=tuple(transform),
                  epsg=int(epsg), bbox=tuple(bbox), source=_name_of(scene),
                  mb=None if nbytes is None else nbytes / 1e6, seconds=time.perf_counter() - t0)
 
@@ -523,10 +573,25 @@ def _drop_baseline_dated(result, last_baseline):
     """Remove regions whose first_date lies in the baseline: a pass that defines "before" cannot be the date of a
     lasting change. Labels are renumbered so that regions[i].label == i + 1 still holds."""
     keep = [r for r in result.regions if r.first_date > last_baseline]
+    if len(keep) < len(result.regions):
+        log.info("dropped %d region(s) dated inside the baseline (up to %s)", len(result.regions) - len(keep),
+                 last_baseline)
+    return _keep_regions(result, keep)
+
+
+def _keep_types(result, types):
+    """Keep only regions of the given types (labels renumbered as _drop_baseline_dated)."""
+    keep = [r for r in result.regions if r.type in types]
+    if len(keep) < len(result.regions):
+        log.info("dropped %d region(s) of types other than %s", len(result.regions) - len(keep), ", ".join(types))
+    return _keep_regions(result, keep)
+
+
+def _keep_regions(result, keep: list):
+    """The result with only the regions in `keep` (a sublist of result.regions, in order), labels renumbered so that
+    regions[i].label == i + 1 still holds."""
     if len(keep) == len(result.regions):
         return result
-    log.info("dropped %d region(s) dated inside the baseline (up to %s)", len(result.regions) - len(keep),
-             last_baseline)
     remap = np.zeros(len(result.regions) + 1, dtype=result.labels.dtype)
     for i, r in enumerate(keep, 1):
         remap[r.label] = i
@@ -548,10 +613,11 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     pixel = (math.hypot(a, d), math.hypot(b, e))
     settings = site.nisar if sensor == NISAR else site.s1
     water_db = settings.water_db
-    valid = None if water_db is None else _water_mask(stack, sensor, params.n_early, water_db, settings.water_grow)
+    valid = None if water_db is None else _water_mask(stack, sensor, params.n_early, water_db, settings.water_grow,
+                                                      settings.water_pol)
     if valid is not None:
-        log.info("%s: %.1f%% of the window is water (co-pol below %.0f dB), left out", sensor,
-                 100 * (1 - valid.mean()), water_db)
+        log.info("%s: %.1f%% of the window is water (%s below %.0f dB), left out", sensor,
+                 100 * (1 - valid.mean()), settings.water_pol or "co-pol", water_db)
     n_early = max(1, min(params.n_early, len(dates) - 1))  # the windows detect_changes will use
     n_late = max(1, min(params.n_late, len(dates) - n_early))
     log.info("%s: baseline %s .. %s (%d passes), end state %s .. %s (%d passes)", sensor, dates[0],
@@ -559,6 +625,8 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     result = detect_changes(stack, dates, pixel, params, valid=valid)
     if settings.drop_baseline_dated:
         result = _drop_baseline_dated(result, dates[n_early - 1])
+    if settings.keep_types is not None:
+        result = _keep_types(result, settings.keep_types)
     log.info("%s: %d dates, %d change regions (threshold %.1f dB, min %.2f ha)", sensor, len(dates),
              len(result.regions), params.threshold_db, params.min_area_ha)
     return Run(sensor=SENSOR_NAMES[sensor], result=result, dates=dates, stack=stack, transform=transform, epsg=epsg)
@@ -643,8 +711,8 @@ def _sentence(group: list, change, best, sites: dict) -> str:
         by_source.setdefault(d.source, []).append(d)
     if change.late_start_only:
         began = sites[setter].start if setter in sites else change.first_date
-        head = (f"{SHORT.get(setter, setter)} began watching on {_say_day(began)} and shows the ground already changed, "
-                f"{PATTERNS.get(change.type, PATTERNS['other'])}; the start date is not known")
+        head = (f"This change was already under way when {SHORT.get(setter, setter)} began watching on "
+                f"{_say_day(began)}, so this record cannot say when it started")
     elif by_source[setter][0].kind == "optical":
         head = f"An optical alert found vegetation loss here {change.when}"
     else:
@@ -1047,6 +1115,23 @@ def merged_changes(runs: list, site: Site, n_early: dict, optical=None, params: 
     return out, sorted(used_states)
 
 
+CONFIDENCE_WEIGHT = {"low": 0.5, "medium": 1.0, "high": 1.0}  # top_changes: a low-confidence change counts half
+
+
+def top_changes(merged: list, n: int) -> list:
+    """The n changes that matter most on a large site: largest geodesic area first, a low-confidence one counted at
+    CONFIDENCE_WEIGHT of its area. Order of the kept ones is unchanged (write_site sorts them by date anyway)."""
+    from shapely.geometry import shape
+
+    from . import merge
+
+    if n is None or len(merged) <= n:
+        return merged
+    score = {id(m): merge.area_ha(shape(m.geometry)) * CONFIDENCE_WEIGHT.get(m.confidence, 1.0) for m in merged}
+    keep = {id(m) for m in sorted(merged, key=lambda m: -score[id(m)])[:n]}
+    return [m for m in merged if id(m) in keep]
+
+
 def _site_entry(index_path: Path, site_id: str) -> dict:
     if not index_path.is_file():
         raise PipelineError(f"{index_path} not found (use --out to point at app/data)")
@@ -1113,7 +1198,9 @@ def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, s
     nl = "\r\n" if "\r\n" in text else "\n"
     m = re.search(r'\{\s*"id":\s*' + re.escape(json.dumps(site_id)), text)
     if m:  # edit the values in place (this site's first of each key), so the hand-written layout survives
-        head, block = text[:m.start()], text[m.start():]
+        nxt = re.search(r'\{\s*"id":', text[m.end():])  # the block ends where the next site begins
+        end = len(text) if nxt is None else m.end() + nxt.start()
+        head, block, tail = text[:m.start()], text[m.start():end], text[end:]
         block, n1 = re.subn(r'"ready":\s*(?:true|false)', '"ready": true', block, count=1)
         block, n2 = re.subn(r'"time_range":\s*\[[^\]]*\]', lambda _: '"time_range": ' + json.dumps(entry["time_range"]),
                             block, count=1)
@@ -1135,7 +1222,7 @@ def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, s
                 block, n5 = re.subn(r'("time_range":\s*\[[^\]]*\])', lambda g: g.group(1) + "," + nl + "   " + line,
                                     block, count=1)
         if n1 == n2 == n3 == n4 == n5 == 1:
-            new = head + block
+            new = head + block + tail
     if new is None or json.loads(new) != index:
         new = _format_sites(index, nl)
     index_path.write_bytes(new.encode("utf-8"))
@@ -1227,7 +1314,18 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         sources = site_sources_json(site)
         log.info("merged: %d changes from %s", len(merged), ", ".join(SHORT.get(r.sensor, r.sensor) for r in runs)
                  + (" and the optical alerts" if optical else ""))
-    written = write_site(site_dir, site_id, runs, merged=merged)
+        if site.exclude_points:
+            from shapely.geometry import Point, shape
+            hit = [m for m in merged if any(shape(m.geometry).contains(Point(pt)) for pt in site.exclude_points)]
+            merged = [m for m in merged if m not in hit]
+            log.info("left out %d change(s) at the site's exclude_points", len(hit))
+        if site.max_changes is not None and len(merged) > site.max_changes:
+            merged = top_changes(merged, site.max_changes)
+            log.info("kept the %d largest changes (max_changes)", len(merged))
+            optical_days = [d for d in optical_days if any(m.first_date == d for m in merged)]
+    elif site.max_changes is not None:
+        raise PipelineError(f"{site_id}: max_changes needs the site's `sources` (it applies to the merged changes)")
+    written = write_site(site_dir, site_id, runs, merged=merged, layer_bytes=site.layer_bytes)
     if merged and write_stages(site_dir, site):
         log.info("wrote %s", site_dir / "stages.geojson")
     (first, last), bbox = written["time_range"], written["bbox"]  # first to last pass used; around all changes
