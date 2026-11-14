@@ -316,7 +316,7 @@ def test_deciding_reason_comes_first_and_explain_never_contradicts_the_label():
         wrong = "raises" if verdict == "expected" else "lowers"
         assert all(r["text"] not in explain for r in reasons if r["effect"] == wrong)
     verdict, reasons, explain = judge(change(area=1), records(zone=None))
-    assert verdict == "expected" and codes(reasons)[0] == "small_area" and "No registered building" not in explain
+    assert verdict == "expected" and codes(reasons)[0] == "small_area" and "No building registered" not in explain
 
 
 def test_protected_buffer_zone_raises_but_a_thin_edge_overlap_is_neutral():
@@ -511,6 +511,41 @@ def test_a_pending_solar_application_is_not_an_authorisation():
     assert both[0] == "expected" and "solar_application_pending" not in codes(both[1])
 
 
+def test_a_half_developable_half_non_buildable_place_is_both_and_says_so():
+    """Reviewer case (agroparc-0004): 51 % developable, 49 % non-buildable. Label stays review (row 5)."""
+    recs = records(zone="developable")
+    recs["zoning"]["shares"] = {"developable": 0.51, "non_buildable": 0.49}
+    verdict, reasons, explain = judge(change(area=1.2, ctype="structure"), recs)
+    assert verdict == "review" and codes(reasons)[0] == "zoning_non_buildable"
+    assert "planned_sector" in codes(reasons) and "no_record_found" not in codes(reasons)  # a planned area is a match
+    text = {r["code"]: r["text"] for r in reasons}
+    assert text["zoning_non_buildable"] == "About 49 % of the place is zoned as non-buildable."
+    assert text["planned_sector"] == "About 51 % of the place is inside a planned development area."
+    plain = records(zone="non_buildable")
+    plain["zoning"]["shares"] = {"non_buildable": 0.97}
+    assert judge(change(area=1.2), plain)[1][0]["text"] == "The land is zoned as non-buildable."  # nearly all: plain
+
+
+def test_building_and_solar_reasons_do_not_overclaim():
+    """Reviewer: the registry dates buildings by year (so "since the change" can include older ones), and the solar
+    list is by municipality only (so "here" is too exact)."""
+    reasons = judge(change(area=9, ctype="structure"), records(zone="urban", built=4))[1]
+    text = next(r["text"] for r in reasons if r["code"] == "cadastre_building_found")
+    assert text.startswith("4 building(s) registered here date from 2026 or later") and "construction years only" in text
+    pending = judge(change(area=12), records(zone="urban", plants=[plant(status="En tramitació")]))[1]
+    solar = next(r["text"] for r in pending if r["code"] == "solar_application_pending")
+    assert "in this municipality" in solar and "no exact location" in solar and "here" not in solar.split("in this")[0][-6:]
+    no_date = {k: v for k, v in change(area=9, ctype="structure").items() if k != "first_date"}
+    assert "since the change" in next(
+        r["text"] for r in judge(no_date, records(zone="urban", built=1))[1] if r["code"] == "cadastre_building_found")
+
+
+def test_no_record_reason_does_not_overclaim_about_the_registry():
+    reasons = judge(change(area=9), records(zone="urban"))[1]
+    text = next(r["text"] for r in reasons if r["code"] == "no_record_found")
+    assert "months late" in text and "since the change" in text and "No registered building" not in text
+
+
 def test_a_buffer_zone_never_counts_toward_the_real_overlap_share():
     """Reviewer case: the buffer zone covers the whole change, a real area only 2 % of it."""
     recs = records(inside=True, zone="urban", built=1)
@@ -602,3 +637,103 @@ def test_small_low_confidence_changes_are_not_flagged_on_their_own():
     assert judge(change(area=0.9, confidence="low"), records(inside=True))[0] == "high_concern"
     # a building record or a fire still explains it: no change of label
     assert judge(change(area=1.2, confidence="low"), records(zone="urban", built=1))[0] == "expected"
+
+
+# ---- Muhos final run: scope without the size floor, the change's own sensor, small forestry without records ----
+
+
+def _no_records():
+    return {k: {"checked": False, "not_applicable": True} for k in ("protected", "cadastre", "zoning", "solar")}
+
+
+def _scoped_official():
+    return {"version": 1, "default": {"official": {**official()["official"], "scope": {
+        "type": "Polygon", "coordinates": [[[0, 0], [0, 50], [50, 50], [50, 0], [0, 0]]]}}}}
+
+
+def test_inside_the_records_scope_the_size_floor_does_not_apply():
+    inside = records_for(_scoped_official(), "a", {"type": "Point", "coordinates": [10, 10]})
+    assert inside["official"]["in_scope"] is True
+    small = judge(change(area=3.8), {**_no_records(), **inside})
+    assert small[0] == "high_concern" and codes(small[1])[0] == "assessment_missing"
+    # the same 3.8 ha with a record that covers the whole site (no scope) keeps the limits: only "review"
+    whole_site = records_for({"version": 1, "default": {"official": official()["official"]}}, "a")
+    assert "in_scope" not in whole_site["official"]
+    assert judge(change(area=3.8), {**_no_records(), **whole_site})[0] == "review"
+    # a tiny low-confidence change inside the scope still follows the record, it is not "too small"
+    assert judge(change(area=0.4, confidence="low"), {**_no_records(), **inside})[0] == "high_concern"
+    # clearings and earthworks only: a structure inside the scope is "review", as before
+    assert judge(change(area=3.8, ctype="structure"), {**_no_records(), **inside})[0] == "review"
+
+
+def test_the_size_reason_names_the_changes_own_sensor():
+    na = _no_records()
+    optical = {**change(area=9, ctype="other"), "sensor": "OPERA DIST-ALERT"}
+    assert judge(optical, na)[1][0]["source"] == "NASA optical alerts (Landsat + Sentinel-2)"
+    assert judge({**change(area=9, ctype="other"), "sensor": "Sentinel-1 C-band"}, na)[1][0]["source"] == "Sentinel-1 C-band"
+    assert judge(change(area=9, ctype="other"), na)[1][0]["source"] == "Satellite detection"
+    small = judge({**change(area=0.5), "sensor": "NISAR L-band"}, records(zone="urban"))
+    assert [r["source"] for r in small[1] if r["code"] == "small_area"] == ["NISAR L-band"]
+
+
+def test_a_small_clearing_without_land_records_is_expected_not_review():
+    verdict, reasons, _ = judge({**change(area=3.2), "sensor": "OPERA DIST-ALERT"}, _no_records())
+    assert verdict == "expected" and codes(reasons)[0] == "small_no_records" and reasons[0]["effect"] == "lowers"
+    assert "too small to flag on its own" in reasons[0]["text"] and "no official record we have covers this spot" in reasons[0]["text"]
+    assert "records_unavailable" not in codes(reasons)
+    # a big clearing, or any other kind of change, is still flagged by size alone
+    assert judge(change(area=6), _no_records())[0] == "review"
+    assert judge(change(area=3.2, ctype="other"), _no_records())[0] == "review"
+    # where the land registry answers (Catalonia) nothing changes: no record -> needs review
+    assert judge(change(area=3.2), records(zone="urban"))[0] == "review"
+    # a protected area still raises it
+    assert judge(change(area=3.2), {**_no_records(), **records(inside=True)})[0] == "high_concern"
+
+
+# ---- PR #107 review: the new reason must not contradict an official record or repeat itself; sliver and boundaries ----
+
+
+def _box(x0, y0, x1, y1):
+    return {"type": "Polygon", "coordinates": [[[x0, y0], [x0, y1], [x1, y1], [x1, y0], [x0, y0]]]}
+
+
+def test_small_no_records_is_not_used_when_an_official_record_applies_to_the_change():
+    recs = records_for({"version": 1, "default": {"official": official()["official"]}}, "x", None)  # site-wide record
+    verdict, reasons, _ = judge(change(area=1.5), {**_no_records(), **recs})
+    assert "small_no_records" not in codes(reasons)
+    done = official(assessment_completed=True)  # a completed assessment is still a record that covers this spot
+    assert "small_no_records" not in codes(judge(change(area=1.5), {**_no_records(), **done})[1])
+
+
+def test_a_small_clearing_without_records_names_its_size_only_once():
+    for conf in (None, "low"):
+        _, reasons, _ = judge(change(area=1.99, confidence=conf), _no_records())
+        assert codes(reasons)[0] == "small_no_records"
+        assert not {"small_area", "small_uncertain"} & set(codes(reasons))
+
+
+def test_small_no_records_boundaries_are_5_ha_exclusive_and_any_size_below():
+    assert judge(change(area=4.99), _no_records())[1][0]["code"] == "small_no_records"
+    assert judge(change(area=2.0), _no_records())[1][0]["code"] == "small_no_records"
+    assert judge(change(area=5.0), _no_records())[1][0]["code"] == "size_only"
+
+
+def test_a_sliver_inside_the_scope_does_not_lift_the_size_floor():
+    doc = _scoped_official()
+    doc["default"]["official"]["scope"] = _box(0, 0, 1, 1)
+    mostly = records_for(doc, "a", _box(0.2, 0.2, 1.2, 1.2))   # 64 % inside
+    sliver = records_for(doc, "b", _box(0.99, 0.0, 1.99, 1.0))  # 1 % inside
+    touching = records_for(doc, "c", _box(1.0, 0.0, 2.0, 1.0))  # shares only a border
+    assert mostly["official"]["in_scope"] is True
+    assert "official" in sliver and "in_scope" not in sliver["official"]
+    assert "official" not in touching
+    assert judge(change(area=3.8), {**_no_records(), **mostly})[0] == "high_concern"
+    assert judge(change(area=3.8), {**_no_records(), **sliver})[0] == "review"
+
+
+def test_zoning_without_a_developable_share_is_not_a_planned_area_just_because_the_zone_says_so():
+    mixed = ok(zone="developable", shares={"non_buildable": 0.3, "urban": 0.7})
+    verdict, reasons, _ = judge(change(area=12, ctype="earthworks"), records(zone="developable", zoning=mixed))
+    assert "planned_sector" not in codes(reasons)
+    alone = judge(change(area=12, ctype="earthworks"), records(zoning=ok(zone="developable")))  # no shares at all
+    assert "planned_sector" in codes(alone[1])

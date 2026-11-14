@@ -3,7 +3,7 @@ import { APP, VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
 import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
-import { renderIntro, renderStory, showCard, showHint } from "./panel.js";
+import { renderIntro, renderStory, setStoryDate, showCard, showHint } from "./panel.js";
 import { createInbox } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
@@ -54,13 +54,6 @@ function findStepChange(features, step) {
   return matching.sort((a, b) => b.properties.area_ha - a.properties.area_ha)[0] ?? null;
 }
 
-/** Replay a short highlight on an element (the running total, when new changes appear). */
-function bump(el) {
-  el.classList.remove("bump");
-  void el.offsetWidth; // restart the animation
-  el.classList.add("bump");
-}
-
 function setupExplainer() {
   const dialog = $("explainer");
   $("explain-btn").addEventListener("click", () => dialog.showModal());
@@ -82,9 +75,37 @@ async function main() {
   fillSiteSelect(sites);
   const overview = allSitesBounds(sites);
   let current = null; // the open site's data, or null on the intro screen
-  let lastDate = null; // the slider's previous date, to spot changes that just appeared
+
+  // "Marked areas": hides every shape over the picture. Opening a change turns them back on, so the click shows something.
+  const overlayBtn = $("overlay-btn");
+  function setOverlay(on) {
+    overlayBtn.setAttribute("aria-pressed", String(on));
+    map.setOverlay(on);
+  }
+  overlayBtn.addEventListener("click", () => setOverlay(overlayBtn.getAttribute("aria-pressed") !== "true"));
+
+  // --- shareable view: #site=…&date=…&change=… follows the user (replaceState: the back button is not flooded) ---
+  let selectedId = null;
+  let lastDate = null; // the slider's current date
+  let hashTimer = null;
+  let loading = false; // a site is being opened: `current` is still the old one
+  function writeHash() {
+    clearTimeout(hashTimer);
+    hashTimer = setTimeout(() => { // debounced: the time-lapse changes the date many times a second
+      if (!current || loading) return;
+      const params = new URLSearchParams({ site: current.site.id });
+      if (lastDate) params.set("date", lastDate);
+      if (selectedId) params.set("change", selectedId);
+      try {
+        history.replaceState(null, "", `${location.pathname}${location.search}#${params}`);
+      } catch {} // Safari refuses more than ~100 calls in 30 s: the link just stays at its last state
+    }, 250);
+  }
 
   function select(feature) {
+    if (feature) setOverlay(true);
+    selectedId = feature ? feature.properties.id : null;
+    writeHash();
     map.select(feature);
     inbox.setSelected(feature ? feature.properties.id : null);
     if (feature) {
@@ -96,12 +117,6 @@ async function main() {
   await map.ready;
 
   const picture = createPicture(map, document.querySelector(".map-wrap"));
-
-  /** Changes that first show after the previous slider date, up to this one (only when moving forward). */
-  function justAppeared(iso) {
-    if (!current || !lastDate || iso <= lastDate) return [];
-    return current.changes.features.filter((f) => f.properties.first_date > lastDate && f.properties.first_date <= iso).map((f) => f.properties.id);
-  }
 
   const refreshTotal = () => {
     const { count, ha } = inbox.stats(); // follows the date and the inbox filters
@@ -119,14 +134,13 @@ async function main() {
   });
   const timeline = createTimeline({
     onDate(iso) {
-      const fresh = justAppeared(iso);
-      lastDate = iso;
       map.setDate(iso);
-      map.flash(fresh);
       picture.setDate(iso);
       inbox.setDate(iso);
+      setStoryDate(iso);
       refreshTotal();
-      if (fresh.length) bump($("total"));
+      lastDate = iso;
+      writeHash();
     },
     onPlay: () => picture.setView("radar"), // the time-lapse always runs on the radar pictures
   });
@@ -159,6 +173,7 @@ async function main() {
   function showIntro() {
     current = null;
     lastDate = null;
+    selectedId = null;
     $("map-error").hidden = true;
     $("site").value = "";
     $("fake-badge").hidden = true;
@@ -180,15 +195,22 @@ async function main() {
     $("fake-badge").hidden = !site.fixture;
     $("panel-tabs").hidden = false;
     history.replaceState(null, "", `#site=${site.id}`);
-    current = await loadSite(site);
-    lastDate = null; // no flash for the changes already there when the site opens
-    renderStory(current.story); // first: it changes the map's size on phones
-    showHint();
-    inbox.setSite(current.changes.features);
-    map.setExtraFilter(null);
-    map.showSite(site, current.changes);
-    picture.setSite(current);
-    timeline.setRange(site, current.changes.features, current.story?.events);
+    clearTimeout(hashTimer); // a pending write still describes the old site: drop it, and write nothing while this one loads
+    selectedId = null;
+    lastDate = null;
+    loading = true;
+    try {
+      current = await loadSite(site);
+      renderStory(current.story, current.base); // first: it changes the map's size on phones
+      showHint();
+      inbox.setSite(current.changes.features);
+      map.setExtraFilter(null);
+      map.showSite(site, current.changes, current.stages);
+      picture.setSite(current);
+      timeline.setRange(site, current.changes.features, current.story?.events);
+    } finally {
+      loading = false;
+    }
   }
 
   $("site").addEventListener("change", (e) => {
@@ -198,8 +220,29 @@ async function main() {
     openSite(id).catch((err) => showError(err.message));
   });
 
+  /** Open the view the URL hash describes (site, then date, then change). False when it names no ready site. */
+  async function applyHash() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const id = params.get("site");
+    if (!sites.some((s) => s.id === id)) return false;
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") ? params.get("date") : null; // anything else is ignored
+    if (current?.site.id !== id) {
+      tour.end();
+      await openSite(id);
+    }
+    if (date) timeline.goTo(date);
+    const feature = current.changes.features.find((f) => f.properties.id === params.get("change"));
+    if (feature) {
+      if (!date) timeline.goTo(feature.properties.last_date); // a hand-made link without a date: show the change as it stands
+      map.focus(feature, tourRoom());
+      select(feature);
+    } else if (selectedId) select(null);
+    return true;
+  }
+  window.addEventListener("hashchange", () => applyHash().catch((err) => showError(err.message))); // a link pasted into the same tab
+
   const wanted = new URLSearchParams(location.hash.slice(1)).get("site");
-  if (sites.some((s) => s.id === wanted)) return openSite(wanted);
+  if (await applyHash().catch((err) => showError(err.message))) return;
   showIntro();
   const asked = allSites.find((s) => s.id === wanted);
   if (asked) showError(`${asked.name} is not shown in this version. Pick another site or start the tour.`, true);

@@ -17,7 +17,8 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 
-BIG_HA = 5.0  # clearing / earthworks at least this big, on non-buildable land, with no record -> high concern
+SCOPE_MAIN_SHARE = 0.5  # a change counts as part of the record's outline when at least this much of it lies inside
+BIG_HA = 5.0 # clearing / earthworks at least this big, on non-buildable land, with no record -> high concern
 MID_HA = 2.0  # at least this big with no matching record -> needs review
 NON_BUILDABLE_SHARE = 0.25  # share of the polygon on non-buildable land that makes the zoning count as non-buildable
 PLANNED_SHARE = 0.5  # share on developable land needed to count as a planned development area
@@ -86,22 +87,42 @@ def _fire_text(fire: dict, explains: bool) -> str:
     return f"A recorded wildfire burned here{where}, but it does not explain a new building or ground movement."
 
 
+SENSOR_NAMES = {"OPERA DIST-ALERT": "NASA optical alerts (Landsat + Sentinel-2)"}
+
+
+def _detector(change: dict) -> str:
+    """Who saw the change, for the source line of the size reasons: its own sensor in plain words, else a generic name."""
+    sensor = str(change.get("sensor") or "").strip()
+    return SENSOR_NAMES.get(sensor, sensor) or "Satellite detection"
+
+
 def _area_name(area: dict) -> str:
     return area.get("name") or area.get("kind") or "a protected area"
 
 
-def _zoning(zon) -> tuple[str | None, bool]:
+def _zoning(zon) -> tuple[str | None, bool, dict]:
     """(effective zone, is a planned development area). Mixed polygons use the shares the lookup returns: a
     substantial non-buildable part makes the whole change count as non-buildable. ``zone: None`` with ``checked``
     true means no zoning polygon there (e.g. the sea): unknown, not a failure."""
     if not _ok(zon):
-        return None, False
+        return None, False, {}
     shares = zon.get("shares") or {}
     zone = zon.get("zone")
+    # "planned development area" is judged on its own share, before a non-buildable part overrides the zone: a place
+    # that is 51 % developable and 49 % non-buildable is both (and the label stays "needs review": rule row 5)
+    planned = shares.get("developable", 1.0 if zone == "developable" and not shares else 0.0) >= PLANNED_SHARE
     if shares.get("non_buildable", 0) >= NON_BUILDABLE_SHARE:
         zone = "non_buildable"
-    planned = zone == "developable" and shares.get("developable", 1.0) >= PLANNED_SHARE
-    return zone, planned
+    return zone, planned, shares
+
+
+def _zoning_text(shares: dict, key: str, whole: str, part: str) -> str:
+    """``whole`` when (almost) all of the polygon is in that class (or the share is unknown), else "About 49 % of the
+    place …": the card must not call a half-and-half place plain non-buildable."""
+    share = shares.get(key)
+    if share is None or share >= 0.9:
+        return whole
+    return f"About {round(100 * share)} % of the place {part}"
 
 
 def _plant_ha(plant: dict) -> float | None:
@@ -168,32 +189,42 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     share = prot.get("core_overlap_share", prot.get("overlap_share")) if inside else None
     edge = inside and not buffer_only and share is not None and share < EDGE_SHARE
     real_inside = inside and not buffer_only and not edge
-    zone, planned = _zoning(zon)
+    zone, planned, zshares = _zoning(zon)
     built = int(cad.get("built_since") or 0) if _ok(cad) else 0
     solar_good, solar_pending, solar_other = _solar(sol, area, ctype)
     matching = built > 0 or planned or bool(solar_good)
     fire_recorded = _ok(fire) and bool(fire.get("recorded"))
     fire_explains = fire_recorded and ctype in FIRE_TYPES
     assessment_missing = _ok(off) and bool(off.get("assessment_required")) and not off.get("assessment_completed")
+    # a change inside the record's own outline is part of what the record is about: the size limits do not apply
+    in_scope = assessment_missing and bool(off.get("in_scope"))
+    big_enough = area >= BIG_HA or in_scope
+    # no land registry for this country: a small ordinary clearing is not flagged by size alone
+    small_forestry = (isinstance(cad, dict) and bool(cad.get("not_applicable")) and ctype == "clearing"
+                      and area < BIG_HA and not _ok(off))  # an official record that applies here is never "no records"
     actions = [a for a in (off.get("actions") or []) if isinstance(a, dict)] if _ok(off) else []
     action_keys = [f"{_action_code(a.get('kind'))}:{i}" for i, a in enumerate(actions)]
     small_uncertain = area < MID_HA and change.get("confidence") == "low"
+    change_year = str(change.get("first_date") or "")[:4]
+    change_year = change_year if change_year.isdigit() else ""
 
     # ---- the verdict, and the code of the reason that decides it
     if fire_explains:
         verdict, decisive = "expected", "fire_recorded"
     elif real_inside:
         verdict, decisive = "high_concern", "protected_area"
-    elif assessment_missing and area >= BIG_HA and ctype in ("clearing", "earthworks"):
+    elif assessment_missing and big_enough and ctype in ("clearing", "earthworks"):
         verdict, decisive = "high_concern", "assessment_missing"
     elif zone == "non_buildable" and not small_uncertain:
         big = area >= BIG_HA and ctype in ("clearing", "earthworks") and not matching
         verdict, decisive = ("high_concern" if big else "review"), "zoning_non_buildable"
-    elif assessment_missing and area >= MID_HA:
+    elif assessment_missing and (area >= MID_HA or in_scope):
         verdict, decisive = "review", "assessment_missing"
     elif matching:
         verdict = "expected"
         decisive = "cadastre_building_found" if built > 0 else "planned_sector" if planned else "solar_plant_listed"
+    elif small_forestry and not solar_pending:
+        verdict, decisive = "expected", "small_no_records"
     elif area >= MID_HA:
         verdict = "review"
         decisive = "solar_application_pending" if solar_pending else ("no_record_found" if _ok(cad) else "size_only")
@@ -237,15 +268,22 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
             "raises", off, source="Official records")
     if zone == "non_buildable":
         facts["zoning_non_buildable"] = _reason(
-            "zoning_non_buildable", "The land is zoned as non-buildable.", "raises", zon)
+            "zoning_non_buildable",
+            _zoning_text(zshares, "non_buildable", "The land is zoned as non-buildable.",
+                         "is zoned as non-buildable."), "raises", zon)
     elif zone == "urban":
         facts["zoning_urban"] = _reason("zoning_urban", "The land is zoned as urban.", "lowers", zon)
     if planned:
         facts["planned_sector"] = _reason(
-            "planned_sector", "The land is inside a planned development area.", "lowers", zon)
+            "planned_sector",
+            _zoning_text(zshares, "developable", "The land is inside a planned development area.",
+                         "is inside a planned development area."), "lowers", zon)
     if built > 0:
         facts["cadastre_building_found"] = _reason(
-            "cadastre_building_found", f"{built} new building(s) are registered here since the change.", "lowers", cad)
+            "cadastre_building_found",
+            f"{built} building(s) registered here date from {change_year} or later, the year the change was first seen "
+            "(the registry gives construction years only)." if change_year
+            else f"{built} building(s) are registered here since the change.", "lowers", cad)
     if solar_good:
         ha = _plant_ha(solar_good[0])
         facts["solar_plant_listed"] = _reason(
@@ -255,7 +293,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if solar_pending and not matching:
         facts["solar_application_pending"] = _reason(
             "solar_application_pending",
-            "An application for a solar plant here is being processed; it is not authorised yet.", "raises", sol)
+            "An application for a solar plant in this municipality (the list gives no exact location) is being "
+            "processed; it is not authorised yet.", "raises", sol)
     if solar_other and not solar_good:
         facts["solar_plant_other"] = _reason(
             "solar_plant_other",
@@ -264,8 +303,16 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not matching and _ok(cad):
         facts["no_record_found"] = _reason(
             "no_record_found",
-            "No registered building, listed solar plant or planned development area matches this change.",
+            "No building registered since the change (the land registry often records new buildings months late), "
+            "no authorised solar plant and no planned development area match this change.",
             "raises", cad)
+    detector = _detector(change)
+    if decisive == "small_no_records":
+        facts["small_no_records"] = _reason(
+            "small_no_records",
+            f"The change is small ({area:g} ha), too small to flag on its own. No land registry or zoning records are "
+            "connected for this country yet, and no official record we have covers this spot.",
+            "lowers", source=detector)
     if decisive == "size_only":
         no_records = (cad or {}).get("not_applicable")  # outside Spain the Catalan registry does not apply
         facts["size_only"] = _reason(
@@ -273,15 +320,15 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
             "No public land records are connected for this country yet, so a change of this size is flagged for review."
             if no_records
             else "The land registry could not be checked, so a change of this size is flagged for review.",
-            "raises", source="Radar detection")
-    if verdict != "high_concern":
+            "raises", source=detector)
+    if verdict != "high_concern" and decisive != "small_no_records":  # that reason already says the change is small
         if small_uncertain:
             facts["small_uncertain"] = _reason(
                 "small_uncertain", f"The change is too small ({area:g} ha) and too uncertain to flag on its own.",
-                "lowers", source="Radar detection")
+                "lowers", source=detector)
         elif area < MID_HA:
             facts["small_area"] = _reason(
-                "small_area", f"The change is small ({area:g} ha).", "lowers", source="Radar detection")
+                "small_area", f"The change is small ({area:g} ha).", "lowers", source=detector)
     for key, action in zip(action_keys, actions):
         facts[key] = _reason(
             _action_code(action.get("kind")),
@@ -351,6 +398,17 @@ def _in_scope(geometry: dict, scope: dict) -> bool:
     return g.intersects(s) and not g.touches(s)  # sharing only a border is outside
 
 
+def _scope_share(geometry: dict, scope: dict) -> float:
+    """Share of the change's area that lies inside the scope (0 to 1; ratio of areas in degrees, fine for a ratio)."""
+    from shapely.geometry import shape
+    from shapely.validation import make_valid
+
+    g, s = make_valid(shape(geometry)), make_valid(shape(scope))
+    if g.area == 0:  # a point or a line: inside or not
+        return 1.0 if g.intersects(s) else 0.0
+    return g.intersection(s).area / g.area
+
+
 def records_for(doc: dict, change_id: str, geometry: dict | None = None) -> dict:
     """The hand-entered records that apply to one change (``default`` overridden by the change's own entries; a
     record whose ``scope`` does not reach ``geometry`` is left out). A record from ``default`` without a ``scope``
@@ -365,6 +423,9 @@ def records_for(doc: dict, change_id: str, geometry: dict | None = None) -> dict
         site_wide = key not in own and not scope
         out[key] = {"checked": True, "source": "Hand-entered records", "url": None,
                     **({"site_wide": True} if site_wide else {}),
+                    # "part of the same clearing" only if most of the change lies inside the outline
+                    **({"in_scope": True} if scope and geometry is not None
+                       and _scope_share(geometry, scope) >= SCOPE_MAIN_SHARE else {}),
                     **{k: v for k, v in rec.items() if k != "scope"}}
     return out
 
@@ -432,7 +493,20 @@ def apply_file(
         )
     if not dry_run:
         path.write_text(json.dumps(doc, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        _refresh_stages(path.parent / "stages.geojson", doc)
     return before, after, failed
+
+
+def _refresh_stages(path: Path, changes: dict) -> None:
+    """Give every stage of a growing outline (stages.geojson, if the site has one) the strongest verdict of its members."""
+    if not path.is_file():
+        return
+    rank = {None: 0, "expected": 1, "review": 2, "high_concern": 3}
+    verdicts = {f["properties"]["id"]: f["properties"].get("verdict") for f in changes["features"]}
+    stages = json.loads(path.read_text(encoding="utf-8"))
+    for stage in stages["features"]:
+        stage["properties"]["verdict"] = max((verdicts.get(i) for i in stage["properties"]["members"]), key=rank.get)
+    path.write_text(json.dumps(stages, separators=(",", ":")) + "\n", encoding="utf-8")
 
 
 def main(argv=None) -> int:

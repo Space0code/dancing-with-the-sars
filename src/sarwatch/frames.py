@@ -1,7 +1,8 @@
 """Picture frames for the app's time-lapse and before / after swipe (issue #89, format: kb/data-contract.md).
 
 One radar picture per Sentinel-1 pass (cross-pol VH in dB, speckle-smoothed in space and over neighbouring passes, one grey stretch for every date,
-with the pixels that lost echo since summer 2025 tinted magenta-pink)
+with the pixels that lost echo since summer 2025 tinted magenta-pink) up to NISAR's first pass, then one per NISAR pass
+(cross-pol HV, its own grey stretch, tinted where HV fell 3 dB below NISAR's own first picture),
 and real colour photos (NASA HLS, cloud-free days only, one fixed colour stretch), all warped to one north-up grid
 over the site window. Output: app/data/<site>/frames/{radar,photo}/<date>.jpg + app/data/<site>/frames.json.
 
@@ -44,8 +45,14 @@ TINT_FULL_DB = 5.0                   # ... full strength at this drop
 TINT_MIN_ALPHA, TINT_MAX_ALPHA = 0.35, 0.9
 MIN_PATCH_HA = 1.0                   # smaller tinted patches are dropped
 WATER_DB = -22.0                     # baseline darker than this = water, never tinted
+NISAR_RANGE_DB = (-17.5, -8.0)       # fixed grey stretch of HV: forest (median -10.5 dB, 90 % under -9) light, bare ground (-13 and below) dark
+NISAR_TINT_FROM_DB = 3.0             # tint where HV is this far below NISAR's own first pass ...
+NISAR_TINT_FULL_DB = 6.0             # ... full strength at this drop
+NISAR_STABLE_MIN_DB = -12.0          # a pixel whose HV never falls below this is "stable forest": sets each pass's offset
 TINT_RGB = (214, 40, 160)              # magenta-pink, apart from the verdict colours
 RADAR_CAPTION = "Radar picture. Grey: unchanged since summer 2025. Pink: the echo from trees and plants dropped here."
+NISAR_CAPTION = ("NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. "
+                 "Pink: trees gone since NISAR's first picture on {first}.")
 PHOTO_CAPTION = "Colour images from Landsat and Sentinel-2 (NASA HLS), cloud-free days only."
 
 
@@ -149,19 +156,20 @@ def time_average(stack: list, days: list, max_gap: int = TIME_MAX_GAP_DAYS) -> l
     return out
 
 
-def lost_alpha(drop_db: np.ndarray, baseline_db: np.ndarray, pixel_ha: float) -> np.ndarray:
-    """Tint strength 0..1 per pixel: 0 below TINT_FROM_DB of drop, full at TINT_FULL_DB. Patches smaller than
-    MIN_PATCH_HA and water (very dark in the baseline) get none."""
+def lost_alpha(drop_db: np.ndarray, baseline_db: np.ndarray, pixel_ha: float, from_db: float = TINT_FROM_DB,
+               full_db: float = TINT_FULL_DB, water: np.ndarray | None = None) -> np.ndarray:
+    """Tint strength 0..1 per pixel: 0 below from_db of drop, full at full_db. Patches smaller than MIN_PATCH_HA
+    and water (very dark in the baseline, or True in the `water` mask when given) get none."""
     from scipy import ndimage
 
-    ok = np.isfinite(drop_db) & (baseline_db > WATER_DB)
+    ok = np.isfinite(drop_db) & ((baseline_db > WATER_DB) if water is None else ~water)
     d = np.where(ok, drop_db, 0.0)
-    mask = d >= TINT_FROM_DB
+    mask = d >= from_db
     labels, n = ndimage.label(mask, structure=np.ones((3, 3)))
     if n:
         size = ndimage.sum(mask, labels, index=np.arange(1, n + 1))
         mask &= np.isin(labels, 1 + np.flatnonzero(size * pixel_ha >= MIN_PATCH_HA))
-    alpha = np.clip((d - TINT_FROM_DB) / (TINT_FULL_DB - TINT_FROM_DB), 0.0, 1.0)
+    alpha = np.clip((d - from_db) / (full_db - from_db), 0.0, 1.0)
     alpha = TINT_MIN_ALPHA + (TINT_MAX_ALPHA - TINT_MIN_ALPHA) * alpha
     return np.where(mask, alpha, 0.0).astype(np.float32)
 
@@ -201,18 +209,88 @@ def radar_series(site_id: str, stacks, window, skip_spans) -> tuple:
     return days, dbs, baseline, pixel_ha
 
 
-def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans) -> list:
-    """Write one JPEG per usable Sentinel-1 pass (grey radar, lost vegetation echo tinted); returns
-    [{date, sensor, url}] sorted by date."""
+def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans, until: date | None = None) -> list:
+    """Write one JPEG per usable Sentinel-1 pass before `until` (grey radar, lost vegetation echo tinted); returns
+    [{date, sensor, url}] sorted by date. The smoothing and levelling still use every pass."""
     days, dbs, baseline, pixel_ha = radar_series(site_id, stacks, window, skip_spans)
     out_dir.mkdir(parents=True, exist_ok=True)
     frames = []
     for day, db in zip(days, dbs):
+        if until is not None and day >= until:
+            continue
         data = jpeg_bytes(tint(radar_stretch(db), lost_alpha(baseline - db, baseline, pixel_ha)))
         (out_dir / f"{day.isoformat()}.jpg").write_bytes(data)
         frames.append({"date": day.isoformat(), "sensor": "Sentinel-1", "url": f"frames/radar/{day.isoformat()}.jpg"})
         if len(data) > MAX_FRAME_BYTES:
             log.warning("radar %s: %d KB (target %d KB)", day, len(data) // 1000, MAX_FRAME_BYTES // 1000)
+    return frames
+
+
+def nisar_series(site_id: str, stacks, window, skip_spans) -> tuple:
+    """(days, db, water, pixel_ha): smoothed, levelled HV of every usable NISAR pass on the common grid, and the
+    detection's water mask (pipeline._water_mask: HH baseline, shore grown) on that grid, True = water."""
+    site = pipeline.SITES[site_id]
+    cache = Path(stacks) / site_id / pipeline.NISAR
+    days = [d for d in pipeline.cached_days(cache) if not any(lo <= d <= hi for lo, hi in skip_spans)]
+    if not days:
+        raise pipeline.PipelineError(f"no usable NISAR passes in {cache}")
+    dst_t, w, h = grid_for(window)
+    warped = []
+    for day in days:
+        fr = pipeline.load_frame(pipeline.cache_path(cache, day))
+        warped.append(warp(smooth_linear(fr.data["HV"]), fr.transform, fr.epsg, dst_t, w, h, "bilinear"))
+    dbs = [to_db(a) for a in time_average(warped, days)]
+    stable = np.all([np.nan_to_num(a, nan=-99.0) >= NISAR_STABLE_MIN_DB for a in dbs], axis=0)
+    medians = np.array([np.nanmedian(a[stable]) for a in dbs])  # one offset per pass: moisture must not flicker
+    ref = float(np.median(medians))
+    log.info("nisar: %d passes, stable forest (%d px) median %.2f .. %.2f dB", len(days), stable.sum(), medians.min(),
+             medians.max())
+    dbs = [a - m + ref for a, m in zip(dbs, medians)]
+    stack, _, transform, epsg = pipeline.load_stack(cache, days, site.bbox)
+    s = site.nisar
+    valid = pipeline._water_mask(stack, pipeline.NISAR, s.params.n_early, s.water_db, s.water_grow)
+    water = warp((~valid).astype(np.float32), transform, epsg, dst_t, w, h, "nearest") > 0.5
+    log.info("nisar: water mask %.1f%% of the window", 100 * water.mean())
+    west, south, east, north = window
+    mid = math.radians((north + south) / 2)
+    pixel_ha = (east - west) * 111_320 * math.cos(mid) / w * (north - south) * 110_574 / h / 1e4
+    return days, dbs, water, pixel_ha
+
+
+def nisar_alphas(dbs: list, water: np.ndarray, pixel_ha: float) -> list:
+    """Tint strength per NISAR pass: HV below the first pass by NISAR_TINT_FROM_DB or more (none on the first pass)."""
+    return [lost_alpha(dbs[0] - db, dbs[0], pixel_ha, NISAR_TINT_FROM_DB, NISAR_TINT_FULL_DB, water) if i
+            else np.zeros(db.shape, np.float32) for i, db in enumerate(dbs)]
+
+
+def nisar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans) -> list:
+    """Write one JPEG per usable NISAR pass (grey HV, trees gone since the first pass tinted); returns
+    [{date, sensor, url, caption}] sorted by date. File names end in -nisar so they never meet a Sentinel-1 file."""
+    days, dbs, water, pixel_ha = nisar_series(site_id, stacks, window, skip_spans)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    caption = NISAR_CAPTION.format(first=f"{days[0].day} {days[0]:%b %Y}")
+    frames = []
+    for day, db, alpha in zip(days, dbs, nisar_alphas(dbs, water, pixel_ha)):
+        data = jpeg_bytes(tint(radar_stretch(db, *NISAR_RANGE_DB), alpha))
+        name = f"{day.isoformat()}-nisar.jpg"
+        (out_dir / name).write_bytes(data)
+        frames.append({"date": day.isoformat(), "sensor": "NISAR", "url": f"frames/radar/{name}", "caption": caption})
+        if len(data) > MAX_FRAME_BYTES:
+            log.warning("nisar %s: %d KB (target %d KB)", day, len(data) // 1000, MAX_FRAME_BYTES // 1000)
+    return frames
+
+
+def radar_set(site_id: str, stacks, out_dir: Path, window, skip_spans) -> list:
+    """The radar frames of the app: Sentinel-1 up to NISAR's first pass, NISAR pictures from then on. Files of
+    frames no longer listed (the later Sentinel-1 passes, older runs) are deleted."""
+    has_nisar = (Path(stacks) / site_id / pipeline.NISAR).is_dir() and pipeline.SITES[site_id].nisar is not None
+    nisar = nisar_frames(site_id, stacks, out_dir, window, skip_spans) if has_nisar else []
+    until = date.fromisoformat(nisar[0]["date"]) if nisar else None
+    frames = radar_frames(site_id, stacks, out_dir, window, skip_spans, until) + nisar
+    listed = {Path(f["url"]).name for f in frames}
+    for path in out_dir.glob("*.jpg"):
+        if path.name not in listed:
+            path.unlink()
     return frames
 
 
@@ -289,7 +367,7 @@ def build(site_id: str, stacks=None, root=None, radar: bool = True, photos: bool
     sets = []
     if radar:
         spans = pipeline._skip_spans(pipeline.SITES[site_id])
-        frames = radar_frames(site_id, stacks, site_dir / "frames" / "radar", site.window, spans)
+        frames = radar_set(site_id, stacks, site_dir / "frames" / "radar", site.window, spans)
         sets.append({"id": "radar", "title": "Radar", "caption": RADAR_CAPTION, "frames": frames})
     if photos:
         frames = photo_frames(site, site_dir / "frames" / "photo", root / "data" / "hls" / site_id, token)
@@ -306,7 +384,7 @@ def build(site_id: str, stacks=None, root=None, radar: bool = True, photos: bool
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="python -m sarwatch.frames", description=__doc__.split("\n")[0])
     p.add_argument("site", choices=sorted(FRAME_SITES))
-    p.add_argument("--stacks", help="cache root holding <site>/s1/*.npz (default: data/stacks)")
+    p.add_argument("--stacks", help="cache root holding <site>/s1 and <site>/nisar (*.npz) (default: data/stacks)")
     p.add_argument("--no-radar", action="store_true")
     p.add_argument("--no-photos", action="store_true")
     args = p.parse_args(argv)
