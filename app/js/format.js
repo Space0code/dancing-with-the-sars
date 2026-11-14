@@ -1,5 +1,11 @@
 // Written by Claude. Shared wording, colors and small helpers. Plain language only: no radar jargon, never "illegal".
 
+// The app's name and pitch live only here (working name; the team picks the final one).
+export const APP = {
+  name: "SARwatch",
+  pitch: "Radar satellites see the ground through clouds and at night. This map shows where the land changed, and which changes deserve a second look.",
+};
+
 // Okabe-Ito colorblind-safe palette. The map draws a dark casing around each polygon so all three read on both basemaps.
 export const VERDICTS = {
   expected: { label: "Expected", color: "#0072B2" },
