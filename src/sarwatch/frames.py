@@ -31,7 +31,7 @@ WIDTH = 700
 JPEG_QUALITY = 80
 MAX_FRAME_BYTES = 60_000
 SPECKLE_BOX = 3                      # mean over this many pixels square, in linear power
-RADAR_RANGE_DB = (-26.0, -8.0)       # fixed grey stretch of VH (after the per-date offset): black .. white
+RADAR_RANGE_DB = (-21.0, -9.0)       # fixed grey stretch of VH (after the per-date offset): black .. white
 PHOTO_RANGE = (0.0, 0.22)            # reflectance mapped to 0..1 before the gamma (same for every date)
 PHOTO_GAMMA = 1.0 / 1.8
 PHOTO_MIN_CLEAR = 0.9
@@ -44,11 +44,13 @@ PHOTO_CAPTION = "Colour images from Landsat and Sentinel-2 (NASA HLS), cloud-fre
 class FrameSite:
     window: tuple          # (west, south, east, north) degrees
     photo_periods: tuple   # ((first day, last day), ...) searched for photos
+    photo_exclude: tuple = ()  # days dropped by eye although Fmask calls them clear (thin haze, small cloud puffs)
 
 
 FRAME_SITES = {
     "muhos": FrameSite(window=(26.02, 64.795, 26.20, 64.875),
-                       photo_periods=((date(2025, 6, 1), date(2025, 9, 30)), (date(2026, 3, 1), date(2026, 11, 14)))),
+                       photo_periods=((date(2025, 6, 1), date(2025, 9, 30)), (date(2026, 3, 1), date(2026, 11, 14))),
+                       photo_exclude=(date(2025, 6, 16), date(2026, 8, 9))),
 }
 
 
@@ -188,7 +190,7 @@ def photo_frames(site: FrameSite, out_dir: Path, cache_dir: Path, token=None) ->
     granules = [g for g in granules if g.tile == tile]
     log.info("photos: %d HLS granules on tile %s", len(granules), tile)
     clear = hls.clear_granules(granules, window, PHOTO_MIN_CLEAR, token)
-    kept = thin_days([(g.start.date(), f, g) for g, f in clear])
+    kept = thin_days([(g.start.date(), f, g) for g, f in clear if g.start.date() not in site.photo_exclude])
     log.info("photos: %d clear granules, %d days after thinning", len(clear), len(kept))
     dst_t, w, h = grid_for(window)
     cache_dir.mkdir(parents=True, exist_ok=True)
