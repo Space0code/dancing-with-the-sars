@@ -314,3 +314,17 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
 .story-chart { margin: 8px 0 4px; }
 .story-chart-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
 .chart-cursor { stroke: var(--ink); stroke-width: 1.5; }
+/* Card: "Seen by" list (js/seen.js) */
+.seen { list-style: none; margin: 0 0 6px; padding: 0; }
+.seen-row {
+  display: grid; grid-template-columns: 20px 1fr auto; column-gap: 8px; align-items: baseline;
+  padding: 6px 0; border-top: 1px solid var(--line);
+}
+.seen-row:first-child { border-top: 0; }
+.seen-mark { text-align: center; color: var(--accent); }
+.seen-row.not_seen .seen-mark, .seen-row.not_watching .seen-mark { color: var(--muted); }
+.seen-main { display: flex; flex-wrap: wrap; gap: 0 10px; }
+.seen-name { font-weight: 600; }
+.seen-dates { color: var(--muted); }
+.seen-role { font-size: 13px; color: var(--muted); text-align: right; }
+.seen-note { grid-column: 2 / -1; font-size: 13px; color: var(--muted); }
