@@ -4,21 +4,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Land-change monitor</title>
+  <title>SARwatch</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header class="topbar">
-    <h1>Land-change monitor</h1>
+    <div class="brand">
+      <h1 id="app-name"></h1>
+      <p id="app-pitch" class="pitch"></p>
+    </div>
     <div class="site-picker">
       <label for="site">Site</label>
       <select id="site"></select>
       <span id="fake-badge" class="fake-badge" hidden>Fake data</span>
     </div>
+    <div class="actions">
+      <button id="tour-btn" type="button" class="primary"><span class="wide-only">Start tour</span><span class="narrow-only">Tour</span></button>
+      <button id="explain-btn" type="button">How to read<span class="wide-only"> this</span></button>
+    </div>
     <div class="basemap" role="radiogroup" aria-label="Background map">
-      <label><input type="radio" name="basemap" value="satellite" checked> Satellite</label>
+      <label><input type="radio" name="basemap" value="satellite" checked> Photo</label>
       <label><input type="radio" name="basemap" value="light"> Map</label>
     </div>
   </header>
@@ -34,13 +41,22 @@
           <summary>Radar pictures</summary>
           <div id="layer-list"></div>
         </details>
+        <p id="photo-label" class="photo-label" aria-live="polite"></p>
       </div>
+      <section id="tour" class="tour" aria-label="Guided tour" aria-live="polite" hidden></section>
       <p id="map-error" class="map-error" hidden></p>
     </div>
 
     <aside id="panel" aria-label="Details">
-      <details id="story" class="story" open></details>
-      <div id="card" aria-live="polite"></div>
+      <div id="panel-tabs" class="tabs" role="tablist">
+        <button id="tab-details" type="button" role="tab" aria-selected="true" aria-controls="details-view">Details</button>
+        <button id="tab-inbox" type="button" role="tab" aria-selected="false" aria-controls="inbox">Changes <span id="inbox-count" class="n"></span></button>
+      </div>
+      <div id="details-view" class="view" role="tabpanel">
+        <details id="story" class="story" open></details>
+        <div id="card" aria-live="polite"></div>
+      </div>
+      <section id="inbox" class="view inbox" role="tabpanel" aria-label="Changes at this site" hidden></section>
     </aside>
   </main>
 
@@ -58,6 +74,51 @@
       </div>
     </div>
   </footer>
+
+  <dialog id="explainer" class="explainer" aria-labelledby="explainer-title">
+    <div class="explainer-head">
+      <h2 id="explainer-title">How to read this</h2>
+      <button class="close" type="button" aria-label="Close">Close</button>
+    </div>
+
+    <h3>What you're looking at</h3>
+    <p>Each coloured shape is a place where the ground changed between satellite passes. Drag the timeline to watch the
+      changes appear in the order they happened. In photo view the background is a photo from the slider's year, so you
+      can see the land itself.</p>
+
+    <h3>How radar sees</h3>
+    <p>Radar sends its own signal and measures the echo, so it works at night and through clouds. Trees, bare soil and
+      buildings echo differently, so a change in the echo means a change on the ground.</p>
+
+    <h3>The three labels</h3>
+    <ul class="explain-legend">
+      <li><span class="swatch" style="background:var(--c-expected)"></span><div><b>Expected:</b> the change matches
+        public records (a planned project, a registered building, a recorded wildfire).</div></li>
+      <li><span class="swatch" style="background:var(--c-review)"></span><div><b>Needs review:</b> no record we could
+        check explains the change, or the land is not zoned for building.</div></li>
+      <li><span class="swatch" style="background:var(--c-high_concern)"></span><div><b>High concern:</b> the change is
+        inside a protected area, or it is large and no record explains it.</div></li>
+      <li><span class="swatch" style="background:var(--c-none)"></span><div><b>Not judged yet:</b> grey shapes have not
+        been checked against records yet.</div></li>
+    </ul>
+
+    <h3>What a card shows</h3>
+    <p>What changed, when and how big; the label and the reasons behind it, with their sources; radar pictures from
+      before and after; and the signal over time.</p>
+
+    <h3>Limits</h3>
+    <ul class="limits">
+      <li>A satellite passes every few days, not every day.</li>
+      <li>A label is a prompt for a person to check, not a legal judgment.</li>
+      <li>Rain, harvests, snow and fire can look like change, so each card says how sure the detection is.</li>
+      <li>Only public records that a computer can read are checked; permits kept as documents are not.</li>
+    </ul>
+
+    <h3>Data</h3>
+    <p>NISAR radar (NASA and ISRO) and Sentinel-1 radar (through NASA's OPERA products); public records from the Catalan
+      and Spanish governments. Background photos: ICGC aerial photos (Catalonia) and Sentinel-2 cloudless by EOX
+      (elsewhere).</p>
+  </dialog>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script type="module" src="js/main.js"></script>

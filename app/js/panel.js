@@ -1,8 +1,8 @@
-// Written by Claude. Side panel: the collapsible site story and the change card (reasons, before/after swipe, signal chart).
+// Written by Claude. Side panel: the intro screen, the collapsible site story and the change card (reasons, before/after swipe, signal chart).
 import { buildChart } from "./chart.js";
 import { buildSwipe } from "./swipe.js";
 import { loadJson } from "./data.js";
-import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, sensorLabel, formatDate, formatArea, safeUrl } from "./format.js";
+import { h, APP, VERDICTS, verdictKey, changeLabel, confidenceLabel, sensorLabel, formatDate, formatArea, safeUrl } from "./format.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -55,6 +55,27 @@ function evidenceBlock(evidence, base, layers) {
   return h("p", { class: "note" }, "No before and after pictures for this change yet.");
 }
 
+/** The first screen, before any site is open: what the app is for, the tour, and the sites. */
+export function renderIntro(sites, { onPick, onTour }) {
+  $("story").hidden = true;
+  const siteButton = (s) =>
+    h("li", {},
+      h("button", { type: "button", class: "site-btn", disabled: !s.ready, onclick: () => onPick(s.id) },
+        s.name,
+        s.fixture ? h("span", { class: "fake-badge" }, "Fake data") : null,
+        s.ready ? null : h("span", { class: "soon" }, "coming soon")
+      )
+    );
+  $("card").replaceChildren(
+    h("section", { class: "intro" },
+      h("p", { class: "lead phone-only" }, APP.pitch), // on desktop the top bar already shows the pitch
+      h("p", {}, "Every few days, radar satellites pass overhead and record the ground, whatever the weather. We compare the passes, mark where the land changed (trees removed, buildings added, earth moved), and check each change against public records. Pick a place to start."),
+      h("ul", { class: "site-list" }, sites.map(siteButton)),
+      h("button", { type: "button", class: "primary big", onclick: onTour }, "Or take the two-minute tour")
+    )
+  );
+}
+
 export function showHint() {
   $("card").replaceChildren(h("p", { class: "hint" }, "Click a colored shape on the map to see what changed and why it was flagged."));
 }
@@ -101,5 +122,5 @@ export function showCard(feature, site, onClose) {
       chartSlot
     )
   );
-  $("panel").scrollTop = 0;
+  $("details-view").scrollTop = 0;
 }

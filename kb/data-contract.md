@@ -13,6 +13,7 @@ app only reads it. Last updated 2026-11-14. Living example: `app/data/fixture/` 
 | `<site>/evidence/*.png` | radar | small before / after pictures per change, for the card |
 | `<site>/series/<change id>.json` | radar | the signal over time per change, for the chart |
 | `<site>/story.json` | verdict | plain-language story of the site, dated events, sources |
+| `<site>/context/` (optional) | verdict | what the public records say, as map layers the user can switch on |
 
 ## `sites.json`
 `{"version": 1, "sites": [site, ...]}`, each site:
@@ -55,6 +56,15 @@ already plain language (e.g. "Vegetation echo (HV)").
 ## `story.json`
 `{"headline", "story": [paragraph, ...], "events": [{date, label}], "sources": [{title, url}]}`. Events are shown as
 markers on the timeline (e.g. "Told an assessment was required").
+
+## `context/` (optional): what the records say
+`context/index.json` = `{"layers": [{id, title, kind, file, source, url, checked, note}]}`: `kind` is `protected` ·
+`zoning` · `buildings` · `solar`; `file` is a GeoJSON next to it (`context/<id>.geojson`, EPSG:4326); `checked` is
+`YYYY-MM-DD`; `title` (≤ 60 chars) and `note` (≤ 160 chars) are plain language. Feature properties: `label` (always:
+the text shown on click) and, where they apply, `class` (zoning: `buildable` · `non_buildable` · `planned`;
+protected: `natura2000` · `pein` · `other`), `year` (buildings: construction year), `name`, `status`, `area_ha`.
+A site without the folder has no record layers. Each file ≤ 1 MB. Made in #45, shown in #52; the validator does not
+check this folder yet.
 
 ## Size and hygiene
 Every file under 10 MB (the validator checks); pictures are PNG; nothing here needs credentials or the network.
