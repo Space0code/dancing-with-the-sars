@@ -2,7 +2,8 @@
 import { buildChart } from "./chart.js";
 import { loadJson } from "./data.js";
 import { buildChecklist } from "./checklist.js";
-import { h, APP, VERDICTS, verdictKey, changeLabel, confidenceLabel, sensorLabel, formatDate, formatArea, safeUrl } from "./format.js";
+import { h, APP, VERDICTS, verdictKey, changeLabel, sensorLabel, safeUrl } from "./format.js";
+import { whenText, sizeText, confidenceText, seenBy } from "./seen.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,10 +20,6 @@ export function renderStory(story) {
     ? [h("p", { class: "sources" }, "Sources: ", sources.flatMap((s, i) => [i ? " · " : "", h("a", { href: s.url, target: "_blank", rel: "noopener" }, s.title)]))]
     : []; // an array, not null: replaceChildren(null) would print the word "null"
   box.replaceChildren(h("summary", {}, story.headline), ...story.story.map((p) => h("p", {}, p)), ...sourceLine);
-}
-
-function when(p) {
-  return p.first_date === p.last_date ? formatDate(p.first_date) : `${formatDate(p.first_date)} to ${formatDate(p.last_date)}`;
 }
 
 /** The first screen, before any site is open: what the app is for, the tour, and the sites. */
@@ -60,6 +57,7 @@ export function showCard(feature, site, onClose) {
   const key = verdictKey(p.verdict);
   $("story").open = false;
   const evidence = p.evidence ?? {};
+  const seen = seenBy(p); // null when the change has no `sources`
 
   const chartSlot = h("div", { class: "chart-slot", id: "signal-chart" },
     h("p", { class: "note" }, evidence.series ? "Loading signal history…" : "No signal history for this change yet."));
@@ -77,11 +75,13 @@ export function showCard(feature, site, onClose) {
       ),
       h("h2", {}, changeLabel(p.type)),
       h("dl", { class: "facts" },
-        h("dt", {}, "When"), h("dd", {}, when(p)),
-        h("dt", {}, "Size"), h("dd", {}, formatArea(p.area_ha)),
-        h("dt", {}, "Seen by"), h("dd", {}, sensorLabel(p.sensor)),
-        h("dt", {}, "Confidence"), h("dd", {}, confidenceLabel(p.confidence))
+        h("dt", {}, "When"), h("dd", {}, whenText(p)),
+        h("dt", {}, "Size"), h("dd", {}, sizeText(p)),
+        seen ? null : h("dt", {}, "Seen by"), seen ? null : h("dd", {}, sensorLabel(p.sensor)), // one sensor: as before
+        h("dt", {}, "Confidence"), h("dd", {}, confidenceText(p, site.site?.sources))
       ),
+      seen ? h("h3", {}, "Seen by") : null,
+      seen,
       p.explain ? h("p", { class: "explain" }, p.explain) : null,
       ...buildChecklist(p, site.site?.country),
       p.verdict ? h("p", { class: "note" }, "A label says where a person should look first. It is not a finding about anyone.") : null,
