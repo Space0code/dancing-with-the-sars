@@ -258,6 +258,11 @@ def _check_change(feature, site_id: str, site_dir: Path, seen: set, where: str, 
         return
     for key in ("before", "after", "series"):
         _check_rel_file(site_dir, evidence.get(key), f"{where}: evidence.{key}", errors)
+    dates = [evidence.get(k) for k in ("before_date", "after_date")]  # optional: when the two pictures were taken
+    if any(d is not None and not _is_date(d) for d in dates):
+        errors.append(f"{where}: evidence.before_date and after_date must be YYYY-MM-DD when present")
+    elif None not in dates and dates[0] > dates[1]:
+        errors.append(f"{where}: evidence.before_date must not be after after_date")
     if isinstance(evidence.get("series"), str) and (site_dir / evidence["series"]).is_file():
         _check_series(site_dir, evidence["series"], errors)
 
