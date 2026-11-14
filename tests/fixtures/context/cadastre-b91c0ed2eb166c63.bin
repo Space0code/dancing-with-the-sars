@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--Edificios de la D.G. del Catastro.-->
+<gml:FeatureCollection gml:id="ES.SDGC.BU"  xmlns:ad="urn:x-inspire:specification:gmlas:Addresses:3.0" xmlns:base="urn:x-inspire:specification:gmlas:BaseTypes:3.2" xmlns:bu-base="http://inspire.jrc.ec.europa.eu/schemas/bu-base/3.0" xmlns:bu-core2d="http://inspire.jrc.ec.europa.eu/schemas/bu-core2d/2.0" xmlns:bu-ext2d="http://inspire.jrc.ec.europa.eu/schemas/bu-ext2d/2.0" xmlns:cp="urn:x-inspire:specification:gmlas:CadastralParcels:3.0" xmlns:el-bas="http://inspire.jrc.ec.europa.eu/schemas/el-bas/2.0" xmlns:el-cov="http://inspire.jrc.ec.europa.eu/schemas/el-cov/2.0" xmlns:el-tin="http://inspire.jrc.ec.europa.eu/schemas/el-tin/2.0" xmlns:el-vec="http://inspire.jrc.ec.europa.eu/schemas/el-vec/2.0" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:gmlcov="http://www.opengis.net/gmlcov/1.0" xmlns:gn="urn:x-inspire:specification:gmlas:GeographicalNames:3.0" xmlns:gsr="http://www.isotc211.org/2005/gsr" xmlns:gss="http://www.isotc211.org/2005/gss" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:swe="http://www.opengis.net/swe/2.0" xmlns:xlink="http://www.w3.org/1999/xlink"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://inspire.jrc.ec.europa.eu/schemas/bu-ext2d/2.0 http://inspire.ec.europa.eu/draft-schemas/bu-ext2d/2.0/BuildingExtended2D.xsd">
+  <gml:featureMember>
+    <bu-ext2d:Building gml:id="ES.SDGC.BU.08090A01600001">
+    <gml:boundedBy>
+      <gml:Envelope srsName="urn:ogc:def:crs:EPSG::25831">
+         <gml:lowerCorner>403979.62 4589600.12</gml:lowerCorner>
+         <gml:upperCorner>403992.86 4589609.18</gml:upperCorner>
+      </gml:Envelope>
+    </gml:boundedBy>
+      <bu-core2d:beginLifespanVersion>2023-08-04T00:00:00</bu-core2d:beginLifespanVersion>
+      <bu-core2d:conditionOfConstruction>ruin</bu-core2d:conditionOfConstruction>
+      <bu-core2d:dateOfConstruction>
+        <bu-core2d:DateOfEvent>
+          <bu-core2d:beginning>1900-01-01T00:00:00</bu-core2d:beginning>
+          <bu-core2d:end>1900-01-01T00:00:00</bu-core2d:end>
+        </bu-core2d:DateOfEvent>
+      </bu-core2d:dateOfConstruction>
+      <bu-core2d:endLifespanVersion xsi:nil="true" nilReason="other:unpopulated"></bu-core2d:endLifespanVersion>
+      <bu-core2d:externalReference>
+        <bu-core2d:ExternalReference>
+          <bu-core2d:informationSystem><![CDATA[https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCListaBienes.aspx?rc1=08090A0&rc2=1600001]]></bu-core2d:informationSystem>
+          <bu-core2d:informationSystemName></bu-core2d:informationSystemName>
+          <bu-core2d:reference>08090A01600001</bu-core2d:reference>
+        </bu-core2d:ExternalReference>
+      </bu-core2d:externalReference>
+      <bu-core2d:inspireId>
+        <base:Identifier>
+          <base:localId>08090A01600001</base:localId>
+          <base:namespace>ES.SDGC.BU</base:namespace>
+        </base:Identifier>
+      </bu-core2d:inspireId>
+      <bu-core2d:addresses xlink:href="http://ovc.catastro.meh.es/INSPIRE/wfsAD.aspx?service=wfs&amp;version=2&amp;request=GetFeature&amp;STOREDQUERIE_ID=GetadByRefcat&amp;refcat=08090A01600001&amp;srsname=EPSG::25831"></bu-core2d:addresses>
+      <bu-core2d:cadastralParcels xlink:href="http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx?service=wfs&amp;version=2&amp;request=GetFeature&amp;STOREDQUERIE_ID=GetParcel&amp;refcat=08090A01600001&amp;srsname=EPSG::25831"></bu-core2d:cadastralParcels>
+      <bu-ext2d:geometry>
+       <bu-core2d:BuildingGeometry>
+        <bu-core2d:geometry>
+         <gml:Surface gml:id="Surface_ES.SDGC.BU.08090A01600001" srsName="urn:ogc:def:crs:EPSG::25831">
+           <gml:patches>
+                <gml:PolygonPatch>
+                <gml:exterior>
+                    <gml:LinearRing>
+                      <gml:posList srsDimension="2" count="5">403979.62 4589605.01 403991.08 4589609.18 403992.86 4589604.3 403981.39 4589600.12 403979.62 4589605.01</gml:posList>
+                    </gml:LinearRing>
+                </gml:exterior>
+                </gml:PolygonPatch>
+              </gml:patches>
+            </gml:Surface>
+        </bu-core2d:geometry>
+ 	      <bu-core2d:horizontalGeometryEstimatedAccuracy uom="m">0.1</bu-core2d:horizontalGeometryEstimatedAccuracy>
+ 	      <bu-core2d:horizontalGeometryReference>footPrint</bu-core2d:horizontalGeometryReference>
+ 	      <bu-core2d:referenceGeometry>true</bu-core2d:referenceGeometry>
+       </bu-core2d:BuildingGeometry>
+      </bu-ext2d:geometry>
+        <bu-ext2d:currentUse xsi:nil="true" nilReason="other:unpopulated"></bu-ext2d:currentUse>
+      <bu-ext2d:numberOfBuildingUnits>2</bu-ext2d:numberOfBuildingUnits>
+      <bu-ext2d:numberOfDwellings>0</bu-ext2d:numberOfDwellings>
+      <bu-ext2d:numberOfFloorsAboveGround xsi:nil="true" nilReason="other:unpopulated"></bu-ext2d:numberOfFloorsAboveGround>
+      <bu-ext2d:document>
+         <bu-ext2d:Document>
+          <bu-ext2d:documentLink>http://ovc.catastro.meh.es/OVCServWeb/OVCWcfLibres/OVCFotoFachada.svc/RecuperarFotoFachadaGet?ReferenciaCatastral=08090A01600001</bu-ext2d:documentLink>
+          <bu-ext2d:format>jpeg</bu-ext2d:format>
+          <bu-ext2d:sourceStatus>NotOfficial</bu-ext2d:sourceStatus>
+         </bu-ext2d:Document>
+      </bu-ext2d:document>
+      <bu-ext2d:officialArea>
+         <bu-ext2d:OfficialArea>
+          <bu-ext2d:officialAreaReference>grossFloorArea</bu-ext2d:officialAreaReference>
+          <bu-ext2d:value uom="m2">126</bu-ext2d:value>
+         </bu-ext2d:OfficialArea>
+      </bu-ext2d:officialArea>
+    </bu-ext2d:Building>
+  </gml:featureMember>
+  <gml:featureMember>
+    <bu-ext2d:Building gml:id="ES.SDGC.BU.08090A01700025">
+    <gml:boundedBy>
+      <gml:Envelope srsName="urn:ogc:def:crs:EPSG::25831">
+         <gml:lowerCorner>404116.32 4588953.95</gml:lowerCorner>
+         <gml:upperCorner>404173.7 4589042.53</gml:upperCorner>
+      </gml:Envelope>
+    </gml:boundedBy>
+      <bu-core2d:beginLifespanVersion>2026-03-30T00:00:00</bu-core2d:beginLifespanVersion>
+      <bu-core2d:conditionOfConstruction>functional</bu-core2d:conditionOfConstruction>
+      <bu-core2d:dateOfConstruction>
+        <bu-core2d:DateOfEvent>
+          <bu-core2d:beginning>1842-01-01T00:00:00</bu-core2d:beginning>
+          <bu-core2d:end>1988-01-01T00:00:00</bu-core2d:end>
+        </bu-core2d:DateOfEvent>
+      </bu-core2d:dateOfConstruction>
+      <bu-core2d:endLifespanVersion xsi:nil="true" nilReason="other:unpopulated"></bu-core2d:endLifespanVersion>
+      <bu-core2d:externalReference>
+        <bu-core2d:ExternalReference>
+          <bu-core2d:informationSystem><![CDATA[https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCListaBienes.aspx?rc1=08090A0&rc2=1700025]]></bu-core2d:informationSystem>
+          <bu-core2d:informationSystemName></bu-core2d:informationSystemName>
+          <bu-core2d:reference>08090A01700025</bu-core2d:reference>
+        </bu-core2d:ExternalReference>
+      </bu-core2d:externalReference>
+      <bu-core2d:inspireId>
+        <base:Identifier>
+          <base:localId>08090A01700025</base:localId>
+          <base:namespace>ES.SDGC.BU</base:namespace>
+        </base:Identifier>
+      </bu-core2d:inspireId>
+      <bu-core2d:addresses xlink:href="http://ovc.catastro.meh.es/INSPIRE/wfsAD.aspx?service=wfs&amp;version=2&amp;request=GetFeature&amp;STOREDQUERIE_ID=GetadByRefcat&amp;refcat=08090A01700025&amp;srsname=EPSG::25831"></bu-core2d:addresses>
+      <bu-core2d:cadastralParcels xlink:href="http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx?service=wfs&amp;version=2&amp;request=GetFeature&amp;STOREDQUERIE_ID=GetParcel&amp;refcat=08090A01700025&amp;srsname=EPSG::25831"></bu-core2d:cadastralParcels>
+      <bu-ext2d:geometry>
+       <bu-core2d:BuildingGeometry>
+        <bu-core2d:geometry>
+         <gml:Surface gml:id="Surface_ES.SDGC.BU.08090A01700025" srsName="urn:ogc:def:crs:EPSG::25831">
+           <gml:patches>
+                <gml:PolygonPatch>
+                <gml:exterior>
+                    <gml:LinearRing>
+                      <gml:posList srsDimension="2" count="5">404116.32 4588959.02 404123.33 4588970.91 404131.94 4588965.84 404124.94 4588953.95 404116.32 4588959.02</gml:posList>
+                    </gml:LinearRing>
+                </gml:exterior>
+                </gml:PolygonPatch>
+                <gml:PolygonPatch>
+                <gml:exterior>
+                    <gml:LinearRing>
+                      <gml:posList srsDimension="2" count="10">404126.04 4589018.06 404127.53 4589027.44 404139.38 4589025.56 404147.28 4589024.31 404141.84 4589015.55 404138.01 4589009.28 404133.07 4589010.06 404131.82 4589002.16 404123.72 4589003.44 404126.04 4589018.06</gml:posList>
+                    </gml:LinearRing>
+                </gml:exterior>
+                </gml:PolygonPatch>
+                <gml:PolygonPatch>
+                <gml:exterior>
+                    <gml:LinearRing>
+                      <gml:posList srsDimension="2" count="31">404150.66 4589011.36 404151.33 4589012.05 404161.73 4589022.99 404162.78 4589025.15 404160.92 4589025.87 404163.55 4589032.68 404158.23 4589034.73 404155.43 4589035.81 404158.02 4589042.53 404160.82 4589041.45 404173.42 4589036.59 404170.72 4589029.59 404173.7 4589028.44 404171.18 4589021.91 404169.69 4589022.49 404169.09 4589020.4 404168.01 4589020.78 404165.54 4589008.25 404164.63 4589003.66 404165.47 4589003.48 404165.47 4588994.08 404165.47 4588988.68 404150.07 4588988.68 404150.07 4588994.08 404147.4 4589004.96 404152.87 4589004 404155.27 4588994.08 404162.47 4588994.08 404162.47 4589004.11 404146.81 4589007.38 404150.66 4589011.36</gml:posList>
+                    </gml:LinearRing>
+                </gml:exterior>
+                </gml:PolygonPatch>
+              </gml:patches>
+            </gml:Surface>
+        </bu-core2d:geometry>
+ 	      <bu-core2d:horizontalGeometryEstimatedAccuracy uom="m">0.1</bu-core2d:horizontalGeometryEstimatedAccuracy>
+ 	      <bu-core2d:horizontalGeometryReference>footPrint</bu-core2d:horizontalGeometryReference>
+ 	      <bu-core2d:referenceGeometry>true</bu-core2d:referenceGeometry>
+       </bu-core2d:BuildingGeometry>
+      </bu-ext2d:geometry>
+        <bu-ext2d:currentUse>2_agriculture</bu-ext2d:currentUse>
+      <bu-ext2d:numberOfBuildingUnits>2</bu-ext2d:numberOfBuildingUnits>
+      <bu-ext2d:numberOfDwellings>0</bu-ext2d:numberOfDwellings>
+      <bu-ext2d:numberOfFloorsAboveGround xsi:nil="true" nilReason="other:unpopulated"></bu-ext2d:numberOfFloorsAboveGround>
+      <bu-ext2d:document>
+         <bu-ext2d:Document>
+          <bu-ext2d:documentLink>http://ovc.catastro.meh.es/OVCServWeb/OVCWcfLibres/OVCFotoFachada.svc/RecuperarFotoFachadaGet?ReferenciaCatastral=08090A01700025</bu-ext2d:documentLink>
+          <bu-ext2d:format>jpeg</bu-ext2d:format>
+          <bu-ext2d:sourceStatus>NotOfficial</bu-ext2d:sourceStatus>
+         </bu-ext2d:Document>
+      </bu-ext2d:document>
+      <bu-ext2d:officialArea>
+         <bu-ext2d:OfficialArea>
+          <bu-ext2d:officialAreaReference>grossFloorArea</bu-ext2d:officialAreaReference>
+          <bu-ext2d:value uom="m2">1502</bu-ext2d:value>
+         </bu-ext2d:OfficialArea>
+      </bu-ext2d:officialArea>
+    </bu-ext2d:Building>
+  </gml:featureMember>
+</gml:FeatureCollection>
