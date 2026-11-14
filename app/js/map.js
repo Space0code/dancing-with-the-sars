@@ -201,13 +201,13 @@ export function createChangeMap(container, { onSelect, bounds }) {
       overlayOn = on;
       applyOverlay();
     },
-    /** Fly so one change fills the view, with room around it. */
-    focus(feature, bottom = 0) {
+    /** Fly so one change fills the view, with room around it; `right` / `bottom` px stay free (the drawer, the tour box). */
+    focus(feature, { bottom = 0, right = 0 } = {}) {
       const g = feature.geometry;
       const pts = g.coordinates.flat(g.type === "MultiPolygon" ? 2 : 1);
       const lons = pts.map((p) => p[0]);
       const lats = pts.map((p) => p[1]);
-      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: { top: 60, right: 60, left: 60, bottom: 60 + bottom }, maxZoom: 15, essential: true });
+      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: { top: 60, right: 60 + right, left: 60, bottom: 60 + bottom }, maxZoom: 15, essential: true });
     },
     select(feature) {
       selectedId = feature ? feature.properties.id : "";

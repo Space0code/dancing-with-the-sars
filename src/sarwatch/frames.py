@@ -50,10 +50,8 @@ NISAR_TINT_FROM_DB = 3.0             # tint where HV is this far below NISAR's o
 NISAR_TINT_FULL_DB = 6.0             # ... full strength at this drop
 NISAR_STABLE_MIN_DB = -12.0          # a pixel whose HV never falls below this is "stable forest": sets each pass's offset
 TINT_RGB = (214, 40, 160)              # magenta-pink, apart from the verdict colours
-RADAR_CAPTION = "Radar picture. Grey: unchanged since summer 2025. Pink: the echo from trees and plants dropped here."
-NISAR_CAPTION = ("NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. "
-                 "Pink: trees gone since NISAR's first picture on {first}.")
-PHOTO_CAPTION = "Colour images from Landsat and Sentinel-2 (NASA HLS), cloud-free days only."
+RADAR_CAPTION = "Sentinel-1, NISAR"      # the app shows each picture's own satellite name; a set's caption is just the names
+PHOTO_CAPTION = "Landsat, Sentinel-2"
 
 
 @dataclass(frozen=True)
@@ -265,16 +263,15 @@ def nisar_alphas(dbs: list, water: np.ndarray, pixel_ha: float) -> list:
 
 def nisar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans) -> list:
     """Write one JPEG per usable NISAR pass (grey HV, trees gone since the first pass tinted); returns
-    [{date, sensor, url, caption}] sorted by date. File names end in -nisar so they never meet a Sentinel-1 file."""
+    [{date, sensor, url}] sorted by date. File names end in -nisar so they never meet a Sentinel-1 file."""
     days, dbs, water, pixel_ha = nisar_series(site_id, stacks, window, skip_spans)
     out_dir.mkdir(parents=True, exist_ok=True)
-    caption = NISAR_CAPTION.format(first=f"{days[0].day} {days[0]:%b %Y}")
     frames = []
     for day, db, alpha in zip(days, dbs, nisar_alphas(dbs, water, pixel_ha)):
         data = jpeg_bytes(tint(radar_stretch(db, *NISAR_RANGE_DB), alpha))
         name = f"{day.isoformat()}-nisar.jpg"
         (out_dir / name).write_bytes(data)
-        frames.append({"date": day.isoformat(), "sensor": "NISAR", "url": f"frames/radar/{name}", "caption": caption})
+        frames.append({"date": day.isoformat(), "sensor": "NISAR", "url": f"frames/radar/{name}"})
         if len(data) > MAX_FRAME_BYTES:
             log.warning("nisar %s: %d KB (target %d KB)", day, len(data) // 1000, MAX_FRAME_BYTES // 1000)
     return frames

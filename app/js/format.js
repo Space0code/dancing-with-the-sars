@@ -2,8 +2,8 @@
 
 // The app's name and pitch live only here (working name; the team picks the final one).
 export const APP = {
-  name: "SARwatch",
-  pitch: "Radar satellites see the ground through clouds and at night. This map shows where the land changed, and which changes deserve a second look.",
+  name: "Parallax",
+  pitch: "Land changes seen by radar satellites, labelled for review.",
 };
 
 // Okabe-Ito colorblind-safe palette. The map draws a dark casing around each polygon so all three read on the radar and the photos.
@@ -11,15 +11,15 @@ export const VERDICTS = {
   expected: { label: "Expected", color: "#0072B2" },
   review: { label: "Needs review", color: "#F0E442" },
   high_concern: { label: "High concern", color: "#D55E00" }, // orange; the radar frames are tinted magenta-pink (214, 40, 160), so the two stay apart
-  none: { label: "Not judged yet", color: "#9AA3A8" },
+  none: { label: "Not labelled yet", color: "#9AA3A8" },
 };
 export const verdictKey = (verdict) => (Object.hasOwn(VERDICTS, verdict) ? verdict : "none"); // null or unknown = not judged yet
 
 const CHANGE_LABELS = {
-  clearing: "Forest clearing",
-  structure: "New building or structure",
-  earthworks: "Earth moved (grading, digging or filling)",
-  ground_motion: "Ground sinking or rising",
+  clearing: "Land clearing",
+  structure: "New building",
+  earthworks: "Earth moved",
+  ground_motion: "Ground movement",
   fire: "Burned area",
   other: "Other change",
 };
@@ -31,7 +31,7 @@ export const confidenceLabel = (c) => CONFIDENCE[c] ?? "Unknown";
 export function sensorLabel(sensor) {
   if (/nisar/i.test(sensor)) return "NISAR radar satellite";
   if (/sentinel-1/i.test(sensor)) return "Sentinel-1 radar satellite";
-  if (/dist-alert/i.test(sensor)) return "NASA optical alerts (Landsat + Sentinel-2)";
+  if (/dist-alert/i.test(sensor)) return "Optical alerts";
   if (/sentinel-2|optical|hls/i.test(sensor)) return "Optical satellite";
   return sensor;
 }
@@ -52,7 +52,7 @@ export function formatArea(ha) {
 }
 
 export function runningTotal(count, ha) {
-  return `${count} ${count === 1 ? "change" : "changes"} · ${formatArea(ha)} marked so far`;
+  return `${count} ${count === 1 ? "change" : "changes"} · ${formatArea(ha)}`;
 }
 
 // --- tiny DOM builder (text goes through text nodes, so data can never inject HTML) ---

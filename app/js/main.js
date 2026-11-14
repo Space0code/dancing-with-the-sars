@@ -1,9 +1,10 @@
-// Written by Claude. Wires the intro, site switcher, map, the big picture (Radar / Satellite, swipe), legend, timeline, side panel, explainer and tour.
-import { APP, VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
+// Written by Claude. Wires the intro, site switcher, map, the big picture (Radar / Satellite, swipe), legend, timeline, drawer and tour.
+import { APP, VERDICTS, setVerdictColors, runningTotal, changeLabel, h } from "./format.js";
 import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
-import { renderIntro, renderStory, setStoryDate, showCard, showHint } from "./panel.js";
+import { renderIntro, renderOverview, setOverviewDate, showCard } from "./panel.js";
+import { createDrawer } from "./drawer.js";
 import { createInbox } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
@@ -17,20 +18,14 @@ function showError(message, isNotice = false) {
   box.hidden = false;
 }
 
+// One compact legend, the same for every site: the four labels, the radar tint (Radar view only) and the timeline bar.
 function renderLegend() {
+  const row = (swatch, text, attrs = {}) => h("li", attrs, swatch, text);
   $("legend").replaceChildren(
-    ...Object.values(VERDICTS).map((v) =>
-      h("li", {}, h("span", { class: "swatch", style: `background:${v.color}` }), v.label)
-    )
+    ...Object.values(VERDICTS).map((v) => row(h("span", { class: "swatch", style: `background:${v.color}` }), v.label)),
+    row(h("span", { class: "swatch tint" }), "Changed since first picture", { id: "legend-tint" }),
+    row(h("span", { class: "swatch bar" }), "New changes on the timeline")
   );
-}
-
-// Phones: the legend and the picture's caption fold behind small buttons so most of the map stays visible.
-function wireFolds() {
-  const fold = (btn, box) =>
-    btn.addEventListener("click", () => btn.setAttribute("aria-expanded", String(box.classList.toggle("open"))));
-  fold($("legend-btn"), $("legend-box"));
-  fold($("caption-btn"), $("view-caption"));
 }
 
 function fillSiteSelect(sites) {
@@ -50,15 +45,8 @@ function allSitesBounds(sites) {
 function findStepChange(features, step) {
   if (step.change) return features.find((f) => f.properties.id === step.change) ?? null;
   if (!step.change_verdict) return null;
-  const matching = features.filter((f) => f.properties.verdict === step.change_verdict);
-  return matching.sort((a, b) => b.properties.area_ha - a.properties.area_ha)[0] ?? null;
-}
-
-function setupExplainer() {
-  const dialog = $("explainer");
-  $("explain-btn").addEventListener("click", () => dialog.showModal());
-  dialog.querySelector(".close").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", (e) => e.target === dialog && dialog.close()); // a click on the backdrop closes it
+  const largest = (list) => list.sort((a, b) => b.properties.area_ha - a.properties.area_ha)[0];
+  return largest(features.filter((f) => f.properties.verdict === step.change_verdict)) ?? largest(features.slice()) ?? null;
 }
 
 async function main() {
@@ -66,12 +54,11 @@ async function main() {
   $("app-pitch").textContent = APP.pitch;
   setVerdictColors();
   renderLegend();
-  wireFolds();
-  setupExplainer();
   if (!window.maplibregl) return showError("The map library could not be loaded. Check your internet connection and reload.");
 
   const [allSites, tourData] = await Promise.all([loadSites(), loadJson("tour.json").catch(() => ({ steps: [] }))]);
-  const sites = allSites.filter((s) => s.ready && !s.hidden); // the only sites the menu, the intro and the tour know
+  const sites = allSites.filter((s) => s.ready && !s.hidden); // the only sites the menu, the intro and the tour list
+  const openable = allSites.filter((s) => s.ready); // hidden sites open by link
   fillSiteSelect(sites);
   const overview = allSitesBounds(sites);
   let current = null; // the open site's data, or null on the intro screen
@@ -95,6 +82,7 @@ async function main() {
       if (!current || loading) return;
       const params = new URLSearchParams({ site: current.site.id });
       if (lastDate) params.set("date", lastDate);
+      if (picture.view !== "radar" && picture.stops()) params.set("view", "satellite"); // a site without photos stays in Radar
       if (selectedId) params.set("change", selectedId);
       try {
         history.replaceState(null, "", `${location.pathname}${location.search}#${params}`);
@@ -102,21 +90,50 @@ async function main() {
     }, 250);
   }
 
+  /** Select a change (its card opens in the drawer) or, with null, clear the selection (the drawer stays as it is). */
   function select(feature) {
     if (feature) setOverlay(true);
     selectedId = feature ? feature.properties.id : null;
     writeHash();
     map.select(feature);
-    inbox.setSelected(feature ? feature.properties.id : null);
-    if (feature) {
-      showCard(feature, current, () => select(null));
-      inbox.showTab("details");
-    } else showHint();
+    inbox.setSelected(selectedId);
+    if (!feature) return;
+    showCard(feature, current);
+    drawer.setTitle(changeLabel(feature.properties.type));
+    drawer.show("card");
   }
-  const map = createChangeMap($("map"), { onSelect: select, bounds: overview });
+  const drawer = createDrawer({
+    onShow: (view) => view === "inbox" && inbox.refresh(),
+    onClose: () => select(null),
+    onBack: () => {
+      select(null);
+      showSiteDrawer();
+    },
+  });
+  /** The site-level view of the drawer: the overview and the list of changes. */
+  function showSiteDrawer(view = drawer.lastTab) {
+    if (!current) return;
+    drawer.setTitle(current.site.name);
+    drawer.show(view);
+  }
+  // A click on empty map closes whatever is open; Esc does too (before the tour's own Esc handling).
+  const map = createChangeMap($("map"), { onSelect: (f) => (f ? select(f) : drawer.close()), bounds: overview });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !drawer.mode || document.querySelector("dialog[open]")) return;
+    drawer.close();
+    e.preventDefault();
+  });
+  const room = () => ({ bottom: tourRoom(), right: Math.min(480, $("map").clientWidth * 0.4) }); // the drawer covers the right side: keep the change clear of it
+  $("changes-btn").addEventListener("click", () => (drawer.mode && drawer.mode !== "card" ? drawer.close() : (select(null), showSiteDrawer())));
   await map.ready;
 
-  const picture = createPicture(map, document.querySelector(".map-wrap"));
+  // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
+  const syncStops = () => {
+    timeline.setStops(picture.view === "radar" ? null : picture.stops());
+    $("legend-tint").hidden = picture.view !== "radar"; // the tint only exists on the radar pictures
+    writeHash(); // the link carries the view
+  };
+  const picture = createPicture(map, document.querySelector(".map-wrap"), { onView: syncStops });
 
   const refreshTotal = () => {
     const { count, ha } = inbox.stats(); // follows the date and the inbox filters
@@ -124,7 +141,7 @@ async function main() {
   };
   const inbox = createInbox({
     onOpen(feature) {
-      map.focus(feature, tourRoom());
+      map.focus(feature, room());
       select(feature);
     },
     onFilters() {
@@ -137,38 +154,36 @@ async function main() {
       map.setDate(iso);
       picture.setDate(iso);
       inbox.setDate(iso);
-      setStoryDate(iso);
+      setOverviewDate(iso);
       refreshTotal();
       lastDate = iso;
       writeHash();
     },
-    onPlay: () => picture.setView("radar"), // the time-lapse always runs on the radar pictures
   });
 
-  const tour = createTour(tourData.steps ?? [], sites, {
+  // Tour steps are the same for every site: they run on the open site, or on the first real one.
+  const tour = createTour(tourData.steps ?? [], {
     async runStep(step) {
-      if (current?.site.id !== step.site) await openSite(step.site);
+      if (!current) await openSite((sites.find((s) => !s.fixture) ?? sites[0]).id);
       const feature = findStepChange(current.changes.features, step);
-      const date = step.date ?? (feature ? feature.properties.last_date : current.site.time_range[1]);
-      if (step.play_to) timeline.playBetween(date, step.play_to, step.note ?? "");
+      const day = (d) => ({ start: current.site.time_range[0], end: current.site.time_range[1] })[d] ?? d;
+      const date = day(step.date) ?? (feature ? feature.properties.last_date : current.site.time_range[1]);
+      if (step.play_to) timeline.playBetween(date, day(step.play_to), step.note ?? "");
       else timeline.goTo(date, step.note ?? "");
       if (feature) {
         select(feature);
-        map.focus(feature, tourRoom());
+        map.focus(feature, room());
       } else {
         select(null);
+        drawer.close();
         map.view(current.site, tourRoom());
       }
     },
   });
   $("tour-btn").addEventListener("click", () => tour.start());
 
-  // Phones: the tour docks at the top of the bottom sheet. Desktop: it floats over the map, and the camera leaves room for it.
-  const phone = matchMedia("(max-width: 760px)");
-  const placeTour = () => (phone.matches ? $("panel").prepend($("tour")) : document.querySelector(".map-wrap").append($("tour")));
-  placeTour();
-  phone.addEventListener("change", placeTour);
-  const tourRoom = () => (tour.active && !phone.matches ? $("tour").offsetHeight + 30 : 0);
+  // The tour floats over the map (bottom left); the camera leaves room for it.
+  const tourRoom = () => (tour.active ? $("tour").offsetHeight + 30 : 0);
 
   function showIntro() {
     current = null;
@@ -178,22 +193,27 @@ async function main() {
     $("site").value = "";
     $("fake-badge").hidden = true;
     history.replaceState(null, "", location.pathname + location.search);
+    drawer.close();
+    $("changes-btn").hidden = true;
     renderIntro(sites, { onPick: (id) => openSite(id).catch((err) => showError(err.message)), onTour: () => tour.start() });
-    inbox.setSite([]); // no site, no list: the tabs hide and the Details view shows the intro
-    inbox.showTab("details");
-    $("panel-tabs").hidden = true;
+    $("intro").hidden = false;
+    inbox.setSite([]);
     picture.setSite(null);
     map.showOverview(overview);
     timeline.clear();
   }
 
   async function openSite(id) {
-    const site = sites.find((s) => s.id === id);
+    const site = openable.find((s) => s.id === id);
     if (!site) return;
     $("map-error").hidden = true;
+    for (const o of $("site").querySelectorAll("option[value]")) if (o.value && !sites.some((s) => s.id === o.value)) o.remove(); // a hidden site opened earlier by link
+    if (!$("site").querySelector(`option[value="${site.id}"]`)) $("site").append(h("option", { value: site.id }, site.name)); // a hidden site, opened by link
     $("site").value = site.id;
     $("fake-badge").hidden = !site.fixture;
-    $("panel-tabs").hidden = false;
+    $("intro").hidden = true;
+    $("changes-btn").hidden = false;
+    drawer.close();
     history.replaceState(null, "", `#site=${site.id}`);
     clearTimeout(hashTimer); // a pending write still describes the old site: drop it, and write nothing while this one loads
     selectedId = null;
@@ -201,13 +221,13 @@ async function main() {
     loading = true;
     try {
       current = await loadSite(site);
-      renderStory(current.story, current.base); // first: it changes the map's size on phones
-      showHint();
+      renderOverview(site, current.changes.features);
       inbox.setSite(current.changes.features);
       map.setExtraFilter(null);
       map.showSite(site, current.changes, current.stages);
       picture.setSite(current);
-      timeline.setRange(site, current.changes.features, current.story?.events);
+      timeline.setRange(site, current.changes.features);
+      syncStops(); // a site with photos only starts in Satellite
     } finally {
       loading = false;
     }
@@ -224,19 +244,21 @@ async function main() {
   async function applyHash() {
     const params = new URLSearchParams(location.hash.slice(1));
     const id = params.get("site");
-    if (!sites.some((s) => s.id === id)) return false;
+    if (!openable.some((s) => s.id === id)) return false;
     const date = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") ? params.get("date") : null; // anything else is ignored
     if (current?.site.id !== id) {
       tour.end();
       await openSite(id);
     }
+    const view = params.get("view");
+    if (view === "radar" || view === "satellite") picture.setView(view === "satellite" ? "photo" : "radar"); // anything else is ignored; before the date, so the slider has the view's stops
     if (date) timeline.goTo(date);
     const feature = current.changes.features.find((f) => f.properties.id === params.get("change"));
     if (feature) {
       if (!date) timeline.goTo(feature.properties.last_date); // a hand-made link without a date: show the change as it stands
-      map.focus(feature, tourRoom());
+      map.focus(feature, room());
       select(feature);
-    } else if (selectedId) select(null);
+    } else if (drawer.mode) drawer.close();
     return true;
   }
   window.addEventListener("hashchange", () => applyHash().catch((err) => showError(err.message))); // a link pasted into the same tab

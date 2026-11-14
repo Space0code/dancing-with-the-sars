@@ -4,10 +4,10 @@ import { h, formatArea, safeUrl } from "./format.js";
 
 // Each question the rules ask: which reason codes answer it, and what to say when none of them is present.
 const QUESTIONS = [
-  { key: "protected", q: "Protected natural area?", codes: ["protected_area", "protected_buffer"], none: "Not inside a protected area.", spain: true },
-  { key: "zoning", q: "What does the zoning say?", codes: ["zoning_non_buildable", "zoning_urban", "planned_sector"], none: "Nothing in the zoning changes the label.", spain: true },
-  { key: "cadastre", q: "On the land registry?", codes: ["cadastre_building_found", "no_record_found"], none: "No new building on record.", spain: true },
-  { key: "solar", q: "A listed solar plant?", codes: ["solar_plant_listed", "solar_plant_other"], none: "No listed solar plant explains this change.", spain: true },
+  { key: "protected", q: "Protected natural area?", codes: ["protected_area", "protected_buffer"], none: "Not inside a protected area.", regional: true },
+  { key: "zoning", q: "What does the zoning say?", codes: ["zoning_non_buildable", "zoning_urban", "planned_sector"], none: "Nothing in the zoning changes the label.", regional: true },
+  { key: "cadastre", q: "On the land registry?", codes: ["cadastre_building_found", "no_record_found"], none: "No new building on record.", regional: true },
+  { key: "solar", q: "A listed solar plant?", codes: ["solar_plant_listed", "solar_plant_other"], none: "No listed solar plant explains this change.", regional: true },
   { key: "fire", q: "A recorded wildfire?", codes: ["fire_recorded"], none: "No wildfire in the records we have." },
   { key: "official", q: "Any official record (assessment, orders)?", codes: ["assessment_missing", "official_stop_order", "official_investigation", "official_action"], none: "None in the records we have (official records are entered by hand)." },
   { key: "size", q: "How big?", codes: ["small_area", "small_uncertain", "small_no_records", "size_only"], none: null },
@@ -58,7 +58,7 @@ function row(question, reasons, mark, deciding, fallback) {
   );
 }
 
-/** The "Why this label?" block for one change. `country` is the site's country (the Catalan records only apply in "ES"). */
+/** The "Why this label?" block for one change. `country` is the site's country (the regional land records only exist for "ES"). */
 export function buildChecklist(p, country) {
   if (!p.verdict) return [h("h3", {}, "Why this label?"), h("p", { class: "note" }, "Not judged yet: this change has not been checked against public records.")];
   const reasons = p.reasons ?? [];
@@ -77,11 +77,11 @@ export function buildChecklist(p, country) {
   const rows = [];
   for (const q of QUESTIONS) {
     const rs = byKey.get(q.key) ?? [];
-    if (abroad && q.spain && !rs.length) continue; // folded into the one "does not apply" row below
+    if (abroad && q.regional && !rs.length) continue; // folded into the one "does not apply" row below
     const fallback = q.none ?? `${formatArea(p.area_ha)}.`;
     rows.push({ deciding: rs.includes(deciding), el: row(q.q, rs, rowMark(rs, deciding), rs.includes(deciding), fallback) });
   }
-  if (abroad) rows.splice(0, 0, { deciding: false, el: row("Spanish and Catalan records?", [], "neutral", false, "They do not apply outside Spain.") });
+  if (abroad) rows.splice(0, 0, { deciding: false, el: row("Local land records?", [], "neutral", false, "Not available for this place.") });
   for (const r of others) rows.push({ deciding: r === deciding, el: row("Other", [r], markOf(r), r === deciding) });
   rows.sort((a, b) => b.deciding - a.deciding); // stable: the deciding row moves to the top, the rest keep their order
 

@@ -21,7 +21,7 @@
   {
    "id": "radar",
    "title": "Radar",
-   "caption": "Radar picture. Grey: unchanged since summer 2025. Pink: the echo from trees and plants dropped here.",
+   "caption": "Sentinel-1, NISAR",
    "frames": [
     {
      "date": "2025-06-02",
@@ -176,69 +176,59 @@
     {
      "date": "2026-06-25",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-06-25-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-06-25-nisar.jpg"
     },
     {
      "date": "2026-07-07",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-07-07-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-07-07-nisar.jpg"
     },
     {
      "date": "2026-07-19",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-07-19-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-07-19-nisar.jpg"
     },
     {
      "date": "2026-08-12",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-08-12-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-08-12-nisar.jpg"
     },
     {
      "date": "2026-08-24",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-08-24-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-08-24-nisar.jpg"
     },
     {
      "date": "2026-09-05",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-09-05-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-09-05-nisar.jpg"
     },
     {
      "date": "2026-09-17",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-09-17-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-09-17-nisar.jpg"
     },
     {
      "date": "2026-09-29",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-09-29-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-09-29-nisar.jpg"
     },
     {
      "date": "2026-10-11",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-10-11-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-10-11-nisar.jpg"
     },
     {
      "date": "2026-10-23",
      "sensor": "NISAR",
-     "url": "frames/radar/2026-10-23-nisar.jpg",
-     "caption": "NISAR radar picture (NASA and ISRO). Light: forest. Dark: bare ground or water. Pink: trees gone since NISAR's first picture on 25 Jun 2026."
+     "url": "frames/radar/2026-10-23-nisar.jpg"
     }
    ]
   },
   {
    "id": "photo",
    "title": "Satellite photo",
-   "caption": "Colour images from Landsat and Sentinel-2 (NASA HLS), cloud-free days only.",
+   "caption": "Landsat, Sentinel-2",
    "frames": [
     {
      "date": "2025-06-04",
