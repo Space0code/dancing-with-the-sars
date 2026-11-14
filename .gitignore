@@ -1,0 +1,17 @@
+# Written by Claude
+# data: keep only docs + small manifests
+data/*
+!data/README.md
+!data/pilot/
+*.h5
+*.nc
+# python / notebooks
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+# os / editor / local claude state / secrets
+.DS_Store
+.claude/settings.local.json
+.claude/worktrees/
+.env
