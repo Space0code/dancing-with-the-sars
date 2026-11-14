@@ -2,6 +2,7 @@
 // Filtering on the map is a MapLibre expression (mapFilter), so the map never loops over features in JS. Rows render in chunks.
 import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, formatArea } from "./format.js";
 import { whenText } from "./seen.js";
+import { changesCsv, downloadText } from "./csv.js";
 
 const CHUNK = 80; // rows per render step; more load as the list is scrolled
 const CONCERN_ORDER = ["high_concern", "review", "none", "expected"]; // what a regulator should look at first
@@ -30,6 +31,8 @@ export function createInbox({ onOpen, onFilters }) {
   let date = "9999-12-31";
   let verdicts = new Set(); // empty set = no filter
   let kinds = new Set();
+  let minHa = 0; // "smallest change" slider; 0 = any size
+  let sizeSteps = [0]; // the slider's stops, in hectares (set per site)
   let sortKey = "concern";
   let selectedId = null;
   let matching = []; // features passing date + filters (unsorted until rendered)
@@ -41,15 +44,38 @@ export function createInbox({ onOpen, onFilters }) {
   const kindChips = h("div", { class: "chips", role: "group", "aria-label": "Filter by kind of change" });
   const sortSelect = h("select", { id: "inbox-sort", "aria-label": "Sort changes by", onchange: (e) => { sortKey = e.target.value; sorted = null; stale = true; render(); } },
     Object.entries(SORTS).map(([key, s]) => h("option", { value: key }, s.label)));
-  const clearBtn = h("button", { type: "button", class: "clear-filters", hidden: true, onclick: () => { verdicts.clear(); kinds.clear(); filtersChanged(); } }, "Clear filters");
+  const clearBtn = h("button", { type: "button", class: "clear-filters", hidden: true, onclick: () => { verdicts.clear(); kinds.clear(); setMinHa(0); filtersChanged(); } }, "Clear filters");
+  const downloadBtn = h("button", { type: "button", class: "download-csv", onclick: () => {
+    const rows = matching.slice().sort(SORTS[sortKey].cmp); // exactly the list the user sees, in its order
+    downloadText(`${all[0]?.properties.site ?? "site"}-changes.csv`, changesCsv(rows, kindName));
+  } }, "Download CSV");
+  const sizeValue = h("span", { class: "size-value" }, "any size");
+  const sizeSlider = h("input", { type: "range", min: "0", max: "0", step: "1", value: "0", "aria-label": "Smallest change to show",
+    oninput: (e) => { setMinHa(sizeSteps[Number(e.target.value)] ?? 0); filtersChanged(); } });
+  const sizeRow = h("label", { class: "size-filter", hidden: true }, "Smallest change ", sizeSlider, sizeValue);
   const summary = h("p", { class: "inbox-summary", "aria-live": "polite" });
   const list = h("ul", { class: "inbox-list", "aria-label": "Changes" });
   root.replaceChildren(
     h("div", { class: "inbox-controls" },
       h("div", { class: "inbox-top" }, h("label", { class: "sort" }, "Sort by ", sortSelect), clearBtn),
-      verdictChips, kindChips, summary),
+      verdictChips, kindChips, sizeRow, h("div", { class: "inbox-bottom" }, summary, downloadBtn)),
     list
   );
+
+  function setMinHa(value) {
+    minHa = value;
+    sizeSlider.value = String(Math.max(sizeSteps.indexOf(value), 0));
+    sizeValue.textContent = value ? `${value} ha or more` : "any size";
+    sizeSlider.setAttribute("aria-valuetext", value ? `${value} hectares or more` : "any size"); // screen readers say hectares, not a step number
+  }
+  /** Slider stops for a site: round hectare values below its largest change (a site of 1 to 5 ha gets no slider). */
+  function setSizeSteps() {
+    const largest = Math.max(0, ...all.map((f) => f.properties.area_ha));
+    sizeSteps = [0, ...[0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].filter((v) => v < largest)];
+    sizeSlider.max = String(sizeSteps.length - 1);
+    sizeRow.hidden = sizeSteps.length < 2;
+    setMinHa(0);
+  }
 
   // --- tabs ---
   const tabs = { details: $("tab-details"), inbox: $("tab-inbox") };
@@ -67,6 +93,7 @@ export function createInbox({ onOpen, onFilters }) {
   const verdictOf = (f) => verdictKey(f.properties.verdict);
   const passes = (f) =>
     f.properties.first_date <= date &&
+    f.properties.area_ha >= minHa &&
     (!verdicts.size || verdicts.has(verdictOf(f))) &&
     (!kinds.size || kinds.has(f.properties.type));
 
@@ -75,7 +102,7 @@ export function createInbox({ onOpen, onFilters }) {
     sorted = null;
     stale = true;
     $("inbox-count").textContent = String(matching.length);
-    clearBtn.hidden = !(verdicts.size || kinds.size);
+    clearBtn.hidden = !(verdicts.size || kinds.size || minHa);
   }
 
   function filtersChanged() {
@@ -141,6 +168,7 @@ export function createInbox({ onOpen, onFilters }) {
       verdicts.clear();
       kinds.clear();
       selectedId = null;
+      setSizeSteps();
       syncChips();
       recompute();
       render();
@@ -168,6 +196,7 @@ export function createInbox({ onOpen, onFilters }) {
       const parts = [];
       if (verdicts.size) parts.push(["in", JUDGED_KEY, ["literal", [...verdicts]]]);
       if (kinds.size) parts.push(["in", ["get", "type"], ["literal", [...kinds]]]);
+      if (minHa) parts.push([">=", ["get", "area_ha"], minHa]);
       return parts.length ? ["all", ...parts] : null;
     },
     /** Count and total area of the changes passing date + filters. */

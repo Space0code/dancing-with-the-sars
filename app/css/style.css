@@ -517,3 +517,12 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
   *, *::before, *::after { transition: none !important; animation: none !important; }
   :root { --lift: 0px; --press: none; }
 }
+
+/* Changes tab: smallest-change slider and CSV download (js/inbox.js, js/csv.js) */
+.size-filter { display: flex; align-items: center; gap: var(--s-2); padding: 2px 0 var(--s-2); font-size: var(--t-label); color: var(--muted); }
+.size-filter[hidden] { display: none; }
+.size-filter input { flex: 1; min-width: 80px; accent-color: var(--accent); }
+.size-value { min-width: 84px; text-align: right; color: var(--ink); font-weight: 600; }
+.inbox-bottom { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.inbox-bottom .inbox-summary { margin: var(--s-1) 0 var(--s-2); }
+.download-csv { border: 1px solid var(--line); background: var(--panel, #fff); border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: var(--t-label); color: var(--accent); }
