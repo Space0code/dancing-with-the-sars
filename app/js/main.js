@@ -39,7 +39,7 @@ async function main() {
   let current = null; // the open site's data
   function select(feature) {
     map.select(feature);
-    if (feature) showCard(feature, current.base, () => select(null));
+    if (feature) showCard(feature, current, () => select(null));
     else showHint();
   }
   const map = createChangeMap($("map"), { onSelect: select });
