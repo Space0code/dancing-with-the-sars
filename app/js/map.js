@@ -78,6 +78,7 @@ export function createChangeMap(container, { onSelect }) {
   return {
     ready,
     showSite(site, collection) {
+      map.resize(); // measure the container now, so the camera centers on the final size
       features = new Map(collection.features.map((f) => [f.properties.id, f]));
       map.getSource("changes").setData(collection);
       this.select(null);

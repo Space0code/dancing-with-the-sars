@@ -1,8 +1,9 @@
-// Written by Claude. Wires the site switcher, map, legend and basemap toggle together.
+// Written by Claude. Wires the site switcher, map, legend, basemap toggle, timeline and side panel together.
 import { VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
 import { loadSites, loadSite } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
+import { renderStory, showCard, showHint } from "./panel.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -35,10 +36,15 @@ async function main() {
 
   const sites = await loadSites();
   fillSiteSelect(sites);
-  const map = createChangeMap($("map"), { onSelect: () => {} });
+  let current = null; // the open site's data
+  function select(feature) {
+    map.select(feature);
+    if (feature) showCard(feature, current.base, () => select(null));
+    else showHint();
+  }
+  const map = createChangeMap($("map"), { onSelect: select });
   await map.ready;
 
-  let current = null; // the open site's data
   const timeline = createTimeline({
     onDate(iso) {
       map.setDate(iso);
@@ -54,6 +60,8 @@ async function main() {
     $("fake-badge").hidden = !site.fixture;
     history.replaceState(null, "", `#site=${site.id}`);
     current = await loadSite(site);
+    renderStory(current.story); // first: it changes the map's size on phones
+    showHint();
     map.showSite(site, current.changes);
     timeline.setRange(site.time_range, current.story?.events);
   }

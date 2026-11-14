@@ -121,6 +121,8 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
   .basemap { margin-left: 0; }
   main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
   #panel { max-height: 42vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 10px 12px 14px; }
-  .legend { bottom: 24px; }
+  .legend { bottom: auto; top: 8px; padding: 4px 8px; }
+  .legend ul { display: grid; grid-template-columns: auto auto; gap: 0 12px; font-size: 12px; }
+  .swatch { width: 12px; height: 12px; }
   .timeline { padding: 6px 12px 8px; }
 }
