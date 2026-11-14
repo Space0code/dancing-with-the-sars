@@ -1,6 +1,7 @@
 """Picture frames: grid, smoothing, fixed stretches, thinning and a tiny end-to-end radar run."""
 import json
 from datetime import date, timedelta
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -132,3 +133,69 @@ def test_build_writes_frames_json_that_the_contract_accepts(tmp_path):
     from sarwatch import contract
     contract._check_frames(site_dir, errors)
     assert errors == [] and validate is not None
+
+
+def _fake_nisar(root, days):
+    """A tiny NISAR cache on the Muhos window (UTM grid): a lake (dark HH) in one corner, a patch that goes dark on
+    the 3rd pass, and one dry pass (+2 dB everywhere) that must not flicker."""
+    from rasterio.transform import from_bounds
+    from rasterio.warp import transform_bounds
+
+    x0, y0, x1, y1 = transform_bounds("EPSG:4326", "EPSG:32635", *WINDOW)
+    n = 60
+    transform = from_bounds(x0, y0, x1, y1, n, n)
+    cache = root / "muhos" / "nisar"
+    for i, day in enumerate(days):
+        hv = np.full((n, n), 0.09, np.float32) * (1.6 if i == 1 else 1.0)
+        hh = np.full((n, n), 0.2, np.float32)
+        hh[:8, :8] = 0.02                  # lake
+        hv[:8, :8] = 0.005 if i < 2 else 0.0008   # the lake gets darker still: never pink
+        if i >= 2:
+            hv[20:40, 20:40] = 0.01        # trees gone
+        pipeline.save_frame(pipeline.cache_path(cache, day), pipeline.Frame(
+            day=day, data={"HH": hh, "HV": hv}, transform=tuple(transform)[:6], epsg=32635, bbox=WINDOW,
+            source="fake", mb=None, seconds=0.0))
+
+
+NISAR_DAYS = [date(2026, 6, 25) + timedelta(12 * i) for i in range(5)]
+
+
+def test_nisar_frames_are_dark_where_bare_pink_where_gone_since_the_first_pass(tmp_path):
+    _fake_nisar(tmp_path / "stacks", NISAR_DAYS + [date(2026, 11, 4)])      # 4 Nov is a skipped pass
+    skip = pipeline._skip_spans(pipeline.SITES["muhos"])
+    out = tmp_path / "radar"
+    listed = frames.nisar_frames("muhos", tmp_path / "stacks", out, WINDOW, skip)
+    assert [f["date"] for f in listed] == [d.isoformat() for d in NISAR_DAYS]
+    assert all(f["sensor"] == "NISAR" and f["url"].endswith("-nisar.jpg") and f["caption"] for f in listed)
+    assert "25 Jun 2026" in listed[0]["caption"]
+    from PIL import Image
+    imgs = [np.asarray(Image.open(out / Path(f["url"]).name).convert("RGB"), float) for f in listed]
+    h, w, _ = imgs[0].shape
+    centre = (slice(h // 2 - 20, h // 2 + 20), slice(w // 2 - 20, w // 2 + 20))
+    forest = (slice(h - 60, h - 20), slice(w - 60, w - 20))
+    lake = (slice(5, 25), slice(5, 25))
+    assert np.abs(imgs[0][centre][..., 0] - imgs[0][centre][..., 2]).max() < 8          # first pass: no tint
+    assert (imgs[4][centre][..., 0] - imgs[4][centre][..., 1]).mean() > 60               # pink later
+    assert np.abs(imgs[4][lake][..., 0] - imgs[4][lake][..., 2]).max() < 8               # water never pink
+    assert imgs[4][lake][..., 1].mean() < 60                                             # and dark
+    # the dry pass does not flicker: forest grey within a few levels of the neighbours
+    assert abs(imgs[1][forest][..., 1].mean() - imgs[0][forest][..., 1].mean()) < 8
+
+
+def test_radar_set_is_sentinel1_until_the_first_nisar_pass_then_nisar(tmp_path):
+    s1_days = [date(2026, 6, 1) + timedelta(6 * i) for i in range(6)]        # 1 Jun .. 1 Jul
+    _fake_stack(tmp_path / "stacks", SUMMER + s1_days)
+    _fake_nisar(tmp_path / "stacks", NISAR_DAYS)
+    out = tmp_path / "radar"
+    out.mkdir()
+    (out / "stale.jpg").write_bytes(b"x")
+    skip = pipeline._skip_spans(pipeline.SITES["muhos"])
+    listed = frames.radar_set("muhos", tmp_path / "stacks", out, WINDOW, skip)
+    sensors = [(f["date"], f["sensor"]) for f in listed]
+    assert sensors == sorted(sensors) and len({d for d, _ in sensors}) == len(sensors)
+    first = NISAR_DAYS[0].isoformat()
+    assert all((s == "NISAR") == (d >= first) for d, s in sensors)
+    assert [d for d, s in sensors if s == "Sentinel-1"][-1] == "2026-06-19"
+    assert all("caption" in f for f in listed if f["sensor"] == "NISAR")
+    assert not any("caption" in f for f in listed if f["sensor"] == "Sentinel-1")
+    assert sorted(p.name for p in out.glob("*.jpg")) == sorted(Path(f["url"]).name for f in listed)

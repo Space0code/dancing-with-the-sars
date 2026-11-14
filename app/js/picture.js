@@ -87,7 +87,12 @@ export function createPicture(map, mapWrap) {
 
   function labelFor(frame) {
     if (!frame) return NO_FRAME[view].label;
-    return view === "radar" ? `Radar picture of ${formatDate(frame.date)}` : `Photo from ${formatDate(frame.date)}`;
+    return view === "radar" ? `${frame.sensor ?? "Radar"} radar picture of ${formatDate(frame.date)}` : `Photo from ${formatDate(frame.date)}`;
+  }
+
+  /** "Before: Sentinel-1, 2 Jun 2025" on the radar view (the two sides can be different satellites), "Before: 2 Jun 2025" otherwise. */
+  function sideLabel(prefix, frame) {
+    return `${prefix}: ${view === "radar" && frame.sensor ? `${frame.sensor}, ` : ""}${formatDate(frame.date)}`;
   }
 
   /** Show the frame(s) for the current view, date and compare state, once their pictures have loaded. */
@@ -106,13 +111,13 @@ export function createPicture(map, mapWrap) {
     shown = { before: b, after: a };
     draw();
     $("frame-label").textContent = labelFor(after);
-    swipe.setLabels(before ? `Before: ${formatDate(before.date)}` : "", after ? `After: ${formatDate(after.date)}` : "After: no picture yet");
+    $("view-caption").textContent = after?.caption ?? sets[view]?.caption ?? NO_FRAME[view].caption; // a frame's own caption wins
+    swipe.setLabels(before ? sideLabel("Before", before) : "", after ? sideLabel("After", after) : "After: no picture yet");
   }
 
   function update() {
     for (const [key, btn] of Object.entries(buttons)) btn.setAttribute("aria-checked", String(key === view));
     buttons.radar.disabled = !sets.radar;
-    $("view-caption").textContent = sets[view]?.caption ?? NO_FRAME[view].caption;
     if (!sets[view]) comparing = false;
     compareBtn.disabled = !sets[view];
     compareBtn.setAttribute("aria-pressed", String(comparing));
