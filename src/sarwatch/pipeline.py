@@ -69,6 +69,7 @@ class NisarSettings:
     direction: str | None = None   # "ASCENDING" | "DESCENDING"
     min_maturity: str = "PROVISIONAL"
     params: ChangeParams = field(default_factory=ChangeParams)  # 20 m pixels: the change-core defaults
+    water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
 
 
 @dataclass
@@ -78,6 +79,7 @@ class S1Settings:
     max_dates: int | None = None     # thin to at most this many dates, spread over the period
     min_gap_days: int | None = None  # or keep scenes at least this far apart
     params: ChangeParams = field(default_factory=lambda: ChangeParams(boxcar=3))  # 30 m pixels: smaller window
+    water_db: float | None = None  # co-pol baseline below this (dB) = open water, left out of detection
 
 
 @dataclass
@@ -87,14 +89,32 @@ class Site:
     nisar: NisarSettings | None
     s1: S1Settings | None = None
     use_s1: bool = True
+    skip_dates: tuple[str, ...] = ()  # "YYYY-MM-DD" or "YYYY-MM-DD..YYYY-MM-DD" (inclusive) passes left out of
+                                      # detection (frozen ground, snow, ...), for every sensor; they stay cached
+    params: dict = field(default_factory=dict)  # ChangeParams overrides for every sensor of this site
 
+
+# Muhos tuning (#27; quick-looks and the clearing outline in explore/muhos/).
+# NISAR: 4 Nov 2026 is a frozen pass (HV 2 dB lower over the whole window, forest most); 23 Oct looks normal. The
+# summer felling lowers L-band HV by only 1.5-3 dB (slash and stumps stay), so 2.5 dB with a 7 x 7 boxcar.
+# Sentinel-1: the baseline is the 19 snow-free passes of 3 Jun - 25 Sep 2025 (n_early), the end state the last 10
+# passes (28 Aug - 21 Oct 2026). Oct 2025 - 6 Mar 2026 (wet autumn, frozen ground, snow: artifacts on 6 Mar) and
+# Nov 2026 (frozen, like NISAR's 4 Nov) are left out, so the felling is dated from the first spring pass that shows it
+# (from 30 Mar); May 2025 is before the baseline. The river is masked (summer VV below -16 dB), else its 2026 surface
+# reads as change. Minimum areas (NISAR 2 ha, Sentinel-1 3 ha) drop field-sized specks (tillage, wet ground).
+MUHOS_SKIP = ("2025-05-01..2025-05-31", "2025-10-01..2026-03-10", "2026-11-01..2026-11-30")
+MUHOS_PARAMS: dict = {}  # all Muhos tuning is per sensor, below
 
 SITES = {
     # Google's reported clear-cut; NISAR stack measured on 14 Nov: 11 dates 25 Jun -> 4 Nov 2026, grid EPSG:3413.
     "muhos": Site(
         id="muhos", bbox=(25.94, 64.80, 26.15, 64.89),
-        nisar=NisarSettings(start=date(2026, 6, 1), track=157, frame=35, direction="ASCENDING"),
-        s1=S1Settings(start=date(2026, 1, 1), end=date(2026, 11, 10), max_dates=30),
+        nisar=NisarSettings(start=date(2026, 6, 1), track=157, frame=35, direction="ASCENDING",
+                            params=ChangeParams(boxcar=7, threshold_db=2.5, min_area_ha=2.0)),
+        s1=S1Settings(start=date(2025, 5, 1), end=date(2026, 11, 10), water_db=-16.0,
+                      params=ChangeParams(boxcar=5, n_early=19, n_late=10, threshold_db=2.0, persist=3,
+                                          min_area_ha=3.0)),
+        skip_dates=MUHOS_SKIP, params=MUHOS_PARAMS,
     ),
     # Agroparc Penedes earthworks; Sentinel-1 gives the years before NISAR, about one scene a month.
     "agroparc": Site(
@@ -106,9 +126,43 @@ SITES = {
 
 
 def _params(site: Site, sensor: str, threshold_db=None, min_area_ha=None) -> ChangeParams:
+    """The sensor's defaults, then the site's overrides, then the command line's."""
     params = (site.nisar if sensor == NISAR else site.s1).params
-    changes = {k: v for k, v in (("threshold_db", threshold_db), ("min_area_ha", min_area_ha)) if v is not None}
-    return dataclasses.replace(params, **changes)
+    known = {f.name for f in dataclasses.fields(ChangeParams)}
+    if set(site.params) - known:
+        raise PipelineError(f"{site.id}: unknown change parameter(s) {sorted(set(site.params) - known)}; "
+                            f"known: {sorted(known)}")
+    cli = {k: v for k, v in (("threshold_db", threshold_db), ("min_area_ha", min_area_ha)) if v is not None}
+    return dataclasses.replace(params, **{**site.params, **cli})
+
+
+def _skip_spans(site: Site, skip_dates=None) -> list:
+    """The passes to leave out as inclusive (first, last) spans: the command line's list if given (even empty), else
+    the site's. Each entry is "YYYY-MM-DD" or "YYYY-MM-DD..YYYY-MM-DD"."""
+    names = site.skip_dates if skip_dates is None else skip_dates
+    spans = []
+    try:
+        for name in (str(n).strip() for n in names):
+            if name:
+                lo, _, hi = name.partition("..")
+                lo, hi = date.fromisoformat(lo.strip()), date.fromisoformat((hi or lo).strip())
+                if lo > hi:
+                    raise ValueError(f"{name!r} ends before it starts")
+                spans.append((lo, hi))
+    except ValueError as exc:
+        raise PipelineError(f"skip dates must be YYYY-MM-DD or YYYY-MM-DD..YYYY-MM-DD: {exc}") from None
+    return spans
+
+
+def _water_mask(stack: dict, sensor: str, n_early: int, water_db: float) -> np.ndarray:
+    """valid mask for detect_changes: False on open water (co-pol baseline median below water_db), plus one pixel."""
+    from scipy import ndimage
+
+    arr = stack[POLS[sensor][0]]
+    copol = np.nanmedian(arr[:max(1, min(n_early, len(arr) - 1))], axis=0)  # the baseline, as detect_changes takes it
+    with np.errstate(divide="ignore", invalid="ignore"):
+        water = ndimage.median_filter(10 * np.log10(copol), size=3) < water_db  # NaN compares False
+    return ~ndimage.binary_dilation(water)
 
 
 # ---------------------------------------------------------------- token
@@ -397,6 +451,23 @@ def collect(sensor: str, site: Site, cache_root, *, offline=False, max_new=None,
 # ---------------------------------------------------------------- detect, export, index
 
 
+def _drop_baseline_dated(result, last_baseline):
+    """Remove regions whose first_date lies in the baseline: a pass that defines "before" cannot be the date of a
+    lasting change. Labels are renumbered so that regions[i].label == i + 1 still holds."""
+    keep = [r for r in result.regions if r.first_date > last_baseline]
+    if len(keep) == len(result.regions):
+        return result
+    log.info("dropped %d region(s) dated inside the baseline (up to %s)", len(result.regions) - len(keep),
+             last_baseline)
+    remap = np.zeros(len(result.regions) + 1, dtype=result.labels.dtype)
+    for i, r in enumerate(keep, 1):
+        remap[r.label] = i
+    labels = remap[result.labels]
+    first = np.where(labels > 0, result.first_change_idx, -1).astype(result.first_change_idx.dtype)
+    regions = [dataclasses.replace(r, label=i) for i, r in enumerate(keep, 1)]
+    return dataclasses.replace(result, labels=labels, first_change_idx=first, regions=regions)
+
+
 def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams):
     """Run the change core on the cached stack; an export Run, or None with fewer than two dates."""
     from .export import Run
@@ -407,7 +478,18 @@ def detect(sensor: str, site: Site, cache_root, days: list, params: ChangeParams
     stack, dates, transform, epsg = load_stack(Path(cache_root) / site.id / sensor, days, site.bbox)
     a, b, _, d, e, _ = transform
     pixel = (math.hypot(a, d), math.hypot(b, e))
-    result = detect_changes(stack, dates, pixel, params)
+    water_db = (site.nisar if sensor == NISAR else site.s1).water_db
+    valid = None if water_db is None else _water_mask(stack, sensor, params.n_early, water_db)
+    if valid is not None:
+        log.info("%s: %.1f%% of the window is water (co-pol below %.0f dB), left out", sensor,
+                 100 * (1 - valid.mean()), water_db)
+    n_early = max(1, min(params.n_early, len(dates) - 1))  # the windows detect_changes will use
+    n_late = max(1, min(params.n_late, len(dates) - n_early))
+    log.info("%s: baseline %s .. %s (%d passes), end state %s .. %s (%d passes)", sensor, dates[0],
+             dates[n_early - 1], n_early, dates[-n_late], dates[-1], n_late)
+    result = detect_changes(stack, dates, pixel, params, valid=valid)
+    if sensor == S1:
+        result = _drop_baseline_dated(result, dates[n_early - 1])
     log.info("%s: %d dates, %d change regions (threshold %.1f dB, min %.2f ha)", sensor, len(dates),
              len(result.regions), params.threshold_db, params.min_area_ha)
     return Run(sensor=SENSOR_NAMES[sensor], result=result, dates=dates, stack=stack, transform=transform, epsg=epsg)
@@ -496,7 +578,7 @@ def _tally(site_dir: Path, key: str) -> dict:
 
 
 def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1), offline=False, fetch_only=False,
-        max_new=None, threshold_db=None, min_area_ha=None) -> int:
+        max_new=None, threshold_db=None, min_area_ha=None, skip_dates=None) -> int:
     """The whole site run; prints a summary. Returns 0 if the data passes the contract, 1 if not."""
     site = SITES[site_id]
     out, cache = Path(out), Path(cache)
@@ -504,6 +586,8 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     if not use:
         raise PipelineError(f"{site_id}: no sensor left to run")
     entry = None if fetch_only else _site_entry(out / "sites.json", site_id)  # fail before spending data
+    spans = _skip_spans(site, skip_dates)  # typos in the settings fail here too, not after the downloads
+    params = {s: _params(site, s, threshold_db, min_area_ha) for s in use}
     token = None if offline else load_token()
     meter, days = Meter(), {}
     for sensor in use:
@@ -527,7 +611,13 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         print("\n".join(summary()))
         return 0
 
-    runs = [r for r in (detect(s, site, cache, days[s], _params(site, s, threshold_db, min_area_ha)) for s in use) if r]
+    for sensor in use:  # skip dates stay cached; they are only left out of detection
+        left_out = [d for d in days[sensor] if any(lo <= d <= hi for lo, hi in spans)]
+        if left_out:
+            log.info("%s: left out %d date(s), %s (skip dates)", sensor, len(left_out),
+                     ", ".join(map(str, left_out)))
+            days[sensor] = [d for d in days[sensor] if d not in left_out]
+    runs = [r for r in (detect(s, site, cache, days[s], params[s]) for s in use) if r]
     if not runs:
         raise PipelineError(f"{site_id}: no sensor has two cached dates, nothing to detect")
     from .export import write_site
@@ -562,8 +652,10 @@ def main(argv=None) -> int:
     p.add_argument("--max-dates", type=int, metavar="N", help="fetch at most N new dates this run (all sensors)")
     p.add_argument("--no-s1", action="store_true", help="skip Sentinel-1")
     p.add_argument("--no-nisar", action="store_true", help="skip NISAR")
-    p.add_argument("--threshold-db", type=float, help="change threshold in dB (default 3.0 for both sensors)")
-    p.add_argument("--min-area-ha", type=float, help="smallest change kept, hectares (default 0.5)")
+    p.add_argument("--threshold-db", type=float, help="change threshold in dB (default: the site's, else 3.0)")
+    p.add_argument("--min-area-ha", type=float, help="smallest change kept, hectares (default: the site's, else 0.5)")
+    p.add_argument("--skip-dates", metavar="D1,D2", help="comma-separated YYYY-MM-DD or YYYY-MM-DD..YYYY-MM-DD "
+                   "passes to leave out of detection; replaces the site's own list ('' = use every date)")
     args = p.parse_args(argv)
     if args.fetch_only and args.offline:
         p.error("--fetch-only and --offline exclude each other")
@@ -575,7 +667,8 @@ def main(argv=None) -> int:
     try:
         return run(args.site, args.out, args.cache, sensors=sensors, offline=args.offline,
                    fetch_only=args.fetch_only, max_new=args.max_dates, threshold_db=args.threshold_db,
-                   min_area_ha=args.min_area_ha)
+                   min_area_ha=args.min_area_ha,
+                   skip_dates=None if args.skip_dates is None else tuple(args.skip_dates.split(",")))
     except (PipelineError, PermissionError) as exc:  # PermissionError: the archive refused the token
         print(f"error: {exc}", file=sys.stderr)
         return 2
