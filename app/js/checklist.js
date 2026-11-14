@@ -10,7 +10,7 @@ const QUESTIONS = [
   { key: "solar", q: "A listed solar plant?", codes: ["solar_plant_listed", "solar_plant_other"], none: "No listed solar plant explains this change.", spain: true },
   { key: "fire", q: "A recorded wildfire?", codes: ["fire_recorded"], none: "No wildfire in the records we have." },
   { key: "official", q: "Any official record (assessment, orders)?", codes: ["assessment_missing", "official_stop_order", "official_investigation", "official_action"], none: "None in the records we have (official records are entered by hand)." },
-  { key: "size", q: "How big?", codes: ["small_area", "size_only"], none: null },
+  { key: "size", q: "How big?", codes: ["small_area", "small_uncertain", "small_no_records", "size_only"], none: null },
 ];
 
 // `records_unavailable` reasons: verdict.py writes "The <service> could not be checked…" ("land registry", …),
