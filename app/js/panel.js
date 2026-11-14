@@ -1,5 +1,5 @@
-// Written by Claude. Side panel: the intro screen, the collapsible site story and the change card (the "why this label" checklist, signal chart).
-import { buildChart } from "./chart.js";
+// Written by Claude. Side panel: the intro screen, the collapsible site story (with its curve) and the change card (the "why this label" checklist, signal chart).
+import { buildChart, buildStoryChart } from "./chart.js";
 import { loadJson } from "./data.js";
 import { buildChecklist } from "./checklist.js";
 import { h, APP, VERDICTS, verdictKey, changeLabel, sensorLabel, safeUrl } from "./format.js";
@@ -7,8 +7,35 @@ import { whenText, sizeText, confidenceText, seenBy } from "./seen.js";
 
 const $ = (id) => document.getElementById(id);
 
-export function renderStory(story) {
+let storyChart = null; // {setDate} of the open story's curve, if it has one
+let storyToken = 0; // a slow chart file must not land in another site's story
+let storyDate = null; // the slider date, so a chart that loads late starts at the right place
+
+/** Move the story curve's slider line (called on every timeline step). */
+export function setStoryDate(iso) {
+  storyDate = iso;
+  storyChart?.setDate(iso);
+}
+
+// story.chart: {title, file, note}; the file sits next to story.json and has the format of a series file.
+function storyChartSlot(chart, base, token) {
+  const slot = h("div", { class: "story-chart-slot" });
+  loadJson(base + chart.file)
+    .then((data) => {
+      const built = token === storyToken && buildStoryChart(data, chart);
+      if (!built) return;
+      slot.replaceChildren(built.node);
+      storyChart = built;
+      built.setDate(storyDate);
+    })
+    .catch(() => token === storyToken && slot.replaceChildren(h("p", { class: "note" }, "The chart could not be loaded.")));
+  return slot;
+}
+
+export function renderStory(story, base = "") {
   const box = $("story");
+  const token = ++storyToken;
+  storyChart = null;
   if (!story) {
     box.hidden = true;
     return;
@@ -19,7 +46,8 @@ export function renderStory(story) {
   const sourceLine = sources.length
     ? [h("p", { class: "sources" }, "Sources: ", sources.flatMap((s, i) => [i ? " · " : "", h("a", { href: s.url, target: "_blank", rel: "noopener" }, s.title)]))]
     : []; // an array, not null: replaceChildren(null) would print the word "null"
-  box.replaceChildren(h("summary", {}, story.headline), ...story.story.map((p) => h("p", {}, p)), ...sourceLine);
+  const chart = story.chart?.file ? [storyChartSlot(story.chart, base, token)] : [];
+  box.replaceChildren(h("summary", {}, story.headline), ...story.story.map((p) => h("p", {}, p)), ...chart, ...sourceLine);
 }
 
 /** The first screen, before any site is open: what the app is for, the tour, and the sites. */
