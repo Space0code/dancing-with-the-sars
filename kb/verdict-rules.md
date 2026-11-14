@@ -12,7 +12,7 @@ The app flags places for a human to look at. It never says "illegal" and never n
   - `cadastre`: `built_since` = buildings whose construction **year** is ≥ the change's `first_date` year (the registry only has years; `1900-01-01` is a placeholder and never counts as recent).
   - `zoning`: `zone` (`urban` / `developable` / `non_buildable` / null) and `shares` (fraction of the polygon per zone). `zone: null` with `checked: true` means no zoning polygon there (e.g. the sea): unknown, not a failure.
   - `solar`: `plants` (`[{name, status, ha, ha_in_municipality}]`), by municipality only.
-  - `fire`: `recorded`. No lookup client yet, so only from a records file.
+  - `fire`: `recorded` (at least half of the change polygon inside a mapped fire) and `fires` (`[{name, date, area_ha, overlap_share}]`), from the EFFIS lookup (`context/fire.py`, #47). The command line asks for fires that started by the change's `first_date` and ended at most a year before it, so an old burn scar does not explain a change today. If the lookup fails, a `records_unavailable` reason says the wildfire map could not be checked (a burn scar may then be mistaken for a clearing). EFFIS does not map fires under about 20 ha.
   - `official`: hand-entered only (below).
 
 ## The rule table (first matching row wins)

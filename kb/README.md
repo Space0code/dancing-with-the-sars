@@ -15,6 +15,8 @@ What we know, written for engineers (CS / math / EE), not geologists. One line p
 | [sar-primer.md](sar-primer.md) | How radar imaging works: backscatter, polarization, speckle, InSAR, L vs C band, products |
 | [glossary.md](glossary.md) | Remote-sensing jargon → engineering meaning |
 | [submission.md](submission.md) | Space Apps submission: form checklist, demo rules (≤30 s / ≤7 slides), judging criteria, drafts of every field |
+| [demo-strategy.md](demo-strategy.md) | What wins: the one-sentence claim, the 30 s video storyboard, the 3-minute live pitch, the project page, what we leave out |
+| [evidence-check.md](evidence-check.md) | Sceptical check of every demo claim against our results: support, rival explanations, defensible wording, go / no-go per site, fallbacks, what to measure next |
 | [decisions.md](decisions.md) | One line per team decision + why |
 
 <sub>Written by Claude; agents keep this index current.</sub>

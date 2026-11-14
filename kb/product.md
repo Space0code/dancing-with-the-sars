@@ -12,7 +12,7 @@ with the evidence.
 - **The Finland case (verified).** From Mar to Aug 2026 Google's Finnish subsidiary cleared ~330 ha of forest at Muhos
   and just under 200 ha at Kajaani-Otanmäki for planned AI datacenters, **before the mandatory environmental impact
   assessment was finished**. It kept cutting after being told in May that an assessment was required. 6 Oct: the
-  permit regulator ordered a stop. 29 Oct: police opened a preliminary investigation into suspected environmental damage,
+  permit regulator called on the company to suspend the work by 23 Oct. 29 Oct: police opened a preliminary investigation into suspected environmental damage,
   including drainage failures. That's months of large physical change, visible from orbit, before anyone stepped in.
   Details and coordinates: `project-context.md` §7.
 - **Regulators can't inspect everything.** Changes that match no plan or permit go unnoticed until the damage is done.

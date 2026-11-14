@@ -12,6 +12,13 @@
    "time_range": ["2023-01-01", "2026-11-05"]},
   {"id": "fixture", "name": "Fake example (not real data)", "country": "ES", "ready": true, "fixture": true,
    "center": [1.85, 41.45], "zoom": 13, "bbox": [1.80, 41.42, 1.90, 41.48],
-   "time_range": ["2024-01-01", "2026-11-02"]}
+   "time_range": ["2024-01-01", "2026-11-02"],
+   "sources": [
+    {"sensor": "OPERA DIST-ALERT", "kind": "optical", "start": "2023-01-01", "end": null, "revisit_days": 5,
+     "sees": ["clearing", "fire"], "risky_months": [11, 12, 1, 2]},
+    {"sensor": "Sentinel-1 C-band", "kind": "radar", "start": "2016-01-01", "end": null, "revisit_days": 12,
+     "sees": ["clearing", "structure", "earthworks", "fire"], "risky_months": [12, 1, 2]},
+    {"sensor": "NISAR L-band", "kind": "radar", "start": "2026-06-25", "end": null, "revisit_days": 12,
+     "sees": ["clearing", "structure", "earthworks", "fire", "ground_motion"], "risky_months": []}]}
  ]
 }
