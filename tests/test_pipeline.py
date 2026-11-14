@@ -367,3 +367,13 @@ def test_sensor_defaults_and_overrides():
     p = pipeline._params(site, "s1", threshold_db=4.0, min_area_ha=1.0)
     assert (p.boxcar, p.threshold_db, p.min_area_ha) == (3, 4.0, 1.0)
     assert site.s1.params.threshold_db == 3.0  # the site definition is not modified
+
+
+def test_s1_months_keep_the_same_season_every_year():
+    site = pipeline.Site(id="x", bbox=(0, 0, 1, 1), nisar=None,
+                         s1=pipeline.S1Settings(start=date(2016, 1, 1), months=(6, 7, 8, 9)))
+    days = [date(2016, 5, 31), date(2016, 6, 1), date(2017, 9, 30), date(2017, 10, 1), date(2026, 7, 4)]
+    assert pipeline._in_season(site, "s1", days) == [date(2016, 6, 1), date(2017, 9, 30), date(2026, 7, 4)]
+    assert pipeline._in_season(site, "nisar", days) == days  # NISAR dates are not filtered
+    site.s1.months = None
+    assert pipeline._in_season(site, "s1", days) == days
