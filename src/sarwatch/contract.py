@@ -379,6 +379,8 @@ def _check_frames(site_dir: Path, errors: list[str]) -> None:
                 errors.append(f"{fw}: sensor must be a non-empty string")
             if last is not None and frame["date"] <= last:
                 errors.append(f"{fw}: frames must be sorted by date, strictly increasing ({frame['date']})")
+            if "caption" in frame and (not isinstance(frame["caption"], str) or not frame["caption"]):
+                errors.append(f"{fw}: caption (optional) must be a non-empty string")
             last = frame["date"]
             _check_rel_file(site_dir, frame.get("url"), f"{fw}: url", errors, required=True)
 

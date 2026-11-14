@@ -37,6 +37,12 @@ def test_good_frames_pass(data):
     assert validate(data) == []
 
 
+def test_a_frame_may_carry_its_own_caption(data):
+    doc = _mutate(lambda d: d["sets"][0]["frames"][1].update(sensor="NISAR", caption="NISAR radar picture."))
+    _write(data, doc)
+    assert validate(data) == []
+
+
 def test_frames_are_optional(data):
     (data / "fixture" / "frames.json").unlink(missing_ok=True)
     assert validate(data) == []
@@ -59,6 +65,8 @@ def _mutate(fn):
     lambda d: d["sets"][0]["frames"][0].update(date="2026-13-01"),
     lambda d: d["sets"][0].update(frames=[]),
     lambda d: d.update(sets=[]),
+    lambda d: d["sets"][0]["frames"][0].update(caption=""),
+    lambda d: d["sets"][0]["frames"][0].update(caption=5),
 ])
 def test_bad_frames_rejected(data, fn):
     _write(data, _mutate(fn))

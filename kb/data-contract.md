@@ -59,12 +59,12 @@ the fixture uses `protected_area`, `zoning_non_buildable`, `no_record_found`, `p
 takes). `date` is `YYYY-MM-DD` or null. `caption` says in plain words what the picture shows.
 
 ## `frames.json` (optional)
-`{"coordinates": [4 corners], "sets": [{id, title, caption, frames: [{date, sensor, url}]}]}`. `coordinates` are the
+`{"coordinates": [4 corners], "sets": [{id, title, caption, frames: [{date, sensor, url, caption?}]}]}`. A frame's optional `caption` replaces the set caption while that frame is shown (Muhos radar: Sentinel-1 frames use the set caption, NISAR frames their own). `coordinates` are the
 four corners `[lon, lat]` (top-left, top-right, bottom-right, bottom-left) shared by every frame of the site; all
 frames are north-up and the same size. Each set (`radar`, `photo`) is one picture per satellite pass or clear day,
 `frames` strictly sorted by date; `url` is a path inside the site folder that must exist. The app shows the latest
 frame at or before the slider date. Written by `python -m sarwatch.frames <site>` (radar: VH dB, one fixed grey
-stretch, pixels that lost echo since summer 2025 tinted magenta-pink; photo: HLS true colour, cloud-free days). A site without `frames.json` is valid.
+stretch, pixels that lost echo since summer 2025 tinted magenta-pink, up to NISAR's first pass; from then on NISAR pictures, `sensor: "NISAR"`, files `<date>-nisar.jpg`: HV dB, own fixed stretch, pink where HV is 3 dB or more below NISAR's own first pass; photo: HLS true colour, cloud-free days). A site without `frames.json` is valid.
 
 ## `stages.geojson` (optional): one outline that grows
 For sites whose parts of one clearing interleave on the ground (Muhos). A FeatureCollection with one feature per date on
