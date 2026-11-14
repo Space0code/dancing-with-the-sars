@@ -171,7 +171,10 @@ def test_run_builds_a_valid_site_and_a_rerun_fetches_nothing(fake, capsys):
     assert fake.nisar.searches == searches and len(fake.nisar.reads) == len(N_DAYS)
 
 
-def test_s1_history_runs_alongside_nisar(fake, capsys):
+def test_s1_history_runs_alongside_nisar(fake, monkeypatch, capsys):
+    site = pipeline.SITES["muhos"]  # the machinery, not the Muhos tuning (its skip dates and baseline length)
+    monkeypatch.setattr(site, "skip_dates", ())
+    monkeypatch.setattr(site, "s1", pipeline.S1Settings(start=date(2026, 1, 1), max_dates=30))
     assert pipeline.main(["muhos", *fake.args]) == 0
     assert "fetched this run: 18 dates, 230.0 MB" in capsys.readouterr().out  # 8 x 25 MB + 10 x 3 MB
 
@@ -381,7 +384,8 @@ def test_site_overrides_then_command_line_overrides(monkeypatch):
         pipeline._params(site, "nisar")
 
 
-def test_skip_dates_from_the_site_or_the_command_line(fake, monkeypatch, capsys):
+def test_skip_dates_from_the_site_or_the_command_line(fake, monkeypatch, capsys, caplog):
+    caplog.set_level("INFO", logger="sarwatch.pipeline")
     monkeypatch.setattr(pipeline.SITES["muhos"], "skip_dates", (str(N_DAYS[-1]),))
     assert pipeline.main(["muhos", "--no-s1", *fake.args]) == 0
     assert sorted(fake.nisar.reads) == N_DAYS  # a skipped date is still fetched and cached, only not used
@@ -393,5 +397,24 @@ def test_skip_dates_from_the_site_or_the_command_line(fake, monkeypatch, capsys)
     assert site_entry(fake.data, "muhos")["time_range"] == [str(N_DAYS[1]), str(N_DAYS[-2])]
     assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", "", *fake.args]) == 0  # '' = all dates
     assert site_entry(fake.data, "muhos")["time_range"] == [str(N_DAYS[0]), str(N_DAYS[-1])]
+    span = f"{N_DAYS[1]}..{N_DAYS[3]}"  # an inclusive range
+    assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", span, *fake.args]) == 0
+    assert f"left out 3 date(s), {N_DAYS[1]}, {N_DAYS[2]}, {N_DAYS[3]}" in caplog.text
     assert pipeline.main(["muhos", "--no-s1", "--offline", "--skip-dates", "4 Nov", *fake.args]) == 2
     assert "YYYY-MM-DD" in capsys.readouterr().err
+
+
+def test_water_is_left_out_of_detection(fake, monkeypatch):
+    site = pipeline.SITES["muhos"]
+    monkeypatch.setattr(site, "skip_dates", ())
+    monkeypatch.setattr(site, "params", {})
+    monkeypatch.setattr(site, "nisar", pipeline.NisarSettings(start=date(2026, 6, 1), track=157, frame=35))
+    assert pipeline.main(["muhos", "--no-s1", *fake.args]) == 0
+    assert any(f["properties"]["type"] == "clearing" for f in features(fake.data, "muhos"))
+    # the changed rectangle is dark in HH (-10 dB) but brighter than -12 dB: land, still found
+    site.nisar.water_db = -12.0
+    assert pipeline.main(["muhos", "--no-s1", "--offline", *fake.args]) == 0
+    assert any(f["properties"]["type"] == "clearing" for f in features(fake.data, "muhos"))
+    site.nisar.water_db = -5.0  # everything is "water": nothing left to detect
+    assert pipeline.main(["muhos", "--no-s1", "--offline", *fake.args]) == 0
+    assert features(fake.data, "muhos") == []
