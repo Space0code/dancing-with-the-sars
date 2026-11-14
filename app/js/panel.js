@@ -1,4 +1,7 @@
-// Written by Claude. Side panel: the collapsible site story and the change card.
+// Written by Claude. Side panel: the collapsible site story and the change card (reasons, before/after swipe, signal chart).
+import { buildChart } from "./chart.js";
+import { buildSwipe } from "./swipe.js";
+import { loadJson } from "./data.js";
 import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, sensorLabel, formatDate, formatArea, safeUrl } from "./format.js";
 
 const $ = (id) => document.getElementById(id);
@@ -40,23 +43,40 @@ function reasonItem(r) {
   );
 }
 
-function picture(src, base, caption) {
-  const fig = h("figure", {}, h("img", { src: base + src, alt: `${caption} picture of this place`, loading: "lazy" }), h("figcaption", {}, caption));
-  fig.querySelector("img").addEventListener("error", () => fig.replaceChildren(h("figcaption", {}, `${caption}: picture not available`)));
-  return fig;
+// Evidence pictures are crops of the site's radar pictures, so their dates come from layers.json (unverified for real sites).
+function evidenceBlock(evidence, base, layers) {
+  const date = (id) => layers.find((l) => l.id === id)?.date;
+  const label = (name, d) => (d ? `${name} · ${formatDate(d)}` : name);
+  const before = evidence.before && { src: base + evidence.before, label: label("Before", date("radar_before")) };
+  const after = evidence.after && { src: base + evidence.after, label: label("After", date("radar_after")) };
+  if (before && after) return buildSwipe(before, after);
+  const single = before ?? after;
+  if (single) return h("figure", { class: "single" }, h("img", { src: single.src, alt: `${single.label} picture of this place` }), h("figcaption", {}, single.label));
+  return h("p", { class: "note" }, "No before and after pictures for this change yet.");
 }
 
 export function showHint() {
   $("card").replaceChildren(h("p", { class: "hint" }, "Click a colored shape on the map to see what changed and why it was flagged."));
 }
 
-/** Show one change. `base` is the site's data folder, for evidence picture paths. */
-export function showCard(feature, base, onClose) {
+let cardToken = 0; // guards against a slow chart arriving after another card was opened
+
+/** Show one change. `site` is the loaded site data ({base, layers}). */
+export function showCard(feature, site, onClose) {
+  const { base, layers } = site;
+  const token = ++cardToken;
   const p = feature.properties;
   const key = verdictKey(p.verdict);
   $("story").open = false;
   const evidence = p.evidence ?? {};
-  const pictures = [evidence.before && picture(evidence.before, base, "Before"), evidence.after && picture(evidence.after, base, "After")].filter(Boolean);
+
+  const chartSlot = h("div", { class: "chart-slot", id: "signal-chart" },
+    h("p", { class: "note" }, evidence.series ? "Loading signal history…" : "No signal history for this change yet."));
+  if (evidence.series) {
+    loadJson(base + evidence.series)
+      .then((data) => token === cardToken && chartSlot.replaceChildren(buildChart(data, p)))
+      .catch(() => token === cardToken && chartSlot.replaceChildren(h("p", { class: "note" }, "The signal history could not be loaded.")));
+  }
 
   $("card").replaceChildren(
     h("article", { class: "card" },
@@ -75,12 +95,11 @@ export function showCard(feature, base, onClose) {
       p.reasons?.length ? h("h3", {}, "Why this verdict") : null,
       p.reasons?.length ? h("ul", { class: "reasons" }, p.reasons.map(reasonItem)) : null,
       p.verdict ? h("p", { class: "note" }, "A verdict says where a person should look first. It is not a finding about anyone.") : h("p", { class: "note" }, "This change has not been checked against public records yet."),
-      pictures.length ? h("h3", {}, "Before and after") : null,
-      pictures.length ? h("div", { class: "pair" }, pictures) : null,
-      // Slot for the signal chart (next issue): listen for the "change-shown" event on document.
-      h("div", { class: "chart-slot", id: "signal-chart" })
+      h("h3", {}, "Before and after"),
+      evidenceBlock(evidence, base, layers),
+      h("h3", {}, "Radar signal over time"),
+      chartSlot
     )
   );
-  document.dispatchEvent(new CustomEvent("change-shown", { detail: { feature, base } }));
   $("panel").scrollTop = 0;
 }

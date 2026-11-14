@@ -46,6 +46,7 @@ export function createChangeMap(container, { onSelect }) {
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   new ResizeObserver(() => map.resize()).observe(container);
 
+  let overlayIds = [];
   let features = new Map();
   let dateIso = "9999-12-31";
 
@@ -84,6 +85,27 @@ export function createChangeMap(container, { onSelect }) {
       this.select(null);
       applyDateFilter();
       map.flyTo({ center: site.center, zoom: site.zoom, essential: true });
+    },
+    /** Lay the site's radar pictures (layers.json) under the change polygons; all start switched off. */
+    setOverlays(base, layers) {
+      for (const id of overlayIds) {
+        map.removeLayer(id);
+        map.removeSource(id);
+      }
+      overlayIds = layers.map((l) => `overlay-${l.id}`);
+      layers.forEach((l, i) => {
+        map.addSource(overlayIds[i], { type: "image", url: base + l.url, coordinates: l.coordinates });
+        map.addLayer({
+          id: overlayIds[i], type: "raster", source: overlayIds[i], layout: { visibility: "none" },
+          paint: { "raster-opacity": 0.7, "raster-fade-duration": 0 },
+        }, "changes-fill");
+      });
+    },
+    setOverlayVisible(id, visible) {
+      map.setLayoutProperty(`overlay-${id}`, "visibility", visible ? "visible" : "none");
+    },
+    setOverlayOpacity(id, opacity) {
+      map.setPaintProperty(`overlay-${id}`, "raster-opacity", opacity);
     },
     setDate(iso) {
       dateIso = iso;

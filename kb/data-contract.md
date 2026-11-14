@@ -35,7 +35,7 @@ GeoJSON FeatureCollection in EPSG:4326 (lon, lat). Geometry: Polygon or MultiPol
 | `verdict` | enum or null | `expected` · `review` · `high_concern`; `null` = not judged yet |
 | `reasons` | list | `[{code, text, source, url, effect}]`: why the verdict; `effect` = `raises` · `lowers` · `neutral`; `url` may be null. Empty before the verdict step |
 | `explain` | string or null | one plain sentence for the card. The radar track writes what was seen; the verdict step may extend it |
-| `evidence` | object | `{before, after, series}`: relative paths or null |
+| `evidence` | object | `{before, after, series}`: relative paths or null; optional `before_date`, `after_date` (`YYYY-MM-DD`, before ≤ after): when the two pictures were taken (the middle pass of each picture, same as its `layers.json` date) |
 
 Rules: a non-null `verdict` needs at least one reason and an `explain` sentence. The app never shows the word
 "illegal"; verdict texts follow `product.md`. Reason `code`s are owned by the verdict track (`verdict-rules.md`);

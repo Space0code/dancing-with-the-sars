@@ -1,5 +1,7 @@
 // Written by Claude. Loads data/sites.json and one site's files. All paths are relative so GitHub Pages sub-paths work.
 
+export const loadJson = (path) => getJson(path);
+
 async function getJson(path, optional = false) {
   try {
     const res = await fetch(path);
