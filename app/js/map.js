@@ -1,7 +1,8 @@
 // Written by Claude. MapLibre map: satellite background (no API key), the big picture of the slider date (a canvas
 // drawn by picture.js), verdict-colored change polygons with a date filter, selection, and a switch that hides them all.
-// A site with stages.geojson draws its grouped changes as ONE area with one bold outline that grows with the date.
-import { VERDICTS } from "./format.js";
+// A site with stages.geojson draws its grouped changes as growth rings: every stage up to the slider date is a thin contour,
+// the latest one bold and filled. The stages nest (each covers the earlier), so they read like the rings of a cut trunk.
+import { VERDICTS, formatDate } from "./format.js";
 
 const STYLE = {
   version: 8,
@@ -59,9 +60,13 @@ export function createChangeMap(container, { onSelect, bounds }) {
       map.addSource("changes", { type: "geojson", data: EMPTY });
       map.addSource("stage", { type: "geojson", data: EMPTY });
       // the grown area: one light fill, one bold outline with a thin white casing (reads on the grey and the colour picture)
-      map.addLayer({ id: "stage-fill", type: "fill", source: "stage", paint: { "fill-color": verdictColor, "fill-opacity": 0.16 } });
-      map.addLayer({ id: "stage-casing", type: "line", source: "stage", layout: { "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": 5.5 } });
-      map.addLayer({ id: "stage-line", type: "line", source: "stage", layout: { "line-join": "round" }, paint: { "line-color": verdictColor, "line-width": 3 } });
+      const LATEST = ["get", "latest"];
+      // Every ring is tinted, so the middle of the area, covered by all of them, ends up the darkest, like a cut trunk.
+      // Older rings run from astra blue (the first) to indigo (the one before the latest); the latest keeps its verdict colour.
+      const ringColor = ["interpolate", ["linear"], ["get", "t"], 0, "#2f7fd0", 1, "#3a2a78"];
+      map.addLayer({ id: "stage-fill", type: "fill", source: "stage", paint: { "fill-color": ["case", LATEST, verdictColor, ringColor], "fill-opacity": ["case", LATEST, 0.16, 0.07] } });
+      map.addLayer({ id: "stage-casing", type: "line", source: "stage", layout: { "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": ["case", LATEST, 5.5, 0] } });
+      map.addLayer({ id: "stage-line", type: "line", source: "stage", layout: { "line-join": "round" }, paint: { "line-color": ["case", LATEST, verdictColor, ringColor], "line-width": ["case", LATEST, 3, 1.4] } });
       // grouped parts stay clickable but add no fill (a hairline opacity keeps them hit-testable)
       map.addLayer({ id: "changes-fill", type: "fill", source: "changes", paint: { "fill-color": verdictColor, "fill-opacity": ["case", ["get", "grouped"], 0.01, 0.3] } });
       map.addLayer({ id: "changes-casing", type: "line", source: "changes", filter: OWN_OUTLINE, paint: { "line-color": "#1b1b1b", "line-width": byZoom(2.6, 4.5) } });
@@ -96,10 +101,31 @@ export function createChangeMap(container, { onSelect, bounds }) {
     for (const id of DATE_LAYERS) map.setFilter(id, id === "changes-fill" ? filter : ["all", filter, OWN_OUTLINE]);
   }
 
-  /** The stage to draw at the slider date: the latest one at or before it (none before the first). */
+  /** The rings to draw at the slider date: every stage at or before it, the latest one marked (none before the first). */
   function applyStage() {
-    const now = stages.filter((f) => f.properties.date <= dateIso).at(-1);
-    map.getSource("stage").setData(now ? { type: "FeatureCollection", features: [now] } : EMPTY);
+    const upTo = stages.filter((f) => f.properties.date <= dateIso);
+    const rings = upTo.map((f, i) => ({
+      ...f, properties: { ...f.properties, ring: i, latest: i === upTo.length - 1, t: upTo.length > 1 ? i / (upTo.length - 1) : 0 },
+    }));
+    map.getSource("stage").setData(rings.length ? { type: "FeatureCollection", features: rings } : EMPTY);
+    placeRingLabel(upTo.at(-1));
+  }
+
+  // The latest ring is named on the map: its month, at its easternmost point, clear of the controls (a flat label, no shadow).
+  let ringLabel = null;
+  function placeRingLabel(stage) {
+    if (!stage) return ringLabel?.remove(), (ringLabel = null);
+    const g = stage.geometry;
+    const pts = g.coordinates.flat(g.type === "MultiPolygon" ? 2 : 1);
+    const top = pts.reduce((best, p) => (p[0] > best[0] ? p : best), pts[0]);
+    if (!ringLabel) {
+      const el = document.createElement("div");
+      el.className = "ring-label";
+      ringLabel = new maplibregl.Marker({ element: el, anchor: "left", offset: [8, 0] }).setLngLat(top).addTo(map);
+    }
+    ringLabel.setLngLat(top);
+    ringLabel.getElement().textContent = formatDate(stage.properties.date).replace(/\s\d{4}$/, "");
+    ringLabel.getElement().style.display = overlayOn ? "" : "none";
   }
 
   /** A grouped part gets a thin outline while the pointer is on it or it is selected; other changes have their own. */
@@ -115,6 +141,7 @@ export function createChangeMap(container, { onSelect, bounds }) {
 
   function applyOverlay() {
     for (const id of OVERLAY_LAYERS) map.setLayoutProperty(id, "visibility", overlayOn ? "visible" : "none");
+    if (ringLabel) ringLabel.getElement().style.display = overlayOn ? "" : "none";
   }
 
   return {

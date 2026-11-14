@@ -71,6 +71,11 @@
   </main>
 
   <footer class="timeline" aria-label="Timeline">
+    <div id="figure" class="figure" hidden>
+      <p class="figure-line"><output id="figure-num" class="figure-num" aria-live="off"></output><span class="figure-unit">ha</span></p>
+      <p id="figure-cap" class="figure-cap"></p>
+    </div>
+    <div class="strip">
     <div class="timeline-top">
       <output id="date-label" class="date-label"></output>
       <span id="gap-note" class="gap-note" aria-live="polite"></span>
@@ -84,6 +89,7 @@
         <div id="events" class="events"></div>
         <div class="range-ends"><span id="range-start"></span><span id="event-note" class="event-note"></span><span id="range-end"></span></div>
       </div>
+    </div>
     </div>
   </footer>
 
