@@ -6,11 +6,11 @@ export const APP = {
   pitch: "Radar satellites see the ground through clouds and at night. This map shows where the land changed, and which changes deserve a second look.",
 };
 
-// Okabe-Ito colorblind-safe palette. The map draws a dark casing around each polygon so all three read on both basemaps.
+// Okabe-Ito colorblind-safe palette. The map draws a dark casing around each polygon so all three read on the radar and the photos.
 export const VERDICTS = {
   expected: { label: "Expected", color: "#0072B2" },
   review: { label: "Needs review", color: "#F0E442" },
-  high_concern: { label: "High concern", color: "#D55E00" },
+  high_concern: { label: "High concern", color: "#CC79A7" }, // not orange: radar frames tint lost vegetation orange-red
   none: { label: "Not judged yet", color: "#9AA3A8" },
 };
 export const verdictKey = (verdict) => (Object.hasOwn(VERDICTS, verdict) ? verdict : "none"); // null or unknown = not judged yet
@@ -51,7 +51,7 @@ export function formatArea(ha) {
 }
 
 export function runningTotal(count, ha) {
-  return `${count} ${count === 1 ? "change" : "changes"} · ${formatArea(ha)} so far`;
+  return `${count} ${count === 1 ? "change" : "changes"} · ${formatArea(ha)} marked so far`;
 }
 
 // --- tiny DOM builder (text goes through text nodes, so data can never inject HTML) ---

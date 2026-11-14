@@ -28,6 +28,8 @@ const EMPTY = { type: "FeatureCollection", features: [] };
 const DATE_LAYERS = ["changes-fill", "changes-casing", "changes-line"];
 const FLASH_MS = 1600; // how long a newly appeared outline glows
 const NONE = ["==", ["get", "id"], ""];
+// Thin outlines at the site overview (detailed shapes with holes would hide the picture), full width from zoom 15.
+const byZoom = (atSite, close) => ["interpolate", ["linear"], ["zoom"], 12, atSite, 15, close];
 
 export function createChangeMap(container, { onSelect, bounds }) {
   // No rotation or tilt: the before/after divider is a vertical line on screen and on the picture alike.
@@ -49,8 +51,8 @@ export function createChangeMap(container, { onSelect, bounds }) {
     map.on("load", () => {
       map.addSource("changes", { type: "geojson", data: EMPTY });
       map.addLayer({ id: "changes-fill", type: "fill", source: "changes", paint: { "fill-color": verdictColor, "fill-opacity": 0.3 } });
-      map.addLayer({ id: "changes-casing", type: "line", source: "changes", paint: { "line-color": "#1b1b1b", "line-width": 4.5 } });
-      map.addLayer({ id: "changes-line", type: "line", source: "changes", paint: { "line-color": verdictColor, "line-width": 2.5 } });
+      map.addLayer({ id: "changes-casing", type: "line", source: "changes", paint: { "line-color": "#1b1b1b", "line-width": byZoom(2.6, 4.5) } });
+      map.addLayer({ id: "changes-line", type: "line", source: "changes", paint: { "line-color": verdictColor, "line-width": byZoom(1.4, 2.5) } });
       map.addLayer({
         id: "changes-flash", type: "line", source: "changes", filter: NONE,
         paint: { "line-color": "#ffffff", "line-width": 4, "line-blur": 2, "line-opacity": 0 },
