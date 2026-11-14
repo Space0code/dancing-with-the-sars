@@ -1,0 +1,95 @@
+<!doctype html>
+<!-- Written by Claude -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ · Parallax</title>
+  <meta name="description" content="Short answers about what Parallax shows, what the labels mean, how recent the data is and how to check a claim.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230a0a0a' fill-rule='evenodd' d='M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z'/%3E%3C/svg%3E">
+  <link rel="preload" href="fonts/funnel-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="brand">
+      <a class="brand-name" href="./" aria-label="Parallax, back to the map">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z"/></svg>
+        <h1 id="app-name">Parallax</h1>
+      </a>
+    </div>
+    <nav class="site-links" aria-label="Pages">
+      <a href="./">Map</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="faq.html" aria-current="page">FAQ</a>
+    </nav>
+  </header>
+
+  <main class="doc faq">
+    <h1>Frequently asked questions</h1>
+    <p class="lede">Short answers. The full method is on <a href="how-it-works.html">How it works</a>.</p>
+
+    <details>
+      <summary>What am I looking at?</summary>
+      <p>A map of one place with every area where the ground changed between satellite passes, drawn as coloured outlines. The picture under them follows the timeline: radar, or the latest cloud-free colour photo. Click an outline to see what changed, when, how big, the label, and the reasons with their sources.</p>
+    </details>
+
+    <details>
+      <summary>What do the colours mean?</summary>
+      <p>Blue is <b>Expected</b>: a public record explains the change. Yellow is <b>Needs review</b>: nothing we could check explains it. Orange is <b>High concern</b>: it is inside a protected area, or it is large and on land where building is not allowed with nothing to explain it. Grey means not labelled yet. The label is also written as a word on every card.</p>
+    </details>
+
+    <details>
+      <summary>What is radar, and why not just use photos?</summary>
+      <p>A radar satellite sends its own signal and measures the echo, so it works at night and through clouds. Photos need daylight and a clear sky, so a cloudy month can hide a change completely. We use both: radar for when and where, photos to look at the place.</p>
+    </details>
+
+    <details>
+      <summary>How recent is the data?</summary>
+      <p>A satellite passes a place every few days, not every day. The date under the map is the date of the picture you are looking at, and a change is dated to between two passes, never to an exact day.</p>
+    </details>
+
+    <details>
+      <summary>How do I choose an area and a time frame?</summary>
+      <p>Pick a place in the site menu, then drag the timeline or press play to watch the changes appear in the order they were seen. The Changes view lists every change and can be narrowed by label, kind of change and smallest size.</p>
+    </details>
+
+    <details>
+      <summary>What can I download?</summary>
+      <p>The Changes view can be downloaded as a CSV file: exactly the list you see after filtering, with a link to the source of each main reason. Every shape also has a shareable link that opens the same place, date and change.</p>
+    </details>
+
+    <details>
+      <summary>What is in a report, and is AI involved?</summary>
+      <p>A report repeats what the cards show: the change, its label, the reasons and their sources. A short summary written by AI may be added to a report, and it is always labelled as AI-written. The facts and the labels never come from AI: they come from the satellite data and from the rules applied to public records.</p>
+    </details>
+
+    <details>
+      <summary>Does "high concern" mean something unlawful happened?</summary>
+      <p>No. It means a person should look. A change can be fully permitted and still be flagged because the records we can read do not show the permit, and a change can be a problem without being flagged. The tool does not judge anyone.</p>
+    </details>
+
+    <details>
+      <summary>Why did it miss something, or mark something wrongly?</summary>
+      <p>Pixels are 20 to 30 metres wide, so small changes are not found. Snow, frost, wet ground and wind on water can look like change. Records can be late or incomplete, so "no building on record" may only mean the registry has not caught up. Each card says how sure we are and what the satellites did and did not see.</p>
+    </details>
+
+    <details>
+      <summary>Which places are covered?</summary>
+      <p>The places in the site menu. They differ in what is connected: some have zoning, protected-area, building and solar records, others have none yet, and for those the label rests on size alone and says so.</p>
+    </details>
+
+    <details>
+      <summary>Who made this?</summary>
+      <p>A small team, for the 2026 NASA Space Apps Challenge, working with AI coding assistants. The satellite data comes from NASA, ISRO and ESA, and the public records from each place's own authorities. The code and the data format are open in the <a href="https://github.com/Space0code/dancing-with-the-sars">project repository</a>.</p>
+    </details>
+
+    <details>
+      <summary>How can I check a claim myself?</summary>
+      <p>Open the change and read "Why this label?": every reason names its source and links to it. The card also shows the before and after pictures and the radar signal over time, so you can compare them with what you know of the place.</p>
+    </details>
+  </main>
+</body>
+</html>

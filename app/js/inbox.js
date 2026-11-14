@@ -2,7 +2,6 @@
 // Filtering on the map is a MapLibre expression (mapFilter), so the map never loops over features in JS. Rows render in chunks.
 import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, formatArea } from "./format.js";
 import { whenText } from "./seen.js";
-import { changesCsv, downloadText } from "./csv.js";
 
 const CHUNK = 80; // rows per render step; more load as the list is scrolled
 const CONCERN_ORDER = ["high_concern", "review", "none", "expected"]; // what a regulator should look at first
@@ -10,7 +9,7 @@ const SHORT_KIND = { // short names for chips and rows; the card has the full wo
   clearing: "Land clearing", structure: "New building", earthworks: "Earth moved",
   ground_motion: "Ground movement", fire: "Burned area", other: "Other change",
 };
-const kindName = (type) => SHORT_KIND[type] ?? changeLabel(type);
+export const kindName = (type) => SHORT_KIND[type] ?? changeLabel(type);
 // verdictKey as a map expression: null or an unknown verdict counts as "none", like in the list
 const JUDGED = Object.keys(VERDICTS).filter((key) => key !== "none");
 const JUDGED_KEY = ["match", ["get", "verdict"], JUDGED, ["get", "verdict"], "none"];
@@ -23,7 +22,7 @@ const CONCERN_RANK = new Map(CONCERN_ORDER.map((key, i) => [key, i]));
 const concernRank = (f) => CONCERN_RANK.get(verdictKey(f.properties.verdict)) ?? CONCERN_RANK.get("none"); // anything unknown ranks as "not judged yet"
 
 /** `onOpen(feature)`: a row was clicked. `onFilters()`: the user changed a filter. */
-export function createInbox({ onOpen, onFilters }) {
+export function createInbox({ onOpen, onFilters, onExport }) {
   const $ = (id) => document.getElementById(id);
   const root = $("inbox");
 
@@ -45,10 +44,7 @@ export function createInbox({ onOpen, onFilters }) {
   const sortSelect = h("select", { id: "inbox-sort", "aria-label": "Sort changes by", onchange: (e) => { sortKey = e.target.value; sorted = null; stale = true; render(); } },
     Object.entries(SORTS).map(([key, s]) => h("option", { value: key }, s.label)));
   const clearBtn = h("button", { type: "button", class: "clear-filters", hidden: true, onclick: () => { verdicts.clear(); kinds.clear(); setMinHa(0); filtersChanged(); } }, "Clear filters");
-  const downloadBtn = h("button", { type: "button", class: "download-csv", onclick: () => {
-    const rows = matching.slice().sort(SORTS[sortKey].cmp); // exactly the list the user sees, in its order
-    downloadText(`parallax-${all[0]?.properties.site ?? "site"}-changes.csv`, changesCsv(rows, kindName));
-  } }, "Download CSV");
+  const exportBtn = h("button", { type: "button", class: "export-open", onclick: (e) => onExport(e.currentTarget) }, "Export");
   const sizeValue = h("span", { class: "size-value" }, "any size");
   const sizeSlider = h("input", { type: "range", min: "0", max: "0", step: "1", value: "0", "aria-label": "Smallest change to show",
     oninput: (e) => { setMinHa(sizeSteps[Number(e.target.value)] ?? 0); filtersChanged(); } });
@@ -58,7 +54,7 @@ export function createInbox({ onOpen, onFilters }) {
   root.replaceChildren(
     h("div", { class: "inbox-controls" },
       h("div", { class: "inbox-top" }, h("label", { class: "sort" }, "Sort by ", sortSelect), clearBtn),
-      verdictChips, kindChips, sizeRow, h("div", { class: "inbox-bottom" }, summary, downloadBtn)),
+      verdictChips, kindChips, sizeRow, h("div", { class: "inbox-bottom" }, summary, exportBtn)),
     list
   );
 
@@ -150,6 +146,18 @@ export function createInbox({ onOpen, onFilters }) {
   });
 
   return {
+    /** The changes the user sees in the list (date, filters, "Smallest change"), in list order. */
+    rows() {
+      return matching.slice().sort(SORTS[sortKey].cmp);
+    },
+    /** The pool changed (a selection was made or cleared): keep the filters and the size steps, show the new pool. */
+    setPool(features) {
+      all = features;
+      syncChips();
+      recompute();
+      render();
+      onFilters();
+    },
     /** Load a site's changes and reset filters. */
     setSite(features) {
       all = features;
