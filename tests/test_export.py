@@ -1,8 +1,9 @@
-"""Synthetic end-to-end tests for sarwatch.export: speckle stacks on UTM grids -> detect_changes -> write_site.
+"""Synthetic end-to-end tests for sarwatch.export: speckle stacks on map grids -> detect_changes -> write_site.
 
 Two runs over the same ground near lon 1.85, lat 41.45: "NISAR" (HH/HV, 20 m, EPSG:32631) with an injected
 clearing and an injected structure, and "Sentinel-1" (VV/VH, 30 m, EPSG:25831, a shifted grid that covers the
-clearing but not the structure) with the same clearing.
+clearing but not the structure) with the same clearing. Plus one run on the real, rotated NISAR grid over
+Muhos, Finland (EPSG:3413).
 """
 import json
 from datetime import date, timedelta
@@ -148,17 +149,19 @@ def test_two_runs_give_a_valid_site_in_the_right_place(runs, site):
     assert by_sensor_type(feats, "Sentinel-1 C-band", "clearing")["properties"]["signal"]["metric"] == "VH_dB"
 
 
-def test_site_pictures_have_corners_in_contract_order(runs, site):
+def test_site_pictures_have_array_corners_in_contract_order(runs, site):
     _, site_dir = site
     write_site(site_dir, SITE, list(runs))
     layers = load(site_dir, "layers.json")["layers"]
 
     assert [l["id"] for l in layers] == ["nisar_l_band_before", "nisar_l_band_after",
                                          "sentinel_1_c_band_before", "sentinel_1_c_band_after"]
+    grids = {"NISAR": (TRANSFORM, EPSG, NX, NY), "Sentinel-1": (S1_TRANSFORM, S1_EPSG, S1_NX, S1_NY)}
     for layer in layers:
-        tl, tr, br, bl = layer["coordinates"]
-        assert tl[1] > bl[1] and tr[1] > br[1]  # top is north
-        assert tl[0] < tr[0] and bl[0] < br[0]  # left is west
+        # the picture array's own corners: (row 0, col 0), (row 0, col nx), (ny, nx), (ny, 0)
+        (a, _, c, _, e, f), epsg, nx, ny = grids["NISAR" if "NISAR" in layer["title"] else "Sentinel-1"]
+        expected = [lonlat(a * col + c, e * row + f, epsg) for col, row in ((0, 0), (nx, 0), (nx, ny), (0, ny))]
+        assert np.allclose(layer["coordinates"], expected, atol=2e-6)
         img = Image.open(site_dir / layer["url"])
         assert max(img.size) <= export.MAX_LAYER_PX
         assert "NISAR" in layer["title"] or "Sentinel-1" in layer["title"]
@@ -166,8 +169,6 @@ def test_site_pictures_have_corners_in_contract_order(runs, site):
 
     before, after = layers[0], layers[1]
     assert before["date"] == DATES[1].isoformat() and after["date"] == DATES[-2].isoformat()
-    expected = [lonlat(X0 + PX * c, Y0 - PX * r) for c, r in ((0, 0), (NX, 0), (NX, NY), (0, NY))]
-    assert np.allclose(before["coordinates"], expected, atol=2e-6)
     rgba = np.array(Image.open(site_dir / before["url"]))
     assert rgba.shape == (NY, NX, 4)
     assert (rgba[:, :NO_DATA_COLS, 3] == 0).all() and (rgba[:, NO_DATA_COLS:, 3] == 255).all()
@@ -252,3 +253,44 @@ def test_large_grids_are_block_averaged_and_kept_small(runs, site, monkeypatch):
     assert (alpha[:, 0] == 0).all() and (alpha[:, 1:] == 255).all()
     expected = [lonlat(X0 + PX * c, Y0 - PX * r) for c, r in ((0, 0), (162, 0), (162, 120), (0, 120))]
     assert np.allclose(layer["coordinates"], expected, atol=2e-6)
+
+
+def test_polar_stereographic_grid(site):
+    """The real NISAR grid over Muhos, Finland: EPSG:3413. Array 'up' points east-north-east there, and a 20 m
+    grid pixel is 19.64 m on the ground (pixel areas are ~3.7 % too big)."""
+    data, site_dir = site
+    epsg, transform, ny, nx = 3413, (20.0, 0.0, 2617240.0, 0.0, -20.0, -898540.0), 80, 80
+    rect = (slice(20, 50), slice(15, 55))  # 30 x 40 px around Muhos (lon 26.044, lat 64.843)
+    rng = np.random.default_rng(5)
+    stack = {"HH": speckle(rng, 0.1, (len(DATES), ny, nx)), "HV": speckle(rng, 0.02, (len(DATES), ny, nx))}
+    stack["HV"][CLEAR_PASS:, rect[0], rect[1]] *= gain(-6)
+    run = Run("NISAR L-band", detect_changes(stack, DATES, (20.0, 20.0)), DATES, stack, transform, epsg)
+    a, _, c, _, e, f = transform
+
+    def grid_lonlat(col, row):
+        return lonlat(a * col + c, e * row + f, epsg)
+
+    summary = write_site(site_dir, SITE, [run])
+
+    assert validate(data) == []
+    assert summary["by_type"] == {"clearing": 1}
+    (feature,) = load(site_dir, "changes.geojson")["features"]
+    poly = shape(feature["geometry"])
+    centre = grid_lonlat((rect[1].start + rect[1].stop) / 2, (rect[0].start + rect[0].stop) / 2)
+    assert GEOD.inv(26.044, 64.843, *centre)[2] < 100
+    assert GEOD.inv(poly.centroid.x, poly.centroid.y, *centre)[2] <= 20.0
+    corners = [grid_lonlat(col, row) for col, row in ((rect[1].start, rect[0].start), (rect[1].stop, rect[0].start),
+                                                      (rect[1].stop, rect[0].stop), (rect[1].start, rect[0].stop))]
+    true_ha = abs(GEOD.polygon_area_perimeter(*zip(*corners))[0]) / 1e4
+    assert true_ha < 0.97 * 1200 * 0.04  # 1200 px x 0.04 ha would overstate it
+    props = feature["properties"]
+    assert props["area_ha"] == pytest.approx(true_ha, rel=0.2)
+    assert props["area_ha"] == pytest.approx(abs(GEOD.geometry_area_perimeter(poly)[0]) / 1e4, abs=0.01)
+
+    # picture corners: the array's own corners (row 0 col 0, then clockwise in the array), not north-west first
+    expected = [grid_lonlat(col, row) for col, row in ((0, 0), (nx, 0), (nx, ny), (0, ny))]
+    for layer in load(site_dir, "layers.json")["layers"]:
+        assert np.allclose(layer["coordinates"], expected, atol=2e-6)
+        assert shape({"type": "Polygon", "coordinates": [layer["coordinates"] + layer["coordinates"][:1]]}).is_valid
+        tl, tr, _, bl = layer["coordinates"]
+        assert tr[1] < tl[1] and bl[0] < tl[0]  # rotated: the array's right is south, its bottom is west

@@ -11,6 +11,12 @@ georeferencing and the ChangeResult from sarwatch.change. Output, under the site
 
 story.json (written by the verdict track) and anything else in the folder are never touched.
 
+Geometry: the grid can be in any projected CRS (UTM, polar stereographic EPSG:3413, ...) and need not
+be north-aligned; every conversion goes through pyproj. Pictures stay in grid orientation: their
+layers.json corners are the array's own corners in lon/lat (row 0 col 0 first), and the map warps
+the picture into that quad. Areas are geodesic (on the WGS84 ellipsoid) from the final lon/lat
+outline, because grid pixels are not equal-area in every projection.
+
 How to read the pictures (background: kb/sar-primer.md). Each is the per-pixel median of a few
 passes in linear power, shown in dB. Red = co-pol (HH / VV, the "surface echo": strong from bare
 rough ground and buildings), green = cross-pol (HV / VH, the "vegetation echo": strong from tree
@@ -81,8 +87,8 @@ class Run:
     dates: list            # list[date], as passed to detect_changes
     stack: dict            # polarization -> (time, y, x) linear power, the arrays given to detect_changes
     transform: tuple       # affine (a, b, c, d, e, f): x = a*col + b*row + c ; y = d*col + e*row + f,
-                           # pixel-corner convention, e < 0 for north-up
-    epsg: int              # projected CRS of the grid (UTM)
+                           # pixel-corner convention; the grid need not be north-up
+    epsg: int              # projected CRS of the grid (UTM, EPSG:3413, ...)
 
 
 # ---------------------------------------------------------------- small helpers
