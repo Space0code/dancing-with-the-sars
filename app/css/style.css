@@ -314,13 +314,30 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .facts dd { margin: 0; }
 .explain { margin: var(--s-3) 0; font-size: var(--t-body); line-height: 1.55; }
 .note { margin: var(--s-2) 0; font-size: var(--t-small); color: var(--muted); }
-.reasons { list-style: none; margin: 0; padding: 0; }
-.reasons li { display: grid; grid-template-columns: 20px 1fr; gap: var(--s-2); padding: var(--s-2) 0; border-top: 1px solid var(--line); }
-.reasons li:first-child { border-top: 0; padding-top: 0; }
-.mark { font-size: 12px; text-align: center; padding-top: 3px; }
+
+/* "Why this label?" checklist (js/checklist.js): one row per question; the row that decided the label sits in a well */
+.checklist { list-style: none; margin: 0; padding: 0; }
+.checklist li {
+  display: grid; grid-template-columns: 20px 1fr; gap: var(--s-2); padding: var(--s-2) var(--s-1); border-top: 1px solid var(--line);
+}
+.checklist li:first-child { border-top: 0; }
+.checklist li.deciding { padding: var(--s-2); border-top: 0; border-radius: var(--r-sm); background: var(--bg); box-shadow: inset 3px 0 0 var(--ink); }
+.checklist li.deciding + li { border-top: 0; }
+.checklist p { margin: 0; }
+.checklist .question { font-size: var(--t-label); font-weight: 500; color: var(--muted); }
+.checklist .answer { margin-top: 2px; }
+.checklist .answer + .answer { margin-top: var(--s-1); }
+.checklist cite { display: block; margin-top: 2px; font-size: var(--t-small); color: var(--muted); font-style: normal; }
+.decider {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; background: var(--ink); color: var(--raised);
+  font-size: var(--t-label); font-weight: 500; line-height: 1.5; white-space: nowrap;
+}
+.mark { font-weight: 600; text-align: center; padding-top: 1px; }
 .mark.raises { color: #a33a00; }
 .mark.lowers { color: #0a5a8c; }
-.reasons cite { display: block; margin-top: 2px; font-size: var(--t-small); color: var(--muted); font-style: normal; }
+.mark.neutral { color: var(--muted); }
+.mark.unchecked { color: #7a5b00; }
+.checklist-key { font-size: var(--t-label); }
 
 /* "Seen by" list (js/seen.js) */
 .seen { list-style: none; margin: 0 0 var(--s-2); padding: 0; }
@@ -336,6 +353,11 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .seen-dates { color: var(--muted); }
 .seen-role { font-size: var(--t-label); color: var(--muted); text-align: right; }
 .seen-note { grid-column: 2 / -1; font-size: var(--t-small); color: var(--muted); }
+
+/* Story curve (#73): story.chart drawn inside the collapsible story */
+.story-chart { margin: var(--s-3) 0 var(--s-1); }
+.story-chart-title { margin-bottom: 2px; font-size: var(--t-small); font-weight: 600; }
+.chart-cursor { stroke: var(--ink); stroke-width: 1.5; }
 
 /* Signal chart */
 .chart-svg { width: 100%; height: auto; display: block; margin-top: var(--s-2); }
