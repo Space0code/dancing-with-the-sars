@@ -1,7 +1,8 @@
-# Submission pack (first draft)
+# Submission pack (Finland as the worked example)
 
 Everything the Space Apps 2026 project form asks for, drafted so the humans edit instead of writing from zero.
-Last updated 2026-11-14 (#49). Numbers that depend on radar results are `[TBD: …]`. Wording rules: `product.md`.
+Last updated 2026-11-14 (#49; rewritten around Finland per Tian's 17:24 note on #9). Numbers that depend on the final
+radar run are `[TBD: …]`; every other number is in `evidence-check.md`. Wording rules: `product.md`.
 
 ## 1. What the form requires (read from the official guides, 14 Nov 2026)
 Sources: [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) ·
@@ -37,118 +38,135 @@ carries most of the score.
 - Optional: request a FortiGuard web-filter classification for the Pages site so judges' networks don't block it.
 
 **Judging criteria** (each scored 1–5, at local and global level):
-| Criterion | What earns a 5 | How we answer it |
+| Criterion | What earns a 5 | How we answer it (Finland as the worked example) |
 |---|---|---|
-| Impact | significant problem, broad reach | regulators can't inspect everything; Muhos shows months of change before anyone stepped in |
-| Creativity | new approach or meaningful improvement | change detection + automatic record check + a plain-language label, not just a change map |
-| Validity | scientifically sound, feasible, usable | physics per change type (`sar-primer.md` §8), real NISAR passes, labels with reasons, made for non-experts |
-| Relevance | NASA data is the core, not decoration | NISAR GCOV finds and dates the changes; OPERA fills the years before NISAR |
-| Presentation | clear, engaging story | the guided tour is the demo; one story per site |
+| Impact | significant problem, broad reach | regulators cannot inspect every hectare; at Muhos the satellites date a clearing that went on after the assessment was required |
+| Creativity | new approach or meaningful improvement | not just a change map: three satellites on one timeline, each change checked against the record and labelled with its reason |
+| Validity | scientifically sound, feasible, usable | the vegetation echo drop is stated as a hypothesis; sources disagree on hectares and we show that instead of hiding it (`evidence-check.md`) |
+| Relevance | NASA data is the core, not decoration | NISAR shows the block through cloud from late June; NASA's optical alerts (OPERA DIST-ALERT, HLS) date the spring; HLS gives the colour photos |
+| Presentation | clear, engaging story | one site, one time-lapse, one card; the main view is understood in ten seconds (#89) |
 
 ## 2. Name, summary, description
 
 **Name options** (one-line taglines; the Python package is already called `sarwatch`):
 1. **SARwatch**: "Radar finds where the land changed. Public records say which changes need a second look."
 2. **Second Look**: "Every change on the ground, sorted by how much it deserves a regulator's attention."
-3. **Through the Clouds**: "Satellite radar keeps watch over forests and fields in any weather, and explains what it saw."
+3. **Through the Clouds**: "Satellite radar keeps watch over forests in any weather, and explains what it saw."
 
 **High-level summary (≤150 words):**
-> We built a web app that watches land with satellite radar and tells regulators, in plain language, which changes
-> look expected and which deserve a closer look. NASA–ISRO's NISAR radar sees through clouds and darkness, so the app
-> detects forest clearing, new buildings and earthworks every few days, whatever the weather. For each change it
-> checks public records: protected areas, zoning, the land registry, solar-plant permits, recorded wildfires. It then
-> labels the change Expected, Needs review or High concern, always with the reason and the before-and-after evidence.
-> A timeline shows changes piling up over months and years. We tested it on Muhos, Finland, where about 330 hectares
-> of forest were cleared for a data centre before the required environmental assessment was finished, and applied it
-> to Catalonia. Regulators cannot inspect every hectare; this shows them where to look first.
+> We built a web app that turns what satellites see into a short, explained list of land changes a regulator should
+> look at first. Our worked example is Muhos, Finland, where about 330 hectares of forest were cleared for a data
+> centre in 2026, as reported, while an environmental assessment was required. The app puts three satellites on one
+> timeline: Sentinel-1 radar first shows the cleared block in late March, NASA's optical alerts date it month by
+> month, and NASA–ISRO's NISAR radar, seeing through cloud, shows it still growing in July and August, after the
+> company had learned an assessment was required. Each change is checked against the public record and labelled
+> Expected, Needs review or High concern, always with the reason and before-and-after pictures. The app never decides
+> whether a rule was broken. Next step: Catalonia, where the record checks already query the public registers.
 
-(≈140 words.)
+(≈145 words.)
 
 **Detailed description** (draft for the form; plain engineering language):
 
-*What it does.* The app shows a map of a region with every detected land change drawn as a coloured shape. Colour =
-label: Expected, Needs review, High concern. Clicking a change opens a card: what changed (forest cleared, new
-structure, earth moved), where, roughly when, how big, the label and the reason behind it, before-and-after pictures,
-and a chart of the radar signal over time with one plain sentence explaining it. A timeline slider replays when each
-change first appeared. A guided tour walks a first-time user through three places: Muhos (Finland), Agroparc Penedès
-(Catalonia) and an overview of Catalonia. The app never decides whether a change breaks a rule; a label is a reason to
-look, with the evidence attached.
+*What it does.* The app opens on one place, Muhos in northern Finland, with a timeline slider. Press play and the map
+becomes a time-lapse: one satellite picture at a time (switch between "Radar" and "Satellite photo"), and the marked
+clearing grows on the date each part was first seen, with a running "hectares so far". "Compare before and after"
+turns the whole map into a swipe between the first and the current picture. Clicking the marked area opens a card:
+what changed, between which dates, how sure we are, which satellites saw it, the label and the reasons behind it,
+and a chart of the signal over time with one plain sentence explaining it. Reported steps (the request to skip the
+assessment, the notice to suspend, the police investigation) appear as flags on the timeline. A label is a reason to
+look, with the evidence attached; the app never says a change is unlawful.
 
 *How it works.*
-1. **Radar stack.** For each site we read small windows of NISAR GCOV images (L-band, 24 cm wavelength, calibrated
-   backscatter, 20 m pixels) over HTTPS without downloading the multi-GB files: 11 passes from late June to early
-   November 2026 per site [TBD: final count]. Older years come from OPERA RTC-S1 (Sentinel-1, C-band, 30 m, from 2016).
+1. **Three satellites, one timeline.** Sentinel-1 radar (C-band, from the OPERA RTC-S1 archive, 2016 on) gives the
+   long history and the first radar sighting; NASA's OPERA DIST-ALERT-HLS optical vegetation-loss alerts (Landsat and
+   Sentinel-2, 30 m) date loss month by month on clear days; NISAR GCOV (L-band, 24 cm wavelength, calibrated
+   backscatter, 20 m) watches from late June 2026, through cloud. We read small windows of each file over HTTPS
+   instead of downloading the multi-GB granules.
 2. **Change detection.** Radar images are grainy (speckle), so we average neighbouring pixels in linear power, compare
-   the early-period median with the late-period median in dB, keep changes above a threshold that persist across
-   passes, date each pixel by the first pass where the change shows, and group pixels into regions of at least 0.5 ha.
-3. **Change type from physics.** Cross-polarised power (HV) comes from volume scattering in canopy, so a large HV drop
-   means trees are gone. A jump in co-polarised power (HH) that stays means walls and ground now form corner
-   reflectors: a new structure. Unstable signal in both means the ground surface keeps being reshaped: earthworks.
-   L-band reaches through leaves to branches and trunks, which makes forest loss clearer than at C-band.
-4. **Optical cross-check.** OPERA DIST-ALERT-HLS vegetation-loss alerts (from Landsat and Sentinel-2) date clearing
-   before NISAR's calibrated record starts and give candidate areas across all of Catalonia; radar confirms them
-   through cloud.
-5. **Record check → label.** Each change is checked against public records: protected areas (PEIN / Natura 2000),
-   the urban-planning map (urban, buildable or protected land), cadastre buildings, the solar-plant register and
-   recorded wildfires. Inside a protected area, or a large clearing on non-buildable land with no record → High
-   concern. No record explains it → Needs review. Matching record, or natural (a recorded fire) → Expected.
-6. **Static web app.** All results are precomputed into small GeoJSON / JSON / PNG files. The app is plain HTML and
-   JavaScript with MapLibre GL JS, no server and no build step, so it runs from GitHub Pages.
+   each pass with a baseline in dB, keep drops that persist across passes, date each pixel by the first pass where the
+   change shows, and group pixels into regions. Each part of the clearing carries its own first-seen date, so the
+   time-lapse grows step by step.
+3. **Physics, stated as a hypothesis.** Cross-polarised power (HV) comes mostly from volume scattering in branches and
+   trunks; L-band reaches through the leaves, so cut forest shows as a drop in this "vegetation echo". Ordinary
+   forestry or open ground nearby can look similar, so we say "the cleared block", not who cleared it.
+4. **Sources kept apart.** Optical and radar disagree on hectares in June (radar marks more low-echo ground than the
+   optical alerts count as new loss). The app gives each source its own name and line and never adds them up.
+5. **Record check → label.** Each change is compared with the public record. Finland has no register we can query,
+   so the regulator's notice and its dates were entered by hand from the published sources, with the area it covers.
+   A large clearing inside that area, while an assessment was required → High concern; nothing on record → Needs
+   review; a matching record or a natural cause (a recorded wildfire) → Expected. Every reason links its source.
+6. **Static web app.** All results are precomputed into small GeoJSON / JSON / image files; plain HTML and JavaScript
+   with MapLibre GL JS, no server and no build step, published on GitHub Pages.
 
-*Results.* Muhos: [TBD: hectares detected, first-seen dates vs. the reported March–August clearing]. Agroparc:
-[TBD: earthworks area and dates]. Catalonia: [TBD: number of changes per label]. False-positive check: recorded
-wildfires come out Expected [TBD: confirm on real data].
+*Results at Muhos* (details and limits: `evidence-check.md`):
+- Sentinel-1 first shows the cleared block in its passes of 18–30 March 2026.
+- NASA's optical alerts show one block of about 358 ha by October, close to the reported 330 ha: 137 ha first seen by
+  the end of May, about half of the block first seen from July on, two months after the assessment was required.
+- NISAR shows the block's edge still moving in July and August.
+- Labels on the final data: [TBD: counts per label after Tian posts "Muhos data final on main"].
+- Limits we state: a first-seen date is the first clear view, not the cutting day; the project boundary is not
+  published; we processed the data in November, nothing was detected live.
 
-*Benefits.* Regulators see where to look first instead of searching everywhere; every label carries its reason and
-evidence; it works in winter and under cloud; it uses only free, open data, so any region can run it.
+*Benefits.* A regulator sees where and when to look, with evidence and a reason; it works under cloud; it uses only
+free, open data, so any region can run it.
 
-*What's next.* Run it continuously over a whole region; add ground sinking and rising from InSAR (EGMS, NISAR
-interferograms); connect permit registers as they go online; let inspectors mark a change as checked.
+*What's next: Catalonia.* The same pipeline with live record checks: protected areas (PEIN / Natura 2000), the
+urban-planning map, the land registry, the solar-plant register and recorded wildfires already answer automatically
+for any Catalan change (built and tested, `src/sarwatch/context/`). Then: run it continuously over a whole region,
+add ground motion from InSAR (EGMS, NISAR interferograms), and let inspectors mark a change as checked.
 
-*Tools.* Python (h5py, rasterio, numpy, asf-search, earthaccess), NASA Earthdata Login, GitHub, MapLibre GL JS,
-plain HTML / CSS / JavaScript, Claude Code (see §5).
+*Tools.* Python (numpy, h5py, rasterio, asf-search, earthaccess, shapely, pyproj), NASA Earthdata Login, GitHub
+Pages, MapLibre GL JS, plain HTML / CSS / JavaScript, Claude Code (see §5).
 
-## 3. Demo (video, ≤30 s)
-The strategy, the 30-second storyboard and the 3-minute live pitch are in [`demo-strategy.md`](demo-strategy.md): one
-story (Muhos), one card, one wide shot of Catalonia; the tour in `app/tour.json` drives both the video and the pitch.
+## 3. Demo (video, ≤ 30 s): shot list on the new main view
+Wording follows `evidence-check.md`: no NISAR hectares, "through cloud" (never snow or winter), "called on to
+suspend" (not "ordered"), "as reported" for the 330 ha, no "nobody was looking". Strategy and the 3-minute pitch:
+[`demo-strategy.md`](demo-strategy.md) (its §3 storyboard predates the new main view; this list replaces it).
 
-If the team prefers slides: 7 slides (title + team and challenge · the Muhos problem · the app · how it works · a
-Catalan card · Catalonia overview · what's next), one screenshot each.
-Caution: the narration must not say anyone did something unlawful; it states what was reported (§6 sources).
+| # | Time | Screen (1080p screen recording of the app, Muhos) | Narration (own voice, ~65 words) |
+|---|---|---|---|
+| 1 | 0–4 s | Muhos opens on "Satellite photo", slider at early March, forest intact. Corner label for the whole video: "SARwatch · <team> · NASA Space Apps 2026" | "Northern Finland, spring 2026. A forest is being cleared for a data centre." |
+| 2 | 4–10 s | Switch to "Radar", press play: frames advance, the marked block appears in late March and grows; "ha so far" counter visible; red flag "May: assessment required" passes | "Radar satellites date it pass by pass, through cloud." |
+| 3 | 10–16 s | Play continues into July–August on NISAR frames; the block's edge still moving after the May flag | "NASA's NISAR shows it still growing in July and August, after an assessment was required." |
+| 4 | 16–21 s | "Compare before and after": drag the full-map swipe from March to August | "Before. After." |
+| 5 | 21–27 s | Click the block: card with label, the top two reasons with sources, "between … and …", the satellites listed | "SARwatch checks each change against the public record and says, in plain words, why it needs a second look." |
+| 6 | 27–30 s | End card: name, tagline "Know where to look first", link | "Next: Catalonia. Know where to look first." |
+
+Recording notes: script the slider (tour or keyboard) so every take is identical; captions burned in; no music with
+lyrics; no AI images or voice (no watermark needed); cut to 29 s, since over 30 s means no global judging. Slides
+fallback (≤ 7): title + team + challenge · the Muhos case · the time-lapse (4 frames) · the card · how it works ·
+limits we state · next: Catalonia.
 
 ## 4. Data used
-**NASA** (all free and open under NASA's Earth science data policy; access via [Earthdata Login](https://urs.earthdata.nasa.gov)):
+**NASA** (free and open under NASA's Earth science data policy; access via [Earthdata Login](https://urs.earthdata.nasa.gov)):
 | Dataset | Used for | Link |
 |---|---|---|
-| NISAR L2 GCOV (L-band backscatter HH/HV, provisional and validated) | detecting and dating changes, Jun–Nov 2026 | [ASF](https://search.asf.alaska.edu/#/?dataset=NISAR) · [docs](https://nisar-docs.asf.alaska.edu/) |
-| OPERA RTC-S1 (Sentinel-1 backscatter, 30 m, 2016→) | the radar history before NISAR | [guide](https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/) |
-| OPERA DIST-ALERT-HLS (vegetation-loss alerts, 30 m, 2023→) | dating the Muhos clearing before June; Catalonia candidates | [LP DAAC](https://www.earthdata.nasa.gov/data/catalog/lpcloud-opera-l3-dist-alert-hls-v1-1) |
-| NISAR mission resources, Earthdata SAR intro | background and wording | [NISAR applications](https://nisar.jpl.nasa.gov/applications/societal-benefit/) |
+| NISAR L2 GCOV (L-band backscatter HH/HV) | the block through cloud from late June 2026; radar frames | [ASF](https://search.asf.alaska.edu/#/?dataset=NISAR) · [docs](https://nisar-docs.asf.alaska.edu/) |
+| OPERA RTC-S1 (Sentinel-1 backscatter, 30 m, 2016 on) | radar history and the first radar sighting (March 2026) | [guide](https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/) |
+| OPERA DIST-ALERT-HLS (vegetation-loss alerts, 30 m) | dating the clearing month by month; the block's outline | [LP DAAC](https://lpdaac.usgs.gov/products/opera_l3_dist-alert-hls_v1v001/) |
+| HLS (Harmonized Landsat Sentinel-2) | the "Satellite photo" frames of the time-lapse | [Earthdata](https://www.earthdata.nasa.gov/data/projects/hls) |
 
 **Space agency partners and others:**
 | Dataset | Used for | Licence |
 |---|---|---|
 | Copernicus Sentinel-1 (ESA; inside OPERA RTC-S1) | radar history | free and open; credit "contains modified Copernicus Sentinel data" |
-| Copernicus Sentinel-2 via EOX Sentinel-2 cloudless (2017–2025) | yearly photo basemap outside Catalonia | CC BY-NC-SA 4.0 for most years (unverified per year): credit EOX |
-| ICGC orthophotos (aerial photos, yearly) | yearly photo basemap and before/after pictures in Catalonia | CC BY 4.0 (unverified): credit ICGC |
-| PEIN + Natura 2000 (Generalitat / Diputació de Barcelona) | protected-area check | Catalan open data (unverified) |
-| Urban-planning map MUC, development sectors, solar-plant register (Generalitat open data) | zoning and permit checks | Catalan open data (unverified) |
-| Spanish cadastre, INSPIRE buildings WFS (Dirección General del Catastro) | building records | open, attribution required (unverified) |
+| Copernicus Sentinel-2 (ESA; inside HLS and DIST-ALERT) | optical alerts and photos | free and open; same credit |
+| Finnish sources: Lupa- ja valvontavirasto press release (6 Oct 2026), Helsingin Sanomat via Kaleva (28 Sep 2026), Yle News (29 Oct 2026) | the reported steps on the timeline and the hand-entered record | cited, linked, not redistributed |
 | Esri World Imagery, OpenStreetMap | modern basemap | Esri terms (attribution shown) · ODbL |
 | MapLibre GL JS | map rendering | BSD-3-Clause |
-
-The full list of datasets and how we query them is in `data-sources.md`.
+| Catalonia (next step, built but not in the demo): PEIN + Natura 2000, MUC zoning, solar-plant register, Spanish cadastre WFS, EFFIS wildfires, ICGC orthophotos | live record checks | see `data-sources.md` §3 (licences unverified) |
 
 ## 5. AI-use disclosure (for the "Use of SI" field and the README)
-> The team chose the challenge, the idea and the sites. We used Claude (Anthropic's AI models, through Claude Code)
-> as a programming and writing assistant under our direction: it wrote most of the code and documentation, researched
-> candidate cases and data sources for us to choose from, and checked cited sources. Humans set the goals, decided
-> every design question and reviewed the results. Every file Claude wrote carries a "Written by Claude" note, and
-> the git history shows who made each change. No AI-generated images, video or audio are used. The radar results
-> come from NASA data processed by our code, not from an AI model.
+> The team chose the challenge, the idea, the Finnish case and the Catalan pilot. We used Claude (Anthropic's AI
+> models, through Claude Code) as a programming and writing assistant under our direction: it wrote most of the code
+> and documentation, researched candidate cases and data sources for us to choose from, checked cited sources and
+> reviewed its own pull requests with a second AI reviewer. Humans set the goals, decided every design question and
+> checked the results. Every file Claude wrote carries a "Written by Claude" note, and the git history shows who made
+> each change. The satellite results come from NASA and ESA data processed by our code, not from an AI model, and no
+> AI-generated images, video or audio are used.
 
-Before submitting: confirm the last two sentences still hold (if the video uses an AI voice or generated pictures,
-they need a watermark and a mention).
+Before submitting: confirm the last sentence still holds (an AI voice or generated pictures would need a watermark
+and a mention).
 
 ## 6. References
 - Challenge: https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/

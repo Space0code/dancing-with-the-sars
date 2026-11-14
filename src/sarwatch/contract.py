@@ -110,6 +110,8 @@ def _check_site_meta(site, i: int, errors: list[str]) -> bool:
     rng = site.get("time_range")
     if not (isinstance(rng, list) and len(rng) == 2 and all(_is_date(v) for v in rng) and rng[0] <= rng[1]):
         errors.append(f"{where}: time_range must be [start, end] dates")
+    if "hidden" in site and not isinstance(site["hidden"], bool):
+        errors.append(f"{where}: hidden must be true or false")
     if "sources" in site:
         _check_site_sources(site["sources"], where, errors)
     if "snapshots" in site:
@@ -287,6 +289,53 @@ def _check_layers(site_dir: Path, errors: list[str]) -> None:
         _check_rel_file(site_dir, layer.get("url"), f"{where}: url", errors, required=True)
 
 
+def _check_frames(site_dir: Path, errors: list[str]) -> None:
+    """frames.json (optional): one picture per satellite pass or clear day, all on the same four corners."""
+    path = site_dir / "frames.json"
+    if not path.is_file():
+        return
+    data = _load(path, errors)
+    if data is None:
+        return
+    coords = data.get("coordinates")
+    if not (isinstance(coords, list) and len(coords) == 4 and all(_is_lonlat(c) for c in coords)):
+        errors.append(f"{path}: coordinates must be 4 [lon, lat] corners (top-left, top-right, bottom-right, "
+                      "bottom-left)")
+    sets = data.get("sets")
+    if not isinstance(sets, list) or not sets:
+        errors.append(f"{path}: sets must be a non-empty list")
+        return
+    seen = set()
+    for i, fset in enumerate(sets):
+        where = f"{path}: sets[{i}]"
+        if not isinstance(fset, dict):
+            errors.append(f"{where}: must be an object")
+            continue
+        sid = fset.get("id")
+        if not isinstance(sid, str) or not sid or sid in seen:
+            errors.append(f"{where}: id must be a unique non-empty string")
+        seen.add(sid)
+        for key in ("title", "caption"):
+            if not isinstance(fset.get(key), str) or not fset[key]:
+                errors.append(f"{where}: {key} must be a non-empty string")
+        frames = fset.get("frames")
+        if not isinstance(frames, list) or not frames:
+            errors.append(f"{where}: frames must be a non-empty list")
+            continue
+        last = None
+        for j, frame in enumerate(frames):
+            fw = f"{where}: frames[{j}]"
+            if not isinstance(frame, dict) or not _is_date(frame.get("date")):
+                errors.append(f"{fw}: needs date (YYYY-MM-DD)")
+                continue
+            if not isinstance(frame.get("sensor"), str) or not frame["sensor"]:
+                errors.append(f"{fw}: sensor must be a non-empty string")
+            if last is not None and frame["date"] <= last:
+                errors.append(f"{fw}: frames must be sorted by date, strictly increasing ({frame['date']})")
+            last = frame["date"]
+            _check_rel_file(site_dir, frame.get("url"), f"{fw}: url", errors, required=True)
+
+
 def _check_geometry(geom, where: str, errors: list[str]) -> None:
     if not isinstance(geom, dict) or geom.get("type") not in ("Polygon", "MultiPolygon"):
         errors.append(f"{where}: geometry must be a Polygon or MultiPolygon")
@@ -401,6 +450,7 @@ def validate(data_dir) -> list[str]:
         site_dir = data_dir / sid
         _check_story(site_dir, errors)
         _check_layers(site_dir, errors)
+        _check_frames(site_dir, errors)
         changes = _load(site_dir / "changes.geojson", errors)
         if changes is None:
             continue
