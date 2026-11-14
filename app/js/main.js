@@ -3,7 +3,7 @@ import { APP, VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
 import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
-import { renderIntro, renderStory, showCard, showHint } from "./panel.js";
+import { renderIntro, renderStory, setStoryDate, showCard, showHint } from "./panel.js";
 import { renderLayerControl } from "./overlays.js";
 import { createInbox } from "./inbox.js";
 import { providerFor, photoFor } from "./photos.js";
@@ -112,6 +112,7 @@ async function main() {
     onDate(iso) {
       map.setDate(iso);
       inbox.setDate(iso);
+      setStoryDate(iso);
       refreshTotal();
       const y = Number(iso.slice(0, 4));
       if (y !== year) {
@@ -175,7 +176,7 @@ async function main() {
     history.replaceState(null, "", `#site=${site.id}`);
     current = await loadSite(site);
     year = null; // a new site can mean a new photo series, so redraw it even if the year stays the same
-    renderStory(current.story); // first: it changes the map's size on phones
+    renderStory(current.story, current.base); // first: it changes the map's size on phones
     showHint();
     inbox.setSite(current.changes.features);
     map.setExtraFilter(null);
