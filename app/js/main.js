@@ -8,6 +8,7 @@ import { createDrawer } from "./drawer.js";
 import { createInbox } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
+import { createRecords } from "./records.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -126,6 +127,7 @@ async function main() {
   const room = () => ({ bottom: tourRoom(), right: Math.min(480, $("map").clientWidth * 0.4) }); // the drawer covers the right side: keep the change clear of it
   $("changes-btn").addEventListener("click", () => (drawer.mode && drawer.mode !== "card" ? drawer.close() : (select(null), showSiteDrawer())));
   await map.ready;
+  const records = createRecords(map.maplibre, $("records-box"));
 
   // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
   const syncStops = () => {
@@ -153,6 +155,7 @@ async function main() {
     onDate(iso) {
       map.setDate(iso);
       picture.setDate(iso);
+      records.setDate(iso);
       inbox.setDate(iso);
       setOverviewDate(iso);
       refreshTotal();
@@ -199,6 +202,7 @@ async function main() {
     $("intro").hidden = false;
     inbox.setSite([]);
     picture.setSite(null);
+    records.setSite(null);
     map.showOverview(overview);
     timeline.clear();
   }
@@ -226,6 +230,7 @@ async function main() {
       map.setExtraFilter(null);
       map.showSite(site, current.changes, current.stages);
       picture.setSite(current);
+      records.setSite(current.base);
       timeline.setRange(site, current.changes.features);
       syncStops(); // a site with photos only starts in Satellite
     } finally {
