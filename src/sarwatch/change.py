@@ -10,7 +10,9 @@ for vegetation volume (tree canopies). Differences are taken in dB: 3 dB = a fac
    to dB. dB values are never averaged: that would bias the mean.
 2. Per pixel, the median of the first passes is the baseline and the median of the last passes is
    the end state; their difference in dB is the change. A median ignores one odd pass (rain).
-3. A pixel has changed if any channel moved by at least `threshold_db`.
+3. A pixel has changed if any channel moved by at least `threshold_db`. For farmland, two opt-in guards against rain
+   and drought (ChangeParams.normalize, .hold): remove each pass's scene-wide shift, and require the change in
+   every late pass.
 4. Date it: the first pass from which the pixel stays at least DATING_FRACTION of the threshold
    away from its baseline, in the direction of the final change, for `persist` passes.
 5. Group changed pixels into regions (8-connected, after a 3x3 opening that removes specks) and
@@ -67,6 +69,11 @@ class ChangeParams:
     threshold_db: float = 3.0  # minimum |late - early| to call a change
     persist: int = 2           # passes the deviation must hold to date the change
     min_area_ha: float = 0.5   # drop smaller regions
+    # Seasonal guards for farmland, both off by default. Rain and dry spells move a whole scene by 1-3 dB at once.
+    normalize: bool = False    # subtract each pass's window-wide median dB (per polarization, relative to the
+                               # baseline passes) before comparing: removes a scene-wide wet / dry or calibration shift
+    hold: bool = False         # a pixel counts only if every one of the last n_late passes is beyond threshold_db
+                               # in the same direction, not just their median: a wet spell over 2 of 3 passes is out
 
 
 @dataclass
@@ -117,6 +124,13 @@ def _smooth_db(arr, valid: np.ndarray, size: int) -> np.ndarray:
         np.log10(total / np.where(ok, weight, 1.0), out=res, where=ok)
         res *= 10
     return out
+
+
+def _pass_offsets(arr, valid: np.ndarray, n_early: int) -> np.ndarray:
+    """Per pass: median dB over the window's usable pixels, minus the median of that over the baseline passes."""
+    med = np.array([np.median(10 * np.log10(img[_usable(img) & valid])) if (_usable(img) & valid).any() else 0.0
+                    for img in (np.asarray(a, dtype=np.float64) for a in arr)])
+    return med - np.median(med[:n_early])
 
 
 def _date_pixels(db: np.ndarray, early: np.ndarray, sign: np.ndarray, level: float, persist: int,
@@ -175,15 +189,21 @@ def detect_changes(stack: dict, dates: list, pixel_size_m: tuple, params: Change
     n_late = max(1, min(params.n_late, n_t - n_early))  # the two windows never overlap
     thr = params.threshold_db
 
+    offsets = {p: _pass_offsets(a, valid, n_early) if params.normalize else np.zeros(n_t) for p, a in stack.items()}
     delta_db = {}
     first = np.full((ny, nx), -1, dtype=np.int16)
     for pol, arr in stack.items():
         db = _smooth_db(arr, valid, max(1, params.boxcar))
+        db -= offsets[pol].astype(np.float32)[:, None, None]
         early = _nanmedian(db[:n_early])
         delta = _nanmedian(db[n_t - n_late:]) - early
         delta_db[pol] = delta
         with np.errstate(invalid="ignore"):
-            hit = np.abs(delta) >= thr  # NaN compares False, so unusable pixels never count as changed
+            if params.hold:  # the late pass closest to the baseline must still be beyond the threshold
+                late = db[n_t - n_late:] - early
+                hit = (np.fmin.reduce(late, axis=0) >= thr) | (np.fmax.reduce(late, axis=0) <= -thr)
+            else:
+                hit = np.abs(delta) >= thr  # NaN compares False, so unusable pixels never count as changed
         idx = _date_pixels(db[:, hit], early[hit], np.sign(delta[hit]), thr * DATING_FRACTION,
                            max(1, params.persist), n_t - n_late)
         seen = first[hit]
@@ -207,7 +227,7 @@ def detect_changes(stack: dict, dates: list, pixel_size_m: tuple, params: Change
         lo, hi = (int(i) for i in np.percentile(first[window][member], DATE_PERCENTILES, method="nearest"))
         series, level, mixed, jitter = {"dates": list(dates)}, {}, False, 0.0
         for pol, arr in stack.items():
-            mean_db = _region_series(arr, window, member)
+            mean_db = _region_series(arr, window, member) - offsets[pol]
             series[f"{pol}_dB"] = mean_db.tolist()
             before, after = float(_nanmedian(mean_db[:n_early])), float(_nanmedian(mean_db[n_t - n_late:]))
             if np.isfinite(after - before):

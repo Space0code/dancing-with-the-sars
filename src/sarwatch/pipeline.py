@@ -105,9 +105,10 @@ SITES = {
 }
 
 
-def _params(site: Site, sensor: str, threshold_db=None, min_area_ha=None) -> ChangeParams:
+def _params(site: Site, sensor: str, threshold_db=None, min_area_ha=None, **flags) -> ChangeParams:
     params = (site.nisar if sensor == NISAR else site.s1).params
-    changes = {k: v for k, v in (("threshold_db", threshold_db), ("min_area_ha", min_area_ha)) if v is not None}
+    pairs = (("threshold_db", threshold_db), ("min_area_ha", min_area_ha), *flags.items())
+    changes = {k: v for k, v in pairs if v is not None}
     return dataclasses.replace(params, **changes)
 
 
@@ -490,7 +491,7 @@ def _tally(site_dir: Path, key: str) -> dict:
 
 
 def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1), offline=False, fetch_only=False,
-        max_new=None, threshold_db=None, min_area_ha=None) -> int:
+        max_new=None, threshold_db=None, min_area_ha=None, normalize=None, hold=None) -> int:
     """The whole site run; prints a summary. Returns 0 if the data passes the contract, 1 if not."""
     site = SITES[site_id]
     out, cache = Path(out), Path(cache)
@@ -521,7 +522,9 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         print("\n".join(summary()))
         return 0
 
-    runs = [r for r in (detect(s, site, cache, days[s], _params(site, s, threshold_db, min_area_ha)) for s in use) if r]
+    flags = {"normalize": normalize, "hold": hold}
+    runs = [r for r in (detect(s, site, cache, days[s], _params(site, s, threshold_db, min_area_ha, **flags))
+                        for s in use) if r]
     if not runs:
         raise PipelineError(f"{site_id}: no sensor has two cached dates, nothing to detect")
     from .export import write_site
@@ -558,6 +561,10 @@ def main(argv=None) -> int:
     p.add_argument("--no-nisar", action="store_true", help="skip NISAR")
     p.add_argument("--threshold-db", type=float, help="change threshold in dB (default 3.0 for both sensors)")
     p.add_argument("--min-area-ha", type=float, help="smallest change kept, hectares (default 0.5)")
+    p.add_argument("--normalize", action="store_true", default=None,
+                   help="remove each pass's scene-wide dB shift (rain, drought) before comparing")
+    p.add_argument("--hold", action="store_true", default=None,
+                   help="a change must show in every one of the last passes, not just their median")
     args = p.parse_args(argv)
     if args.fetch_only and args.offline:
         p.error("--fetch-only and --offline exclude each other")
@@ -569,7 +576,7 @@ def main(argv=None) -> int:
     try:
         return run(args.site, args.out, args.cache, sensors=sensors, offline=args.offline,
                    fetch_only=args.fetch_only, max_new=args.max_dates, threshold_db=args.threshold_db,
-                   min_area_ha=args.min_area_ha)
+                   min_area_ha=args.min_area_ha, normalize=args.normalize, hold=args.hold)
     except (PipelineError, PermissionError) as exc:  # PermissionError: the archive refused the token
         print(f"error: {exc}", file=sys.stderr)
         return 2
