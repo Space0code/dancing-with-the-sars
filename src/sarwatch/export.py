@@ -5,17 +5,19 @@ georeferencing and the ChangeResult from sarwatch.change. Output, under the site
 
 - changes.geojson                  one outline per detected region, lon/lat, with its evidence
 - layers.json + layers/*.png       a "before" and an "after" false-colour radar picture per run
-- evidence/<id>_before.png, _after.png   crops of those pictures around each change, outline drawn
+- evidence/<id>_before.png, _after.png   the same composites around each change, north up, outline drawn
 - series/<id>.json                 the region's signal over time, plus other sensors' signal over
                                    the same ground (a NISAR change can show its Sentinel-1 history)
 
 story.json (written by the verdict track) and anything else in the folder are never touched.
 
 Geometry: the grid can be in any projected CRS (UTM, polar stereographic EPSG:3413, ...) and need not
-be north-aligned; every conversion goes through pyproj. Pictures stay in grid orientation: their
+be north-aligned; every conversion goes through pyproj. Site pictures stay in grid orientation: their
 layers.json corners are the array's own corners in lon/lat (row 0 col 0 first), and the map warps
-the picture into that quad. Areas are geodesic (on the WGS84 ellipsoid) from the final lon/lat
-outline, because grid pixels are not equal-area in every projection.
+the picture into that quad. Evidence pictures sit on a card, not on the map, so they are warped
+north up (a local transverse Mercator grid per change, square pixels in metres). Areas are geodesic
+(on the WGS84 ellipsoid) from the final lon/lat outline, because grid pixels are not equal-area in
+every projection.
 
 How to read the pictures (background: kb/sar-primer.md). Each is the per-pixel median of a few
 passes in linear power, shown in dB. Red = co-pol (HH / VV, the "surface echo": strong from bare
@@ -42,7 +44,9 @@ import shapely
 from PIL import Image
 from pyproj import Geod, Transformer
 from rasterio import features
+from rasterio.crs import CRS
 from rasterio.transform import Affine
+from rasterio.warp import Resampling, reproject, transform_bounds
 from scipy import ndimage
 from shapely.geometry import mapping, shape
 from shapely.geometry.polygon import orient
@@ -67,6 +71,7 @@ OUTLINE_PX = 2                   # outline drawn just outside the region, in out
 OUTLINE_RGBA = (255, 221, 0, 255)  # yellow: stands out on every false colour above
 SIMPLIFY_PX = 0.5                # outline simplification tolerance, in grid pixels
 MIN_FOOTPRINT_PX = 3             # another run's series needs at least this many of its pixels under the change
+BBOX_MARGIN_FRAC = 0.02          # sites.json bbox: this fraction of its width / height added on each side
 
 GEOD = Geod(ellps="WGS84")
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -149,6 +154,18 @@ def _save_png(rgba: np.ndarray, path: Path, max_bytes: int | None = None) -> Non
     img.save(path)
     if max_bytes and path.stat().st_size > max_bytes:
         img.quantize(colors=256, method=Image.Quantize.FASTOCTREE).save(path)
+
+
+def _save_card_png(rgba: np.ndarray, ring: np.ndarray, path: Path) -> None:
+    """Palette PNG: 255 colours for the picture plus one for the outline (`ring`), so the outline stays exact.
+    Warped pictures have slanted pixel edges that compress badly; a palette halves the file."""
+    img = Image.fromarray(rgba).quantize(colors=255, method=Image.Quantize.FASTOCTREE)
+    palette = img.getpalette(rawmode="RGBA")
+    idx = np.array(img)
+    idx[ring] = len(palette) // 4
+    out = Image.frombytes("P", img.size, idx.tobytes())
+    out.putpalette(palette + list(OUTLINE_RGBA), rawmode="RGBA")
+    out.save(path)
 
 
 # ---------------------------------------------------------------- outlines
@@ -331,51 +348,74 @@ def _layer_text(run: Run, pics: _Pictures, when: str) -> tuple:
 
 # ---------------------------------------------------------------- evidence crops
 
-def _fit(lo: int, hi: int, n: int) -> tuple:
-    """Shift [lo, hi) inside [0, n) keeping its length where possible."""
-    if lo < 0:
-        hi, lo = hi - lo, 0
-    if hi > n:
-        lo, hi = max(0, lo - (hi - n)), n
-    return lo, hi
-
-
-def _crop_window(bbox: tuple, shape: tuple) -> tuple:
-    r0, c0, r1, c1 = bbox
-    margin = max(EVIDENCE_MARGIN_PX, round(EVIDENCE_MARGIN_FRAC * max(r1 - r0, c1 - c0)))
-    r0, r1, c0, c1 = r0 - margin, r1 + margin, c0 - margin, c1 + margin
-    max_aspect = EVIDENCE_LONG_MAX / EVIDENCE_SHORT_MIN  # widen the short side so both size limits can hold
-    h, w = r1 - r0, c1 - c0
-    if w > h * max_aspect:
-        grow = math.ceil(w / max_aspect) - h
-        r0, r1 = r0 - grow // 2, r1 + grow - grow // 2
-    elif h > w * max_aspect:
-        grow = math.ceil(h / max_aspect) - w
-        c0, c1 = c0 - grow // 2, c1 + grow - grow // 2
-    r0, r1 = _fit(r0, r1, shape[0])
-    c0, c1 = _fit(c0, c1, shape[1])
-    return slice(r0, r1), slice(c0, c1)
-
-
-def _evidence_size(h: int, w: int) -> tuple:
-    """Output (width, height): integer zoom so the short side reaches EVIDENCE_SHORT_MIN, capped by the long side."""
+def _evidence_size(h: float, w: float) -> tuple:
+    """Output (width, height) for h x w grid pixels: integer zoom so the short side reaches EVIDENCE_SHORT_MIN,
+    capped by the long side."""
     zoom = max(1, math.ceil(EVIDENCE_SHORT_MIN / min(h, w)))
     if max(h, w) * zoom > EVIDENCE_LONG_MAX:
         zoom = EVIDENCE_LONG_MAX / max(h, w)
     return max(1, round(w * zoom)), max(1, round(h * zoom))
 
 
-def _write_evidence(run: Run, pics: _Pictures, region, paths: dict) -> None:
-    window = _crop_window(region.bbox, run.result.labels.shape)
-    member = run.result.labels[window] == region.label
-    size = _evidence_size(*member.shape)
-    big = np.array(Image.fromarray(member.astype(np.uint8) * 255).resize(size, Image.Resampling.NEAREST)) > 0
-    ring = ndimage.binary_dilation(big, structure=SQUARE3, iterations=OUTLINE_PX) & ~big
-    for when in ("before", "after"):
-        rgba = _colour({p: _db(v[window]) for p, v in pics.power[when].items()}, pics.band)
-        out = np.array(Image.fromarray(rgba).resize(size, Image.Resampling.NEAREST))
-        out[ring] = OUTLINE_RGBA
-        _save_png(out, paths[when])
+def _local_crs(lon: float, lat: float) -> str:
+    """Transverse Mercator centred on (lon, lat): north up, metres, true scale at the centre."""
+    return f"+proj=tmerc +lat_0={lat:.7f} +lon_0={lon:.7f} +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
+
+
+def _evidence_grid(poly, pixel_m: float) -> tuple:
+    """North-up picture grid around `poly` (local metres): (transform, width, height), square pixels.
+    Margin and size limits as the EVIDENCE_* constants say, measured in grid pixels of pixel_m metres."""
+    x0, y0, x1, y1 = poly.bounds
+    margin = max(EVIDENCE_MARGIN_PX * pixel_m, EVIDENCE_MARGIN_FRAC * max(x1 - x0, y1 - y0))
+    w, h = x1 - x0 + 2 * margin, y1 - y0 + 2 * margin
+    max_aspect = EVIDENCE_LONG_MAX / EVIDENCE_SHORT_MIN  # widen the short side so both size limits can hold
+    w, h = max(w, h / max_aspect), max(h, w / max_aspect)
+    out_w, out_h = _evidence_size(h / pixel_m, w / pixel_m)
+    res = max(w / out_w, h / out_h)
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    return Affine(res, 0.0, cx - out_w * res / 2, 0.0, -res, cy + out_h * res / 2), out_w, out_h
+
+
+def _source_window(run: Run, local: CRS, dst: Affine, out_w: int, out_h: int):
+    """The grid rows / cols (two slices) under the picture, one pixel of slack; None if it misses the grid."""
+    left, top, right, bottom = dst.c, dst.f, dst.c + out_w * dst.a, dst.f + out_h * dst.e
+    gl, gb, gr, gt = transform_bounds(local, CRS.from_epsg(run.epsg), left, bottom, right, top, densify_pts=21)
+    inv = ~Affine(*run.transform)
+    x, y = np.array([gl, gr, gr, gl]), np.array([gt, gt, gb, gb])
+    cols, rows = inv.a * x + inv.b * y + inv.c, inv.d * x + inv.e * y + inv.f
+    ny, nx = run.result.labels.shape
+    r0, r1 = max(0, math.floor(rows.min()) - 1), min(ny, math.ceil(rows.max()) + 1)
+    c0, c1 = max(0, math.floor(cols.min()) - 1), min(nx, math.ceil(cols.max()) + 1)
+    return (slice(r0, r1), slice(c0, c1)) if r0 < r1 and c0 < c1 else None
+
+
+def _write_evidence(run: Run, pics: _Pictures, outline: dict, paths: dict) -> None:
+    """Before / after picture of one change, north up: the composites are warped (nearest neighbour, so every
+    picture pixel is one grid pixel's value) into a transverse Mercator grid centred on the change, and the
+    change's lon/lat outline is drawn in that same grid, just outside the region."""
+    lonlat = shape(outline)
+    centre = lonlat.centroid
+    proj = _local_crs(centre.x, centre.y)
+    to_local = Transformer.from_crs(4326, proj, always_xy=True)
+    poly = shapely.transform(lonlat, lambda xy: np.column_stack(to_local.transform(xy[:, 0], xy[:, 1])))
+    a, b, _, d, e, _ = run.transform
+    dst, out_w, out_h = _evidence_grid(poly, min(math.hypot(a, d), math.hypot(b, e)))
+    local = CRS.from_proj4(proj)
+
+    pols, whens = list(pics.power["before"]), ("before", "after")
+    warped = np.full((len(whens) * len(pols), out_h, out_w), np.nan, dtype=np.float32)
+    window = _source_window(run, local, dst, out_w, out_h)
+    if window is not None:
+        src = np.stack([pics.power[when][p][window] for when in whens for p in pols]).astype(np.float32)
+        src_transform = Affine(*run.transform) @ Affine.translation(window[1].start, window[0].start)
+        reproject(src, warped, src_transform=src_transform, src_crs=CRS.from_epsg(run.epsg), src_nodata=np.nan,
+                  dst_transform=dst, dst_crs=local, dst_nodata=np.nan, resampling=Resampling.nearest)
+
+    inside = features.rasterize([poly], out_shape=(out_h, out_w), transform=dst, dtype="uint8") > 0
+    ring = ndimage.binary_dilation(inside, structure=SQUARE3, iterations=OUTLINE_PX) & ~inside
+    for k, when in enumerate(whens):
+        rgba = _colour({p: _db(v) for p, v in zip(pols, warped[k * len(pols):(k + 1) * len(pols)])}, pics.band)
+        _save_card_png(rgba, ring, paths[when])
 
 
 # ---------------------------------------------------------------- series
@@ -504,7 +544,7 @@ def write_site(site_dir, site_id: str, runs: list, n_before: int = 3, n_after: i
         run, pics, cid = runs[i], pictures[i], f"{site_id}-{n:04d}"
         files = {"before": f"evidence/{cid}_before.png", "after": f"evidence/{cid}_after.png",
                  "series": f"series/{cid}.json"}
-        _write_evidence(run, pics, region, {k: site_dir / files[k] for k in ("before", "after")})
+        _write_evidence(run, pics, outlines[i][region.label], {k: site_dir / files[k] for k in ("before", "after")})
         _write_json(site_dir / files["series"], _series_doc(runs, i, region))
         written.update(files.values())
         evidence = {**files, "before_date": pics.date("before"), "after_date": pics.date("after")}
