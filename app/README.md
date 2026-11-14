@@ -1,6 +1,6 @@
 # Web app
 
-Static site: no build step, no npm. MapLibre GL JS 4.7.1 comes from a CDN; basemaps need no API key.
+Static viewer for Parallax: it shows whichever sites are in `data/sites.json` and carries no text about any one place. No build step, no npm. MapLibre GL JS 4.7.1 comes from a CDN; basemaps need no API key.
 
 ```
 cd app
@@ -17,7 +17,7 @@ The interface stays neutral (ink on white, one green for the main action, links 
 verdicts, the radar picture's pink and the timeline's red bars.
 
 - **Name and pitch:** `APP` in `js/format.js` (one place). Explainer text: the `<dialog>` in `index.html`.
-- **Timeline** (`js/timeline.js`): the slider steps through the site's `snapshots` (one stop per image date; without them: the change dates plus both ends of `time_range`). A red bar crosses the track at every stop where changes first show (click = jump there); story events are grey flags. Dates from the tour or a link snap to the stop on or before them.
+- **Timeline** (`js/timeline.js`): the slider steps through the site's `snapshots` (one stop per image date; without them: the change dates plus both ends of `time_range`). A red bar crosses the track at every stop where changes first show (click = jump there). Dates from the tour or a link snap to the stop on or before them.
 - **The big picture** (`js/picture.js`, data `frames.json`): one switch, **Radar | Satellite**, with the set's `caption` under it.
   The map shows the latest frame of that set at or before the slider date (and says its date); play always switches to Radar.
   Frames are drawn on one canvas (a MapLibre `canvas` source over the four `coordinates`), neighbours preloaded.
@@ -30,7 +30,7 @@ verdicts, the radar picture's pink and the timeline's red bars.
 - **One growing outline** (optional `stages.geojson`, `map.js`): changes that are members of a stage group have no outline of
   their own; the map draws the latest stage at or before the slider date as one light fill with one bold outline (verdict
   colour, white casing). The member parts stay clickable; hover or select shows a thin outline of just that part.
-- **Shareable view** (`js/main.js`): the address bar follows the user: `#site=muhos&date=2026-07-31&change=muhos-0012`
+- **Shareable view** (`js/main.js`): the address bar follows the user: `#site=<id>&date=2026-07-31&change=<id>-0012`
   (site, slider date, open change). Opening or pasting such a link restores that view; a bad date or id is ignored.
 - **Changes tab** (`js/inbox.js`): sort, filter by label / kind, a "Smallest change" slider (list, map and the running
   total follow it) and **Download CSV** (`js/csv.js`: the filtered list in its current order; UTF-8 with BOM).

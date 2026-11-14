@@ -43,5 +43,6 @@ One line each: `date · decision · why · issue`. Newest at the bottom.
 - 2026-11-14 · App look: one token system in `style.css`, Funnel fonts self-hosted, neutral chrome with one green action colour; the Marked areas switch hides the overlay; new changes appear without a glow · the map picture is the hero, strong colour stays reserved for verdicts, radar pink and red bars · #41
 - 2026-11-14 · Barcelona site (50 × 39 km): Sentinel-1 reads the three IW2 bursts of track 132 as one mosaic per date (one 30 m lattice, no resampling) instead of tiles; NISAR 130 / 22 covers it whole · one stack = one detection, no seams; same track as Agroparc · #44, PR #110
 - 2026-11-14 · The product name is Parallax (was the working title SARwatch) · decided by Tian; the Python package, folders and commands keep `sarwatch` · #112
+- 2026-11-14 · The tool is place-agnostic and carries no hand-written site history: `story.json` and `story_series.json` leave the data format, real-world `events` lists are not required, and `sites.json` gets optional neutral `notes` (≤ 4 × 140 characters) · Tian; the real-world story is told in the video · #112
 
 <sub>Written by Claude</sub>

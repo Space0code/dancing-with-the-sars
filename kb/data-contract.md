@@ -1,7 +1,7 @@
 # Data contract (v1): the hand-off between radar, verdict and app
 
 The one format all three tracks share. The radar track writes it, the verdict step fills in the verdict fields, the web
-app only reads it. Last updated 2026-11-14. Living example: `app/data/fixture/` (fake data, made by
+app only reads it. Last updated 2026-11-14 (no `story.json`: the tool carries no site history, #112). Living example: `app/data/fixture/` (fake data, made by
 `explore/fixture/make_fixture.py`). Check any data with `python -m sarwatch.contract app/data`. Need a change? Ask on #9.
 
 ## Files (all under `app/data/`, paths inside a site are relative to its folder)
@@ -13,7 +13,6 @@ app only reads it. Last updated 2026-11-14. Living example: `app/data/fixture/` 
 | `<site>/frames.json` + `frames/` (optional) | radar | picture frames for the time-lapse and the before / after swipe |
 | `<site>/evidence/*.png` | radar | small before / after pictures per change, for the card |
 | `<site>/series/<change id>.json` | radar | the signal over time per change, for the chart |
-| `<site>/story.json` | verdict | plain-language story of the site, dated events, sources |
 | `<site>/context/` (optional) | verdict | what the public records say, as map layers the user can switch on |
 
 ## `sites.json`
@@ -24,6 +23,8 @@ data, the app shows a badge) · `center` `[lon, lat]` · `zoom` · `bbox` `[west
 
 **`hidden`** (optional bool): a `ready` site that stays out of the app's site menu (kept as a worked example, e.g.
 `agroparc`; also set on `catalonia`, which has no files yet). Files are still checked.
+
+**`notes`** (optional, per site): a list of at most 4 short strings (each at most 140 characters) with neutral notes about the data: what the satellites cover, known limits (e.g. "Open water is masked out"). No story, no names of companies or authorities. The pipeline writes them from `Site.notes`; the app may show them.
 
 **`snapshots`** (optional, per site): the timeline's stops, `[{"date": "YYYY-MM-DD", "sensor": "<name>"}, ...]`, one per
 image date actually used, strictly sorted by date (a date two sensors share is one stop, sensor `"A + B"`), every date
@@ -78,16 +79,11 @@ own outlines but stay clickable. The validator checks per group: dates strictly 
 members exist. Written by the pipeline (`pipeline.write_stages`); the verdict step refreshes `verdict`. A site without the file is valid.
 
 ## `series/<change id>.json`
-`{"series": [{name, unit, sensor, dates[], values[]}], "events": [{date, label}]}`. Each series has its own dates
+`{"series": [{name, unit, sensor, dates[], values[]}], "events": [{date, label}]}`; `events` is optional (marks on the chart, e.g. "Change first seen"; the format has no real-world event lists). Each series has its own dates
 (NISAR and Sentinel-1 pass on different days); `values` are numbers or null, the same length as `dates`. `name` is
 already plain language (e.g. "Vegetation echo (HV)"). Optional `note` (non-empty string) per series: the caveats
-that are too long for the legend; the story curve shows each one as a line of small text under the chart.
+that are too long for the legend; the app shows each one as a line of small text under the chart.
 
-## `story.json`
-`{"headline", "story": [paragraph, ...], "events": [{date, label}], "sources": [{title, url}]}`. Events are shown as
-markers on the timeline (e.g. "Told an assessment was required"). Optional `"chart": {"title", "file", "note"}`: a
-curve for the story panel (e.g. hectares cleared over time at Muhos); `file` sits next to `story.json` and has the
-`series/<change id>.json` format; the validator does not check it yet (#73).
 
 ## `context/` (optional): what the records say
 `context/index.json` = `{"layers": [{id, title, kind, file, source, url, checked, note}]}`: `kind` is `protected` ·

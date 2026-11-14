@@ -20,6 +20,7 @@ SOURCE_KINDS = {"optical", "radar"}
 SOURCE_ROLES = {"detected", "late_start", "not_seen", "not_watching"}
 NO_DETECTION_ROLES = {"not_seen", "not_watching"}
 MAX_FILE_MB = 10
+MAX_NOTES, MAX_NOTE_CHARS = 4, 140  # sites.json `notes`
 
 
 def _is_date(value) -> bool:
@@ -116,7 +117,17 @@ def _check_site_meta(site, i: int, errors: list[str]) -> bool:
         _check_site_sources(site["sources"], where, errors)
     if "snapshots" in site:
         _check_snapshots(site["snapshots"], rng, where, errors)
+    if "notes" in site:
+        _check_notes(site["notes"], where, errors)
     return True
+
+
+def _check_notes(notes, where: str, errors: list[str]) -> None:
+    """Optional `notes`: at most 4 short, neutral notes about the data."""
+    if not (isinstance(notes, list) and len(notes) <= MAX_NOTES
+            and all(isinstance(n, str) and 0 < len(n) <= MAX_NOTE_CHARS for n in notes)):
+        errors.append(f"{where}: notes must be a list of at most {MAX_NOTES} non-empty strings of "
+                      f"{MAX_NOTE_CHARS} characters or fewer")
 
 
 def _check_snapshots(snapshots, rng, where: str, errors: list[str]) -> None:
@@ -258,22 +269,6 @@ def _check_stages(site_dir: Path, change_ids: set, errors: list[str]) -> None:
                 errors.append(f"{where}: area_ha must not decrease within group {group}")
         if ok:
             last[group] = (p["date"], p["area_ha"])
-
-
-def _check_story(site_dir: Path, errors: list[str]) -> None:
-    path = site_dir / "story.json"
-    story = _load(path, errors)
-    if story is None:
-        return
-    if not isinstance(story.get("headline"), str) or not story["headline"]:
-        errors.append(f"{path}: headline must be a non-empty string")
-    paragraphs = story.get("story")
-    if not (isinstance(paragraphs, list) and paragraphs and all(isinstance(p, str) for p in paragraphs)):
-        errors.append(f"{path}: story must be a non-empty list of paragraphs")
-    _check_events(story.get("events", []), str(path), errors)
-    for i, src in enumerate(story.get("sources", [])):
-        if not isinstance(src, dict) or not isinstance(src.get("title"), str) or not isinstance(src.get("url"), str):
-            errors.append(f"{path}: sources[{i}] needs title and url")
 
 
 def _check_series(site_dir: Path, rel: str, errors: list[str]) -> None:
@@ -499,7 +494,6 @@ def validate(data_dir) -> list[str]:
         if site.get("ready") is not True:
             continue
         site_dir = data_dir / sid
-        _check_story(site_dir, errors)
         _check_layers(site_dir, errors)
         _check_frames(site_dir, errors)
         changes = _load(site_dir / "changes.geojson", errors)

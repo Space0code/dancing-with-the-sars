@@ -4,6 +4,7 @@
   {"id": "muhos", "name": "Muhos, Finland", "country": "FI", "ready": true,
    "center": [26.111, 64.835], "zoom": 12, "bbox": [25.9559, 64.7687, 26.2633, 64.9012],
    "time_range": ["2025-06-02", "2026-10-26"],
+   "notes": ["Radar pictures are Sentinel-1 until 25 Jun 2026 and NISAR after that.", "Sentinel-1 passes from Oct 2025 to Mar 2026 are left out (wet or frozen ground): changes in that gap are dated within it.", "Optical alerts (OPERA DIST-ALERT) cannot see the ground from Nov to Mar (snow, little light)."],
    "sources": [{"sensor": "OPERA DIST-ALERT", "kind": "optical", "start": "2023-01-01", "end": null, "revisit_days": 3, "sees": ["clearing", "fire", "other"], "risky_months": [11, 12, 1, 2, 3]}, {"sensor": "Sentinel-1 C-band", "kind": "radar", "start": "2025-06-02", "end": null, "revisit_days": 6, "sees": ["clearing", "structure", "earthworks", "other"], "risky_months": [11, 12, 1, 2, 3, 4]}, {"sensor": "NISAR L-band", "kind": "radar", "start": "2026-06-25", "end": null, "revisit_days": 12, "sees": ["clearing", "structure", "earthworks", "other"], "risky_months": [11, 12, 1, 2, 3, 4]}],
    "snapshots": [
     {"date": "2025-06-02", "sensor": "Sentinel-1 C-band"}, {"date": "2025-06-08", "sensor": "Sentinel-1 C-band"}, {"date": "2025-06-14", "sensor": "Sentinel-1 C-band"},
@@ -32,6 +33,7 @@
   {"id": "agroparc", "name": "Agroparc Penedès, Catalonia", "country": "ES", "ready": true, "hidden": true,
    "center": [1.85, 41.45], "zoom": 13, "bbox": [1.7858, 41.407, 1.914, 41.4931],
    "time_range": ["2016-06-29", "2026-11-02"],
+   "notes": ["Sentinel-1 is compared summer (Jun-Sep) against summer: the 2016-2017 summers are the baseline, 2026 the end state.", "NISAR L-band has observed this area since June 2026."],
    "snapshots": [
     {"date": "2016-06-29", "sensor": "Sentinel-1 C-band"}, {"date": "2016-08-04", "sensor": "Sentinel-1 C-band"}, {"date": "2016-09-09", "sensor": "Sentinel-1 C-band"},
     {"date": "2017-06-06", "sensor": "Sentinel-1 C-band"}, {"date": "2017-07-06", "sensor": "Sentinel-1 C-band"}, {"date": "2017-08-05", "sensor": "Sentinel-1 C-band"},
@@ -54,6 +56,7 @@
   {"id": "barcelona", "name": "Barcelona and its region, Catalonia", "country": "ES", "ready": true, "hidden": true,
    "center": [2.15, 41.425], "zoom": 10.5, "bbox": [1.8312, 41.238, 2.4656, 41.6118],
    "time_range": ["2016-06-05", "2026-11-02"],
+   "notes": ["Open water (the sea and port basins) is masked out of the radar comparison.", "Sentinel-1 is compared summer (Jun-Sep) against summer: the 2016 summer is the baseline, 2026 the end state.", "NISAR L-band has observed since June 2026; it reports clearing, structure and earthworks only.", "Only the 100 largest changes are kept."],
    "sources": [{"sensor": "Sentinel-1 C-band", "kind": "radar", "start": "2016-06-05", "end": null, "revisit_days": 12, "sees": ["clearing", "structure", "earthworks", "other"], "risky_months": []}, {"sensor": "NISAR L-band", "kind": "radar", "start": "2026-06-23", "end": null, "revisit_days": 12, "sees": ["clearing", "structure", "earthworks"], "risky_months": []}],
    "snapshots": [
     {"date": "2016-06-05", "sensor": "Sentinel-1 C-band"}, {"date": "2016-06-29", "sensor": "Sentinel-1 C-band"}, {"date": "2016-07-23", "sensor": "Sentinel-1 C-band"},

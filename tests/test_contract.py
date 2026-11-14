@@ -51,9 +51,43 @@ def test_bad_evidence_before_date_is_rejected(copy, dates):
     assert any("before_date" in e for e in validate(copy))
 
 
-def test_missing_story_is_rejected(copy):
-    (copy / "fixture" / "story.json").unlink()
-    assert any("story.json" in e for e in validate(copy))
+def test_a_site_folder_needs_no_story(copy):
+    assert not (copy / "fixture" / "story.json").exists()
+    assert validate(copy) == []
+
+
+def _set_notes(data_dir, notes):
+    path = data_dir / "sites.json"
+    index = json.loads(path.read_text(encoding="utf-8"))
+    index["sites"][-1]["notes"] = notes
+    path.write_text(json.dumps(index), encoding="utf-8")
+
+
+def test_notes_are_optional_and_valid_when_present(copy):
+    _set_notes(copy, ["Radar pictures are Sentinel-1 until June, NISAR after that.", "x" * 140])
+    assert validate(copy) == []
+    _set_notes(copy, [])
+    assert validate(copy) == []
+
+
+@pytest.mark.parametrize("notes", [
+    "not a list",
+    ["a", "b", "c", "d", "e"],  # more than 4
+    ["x" * 141],                # too long
+    [""],                       # empty
+    [3],                        # not text
+])
+def test_bad_notes_are_rejected(copy, notes):
+    _set_notes(copy, notes)
+    assert any("notes" in e for e in validate(copy))
+
+
+def test_series_events_are_optional(copy):
+    path = next((copy / "fixture" / "series").glob("*.json"))
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    del doc["events"]
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    assert validate(copy) == []
 
 
 def test_not_ready_site_needs_no_files(copy):

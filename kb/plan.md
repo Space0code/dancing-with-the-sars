@@ -60,8 +60,8 @@ updated 2026-11-14. Live state: #1. Assignments: #9. The hand-off format: `data-
 ## Who owns which files (disjoint, so no merge conflicts)
 | Owner | Paths |
 |---|---|
-| Tian's agent | `pyproject.toml`, `.devcontainer/`, `src/sarwatch/{contract,nisar,s1,change,export,pipeline,distalert,merge}.py`, `explore/`, `app/data/sites.json`, `app/data/<real site>/` except `story.json`, `records.json`, `context/`, `kb/plan.md`, `kb/data-contract.md` |
-| Andrea | `src/sarwatch/context/`, `src/sarwatch/verdict.py`, `kb/verdict-rules.md`, `app/data/<site>/{story.json,records.json,context/}` |
+| Tian's agent | `pyproject.toml`, `.devcontainer/`, `src/sarwatch/{contract,nisar,s1,change,export,pipeline,distalert,merge}.py`, `explore/`, `app/data/sites.json`, `app/data/<real site>/` except `records.json`, `context/`, `kb/plan.md`, `kb/data-contract.md` |
+| Andrea | `src/sarwatch/context/`, `src/sarwatch/verdict.py`, `kb/verdict-rules.md`, `app/data/<site>/{records.json,context/}` |
 | Tomi | `app/` except `app/data/` · `README.md`, `LICENSE`, `.github/` · `kb/{submission,demo-strategy,multi-sensor-design,evidence-check}.md` |
 
 `docs/screenshots/` is shared: name files `<issue>-<what>.jpg`. Need a contract change? Ask on #9; don't edit
@@ -90,7 +90,7 @@ workflow, repo public #48 · thinking tasks: several sensors → one change #60,
 | V7 | Andrea · Opus 5.5 | Labels on the Catalonia overview; showcase cards for the pitch | #79: part 1 after #45, part 2 after #44 step 2 |
 | A6 | Tomi · Sonnet 5.5 | App findings from the check against real data | #41 |
 | A8 | Tomi · Opus 5.5 | "Why this label?" checklist on the card | #51: PR #69 |
-| A11 | Tomi · Opus session (Sonnet-level) | Muhos cleared-area curve in the story panel (`story.json` → `chart`) | #73 |
+| A11 | Tomi · Opus session (Sonnet-level) | Muhos cleared-area curve (dropped in #112: the tool carries no site story) | #73 |
 | A12 | Tomi · Opus session (Sonnet-level) | Card: "when" wording, "seen by" list, confidence note | #74 |
 | A9 | Tomi · Opus session (Sonnet-level) | Record layer switches (app side) | #52 |
 | A13 | Tomi · Sonnet 5.5 | Timeline: coverage strip, "watching on this date", start markers | #75 |
