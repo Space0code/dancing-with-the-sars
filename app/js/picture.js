@@ -146,7 +146,7 @@ export function createPicture(map, mapWrap) {
     },
     /** "radar" or "photo". */
     setView(next) {
-      if (next === view || (next === "radar" && !sets.radar)) return;
+      if (box.hidden || next === view || (next === "radar" && !sets.radar)) return;
       view = next;
       update();
     },

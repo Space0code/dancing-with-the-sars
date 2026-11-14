@@ -59,7 +59,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
   border-radius: 8px; box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
 }
 /* What the big picture is: the Radar / Satellite switch, compare, one line on how to read it, the picture's date */
-.viewbox { top: 10px; padding: 8px 10px; max-width: min(360px, calc(100% - 64px)); }
+.viewbox { top: 10px; padding: 8px 10px; max-width: min(430px, calc(100% - 64px)); }
 .viewbox[hidden] { display: none; }
 .view-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .switch { display: inline-flex; border: 1px solid var(--accent); border-radius: 999px; overflow: hidden; }
@@ -91,7 +91,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0
   font-weight: 700; background: rgba(0, 0, 0, .72); color: #fff; pointer-events: none;
 }
 .swipe-tag:empty { display: none; }
-.swipe-tag.left { right: 8px; }
+.swipe-tag.left { right: 8px; top: calc(50% - 52px); } /* above the handle: the two tags never collide */
 .swipe-tag.right { left: 8px; }
 .legend li { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
 .swatch { width: 16px; height: 16px; border-radius: 3px; border: 2px solid #222; flex: none; }
@@ -269,7 +269,7 @@ button.big { width: 100%; padding: 10px 14px; border-radius: 8px; font-size: 16p
   .tour h2 { font-size: 15px; }
   .tour p { font-size: 14px; margin-bottom: 8px; }
   main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-  #panel { max-height: 42vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; }
+  #panel { max-height: 36vh; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; }
   .view { padding: 10px 12px 14px; }
   .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; } /* one row each: the sheet is short */
   .map-error.notice { border-color: #b08900; background: #fff8dc; color: #4d3b00; }

@@ -21,7 +21,14 @@ export function createSwipe(container, { onMove }) {
     line.style.left = `${frac * 100}%`;
     handle.setAttribute("aria-valuenow", String(Math.round(frac * 100)));
     handle.setAttribute("aria-valuetext", `${Math.round(frac * 100)}% before, ${Math.round(100 - frac * 100)}% after`);
+    placeTags();
     onMove();
+  }
+  // Each tag sits beside the line on its own side; near an edge it slides inward so its date stays readable.
+  function placeTags() {
+    const x = frac * width();
+    left.style.transform = `translateX(${Math.max(0, left.offsetWidth + 12 - x)}px)`;
+    right.style.transform = `translateX(${-Math.max(0, right.offsetWidth + 12 - (width() - x))}px)`;
   }
   const fromEvent = (e) => set((e.clientX - container.getBoundingClientRect().left) / width());
 
@@ -53,6 +60,7 @@ export function createSwipe(container, { onMove }) {
     setLabels(leftText, rightText) {
       left.textContent = leftText;
       right.textContent = rightText;
+      if (!line.hidden) placeTags();
     },
   };
 }
