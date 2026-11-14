@@ -380,8 +380,12 @@ def test_missing_required_assessment_on_a_big_clearing_is_high_concern():
 
 def test_missing_assessment_on_a_mid_size_change_is_review_and_a_small_one_is_not_flagged():
     assert judge(change(area=3), {**records(zone="urban"), **official()})[0] == "review"
-    uncertain = judge(change(area=0.5, confidence="low"), {**records(zone="urban"), **official()})
+    no_steps = official(actions=[])  # only the missing assessment: too small and too uncertain to flag on its own
+    uncertain = judge(change(area=0.5, confidence="low"), {**records(zone="urban"), **no_steps})
     assert uncertain[0] == "expected" and codes(uncertain[1])[0] == "small_uncertain"
+    # an official step on record (a stop notice) is a different matter: it lifts even a small, uncertain change
+    lifted = judge(change(area=0.5, confidence="low"), {**records(zone="urban"), **official()})
+    assert lifted[0] == "review" and codes(lifted[1])[0] == "official_stop_order"
     assert judge(change(area=330, ctype="structure"), {**records(zone="urban"), **official()})[0] == "review"
     done = official(assessment_completed=True)
     assert judge(change(area=330), {**records(zone="urban"), **done})[0] == "review"  # no record explains it
@@ -505,6 +509,85 @@ def test_a_pending_solar_application_is_not_an_authorisation():
     # an authorised plant or a building record still wins over a pending one
     both = judge(change(area=12), records(zone="urban", plants=[pending, plant(status="Autoritzat")]))
     assert both[0] == "expected" and "solar_application_pending" not in codes(both[1])
+
+
+def test_a_buffer_zone_never_counts_toward_the_real_overlap_share():
+    """Reviewer case: the buffer zone covers the whole change, a real area only 2 % of it."""
+    recs = records(inside=True, zone="urban", built=1)
+    recs["protected"]["areas"] = [
+        {"name": "Parc buffer", "kind": "natural park buffer zone", "overlap_share": 1.0},
+        {"name": "Riu", "kind": "PEIN", "overlap_share": 0.02},
+    ]
+    recs["protected"].update(overlap_share=1.0, core_overlap_share=0.02)
+    verdict, reasons, _ = judge(change(area=3), recs)
+    assert verdict == "expected" and "protected_edge" in codes(reasons)  # the real part only borders
+    assert "Parc buffer" not in next(r for r in reasons if r["code"] == "protected_edge")["text"]
+    recs["protected"]["core_overlap_share"] = 0.5  # a real overlap: high concern, and the text names the real area
+    verdict, reasons, _ = judge(change(area=3), recs)
+    assert verdict == "high_concern" and "Riu" in reasons[0]["text"] and "Parc buffer" not in reasons[0]["text"]
+    # hand-entered records that only know ``overlap_share`` still work
+    old = records(inside=True, zone="urban", built=1)
+    old["protected"]["overlap_share"] = 0.05
+    assert judge(change(area=3), old)[0] == "expected"
+
+
+def test_rerunning_a_change_without_a_radar_sentence_is_identical():
+    first = judge(change(area=9, explain=None), records(zone="urban"))
+    judged = {**change(area=9, explain=first[2]), "reasons": first[1]}
+    again = judge(judged, records(zone="urban"))
+    assert again[2] == first[2] and first[2].count(first[1][0]["text"]) == 1
+
+
+def test_bad_input_gives_a_clear_error_or_is_skipped_not_a_crash():
+    for bad in (None, 0, -1, float("nan"), "x"):
+        with pytest.raises(ValueError, match="area_ha must be a positive number"):
+            judge({**change(), "area_ha": bad}, records())
+    with pytest.raises(ValueError, match="area_ha"):
+        judge({k: v for k, v in change().items() if k != "area_ha"}, records())
+    rec = official()
+    rec["official"]["actions"] = ["a stray string", None] + rec["official"]["actions"]
+    assert codes(judge(change(area=330), {**records(), **rec})[1]).count("official_stop_order") == 1
+    stringy = records(zone="urban", plants=[{"name": "X", "status": "Autoritzat", "ha": "12", "ha_in_municipality": "12.0"}])
+    assert judge(change(area=12), stringy)[0] == "expected"
+    zero = records(zone="urban", plants=[{"name": "X", "status": "Autoritzat", "ha": 5, "ha_in_municipality": 0}])
+    assert judge(change(area=12), zero)[0] == "review"  # 0 ha in this municipality is a value, not "missing"
+    junk = records(zone="urban", plants=[{"name": "X", "status": None, "ha": "n/a"}])
+    assert judge(change(area=12), junk)[0] == "review"
+
+
+def test_a_bad_scope_gives_a_clear_error():
+    pytest.importorskip("shapely")
+    doc = {"version": 1, "default": {"official": {**official()["official"], "scope": {"type": "Foo", "coordinates": []}}}}
+    with pytest.raises(ValueError, match="scope must be a GeoJSON Polygon or MultiPolygon"):
+        records_for(doc, "a", {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [0, 0]]]})
+
+
+def test_no_output_ever_accuses_anyone_whatever_the_combination():
+    import itertools
+
+    banned = ("illegal", "unlawful", "violat", "guilty", "crime", "offence")
+    base = {
+        "protected": [None, {"inside": True, "areas": [{"name": "Parc X", "kind": "PEIN"}]}],
+        "zoning": [None, "non_buildable", "urban"],
+        "built": [0, 2],
+        "plants": [(), (plant(status="En tramitació"),), (plant(),)],
+        "fire": [False, True],
+        "off": [None, official()],
+    }
+    seen = 0
+    for prot, zone, built, plants, fire, off in itertools.product(*base.values()):
+        recs = records(zone=zone, built=built, plants=plants, fire=fire, inside=bool(prot))
+        if prot:
+            recs["protected"]["areas"] = prot["areas"]
+        if off:
+            recs.update(off)
+        for ch in (change(area=0.8, confidence="low"), change(area=3, ctype="structure"), change(area=40, ctype="earthworks")):
+            verdict, reasons, explain = judge(ch, recs)
+            blob = json.dumps([reasons, explain]).lower()
+            assert not any(word in blob for word in banned), blob
+            assert reasons[0]["text"] in explain
+            seen += 1
+    assert seen == 2 * 3 * 2 * 3 * 2 * 2 * 3  # every combination ran
 
 
 def test_small_low_confidence_changes_are_not_flagged_on_their_own():

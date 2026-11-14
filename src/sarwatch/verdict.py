@@ -104,6 +104,19 @@ def _zoning(zon) -> tuple[str | None, bool]:
     return zone, planned
 
 
+def _plant_ha(plant: dict) -> float | None:
+    """Area of a listed plant: the part in this municipality if given, else the total; None if unknown or not a number
+    (the list stores numbers as text; ``0`` is a value, not "missing")."""
+    for key in ("ha_in_municipality", "ha"):
+        try:
+            value = float(plant[key])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if value == value:  # not NaN
+            return value
+    return None
+
+
 def _solar(sol, area: float, ctype) -> tuple[list, list, list]:
     """(authorised plants that explain the change, pending applications of a matching size, every other listed
     plant). Only plants with a known area of at least half the change count; refused, withdrawn and unknown statuses
@@ -113,8 +126,7 @@ def _solar(sol, area: float, ctype) -> tuple[list, list, list]:
     good, pending, other = [], [], []
     for plant in sol.get("plants") or []:
         status = str(plant.get("status") or "").strip().lower()
-        ha = plant.get("ha_in_municipality")
-        ha = plant.get("ha") if ha is None else ha
+        ha = _plant_ha(plant)
         fits = ha is not None and ha >= SOLAR_MIN_SHARE * area
         if fits and status.startswith(SOLAR_AUTHORISED):
             good.append(plant)
@@ -135,18 +147,25 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     returned by ``sarwatch.context`` or a hand-entered records file). Returns ``(verdict, reasons, explain)`` with the
     reason that decides the label first. No network."""
     records = records or {}
-    area = float(change["area_ha"])
+    try:
+        area = float(change["area_ha"])
+    except (KeyError, TypeError, ValueError):
+        area = float("nan")
+    if not area > 0:  # also catches NaN
+        raise ValueError(f"change {change.get('id')!r}: area_ha must be a positive number")
     ctype = change.get("type")
     prot, cad, zon, sol, fire, off = (records.get(k) for k in KEYS)
 
     # ---- facts
     areas = list(prot.get("areas") or []) if _ok(prot) else []
     inside = _ok(prot) and bool(prot.get("inside"))
-    names = ", ".join(_area_name(a) for a in areas[:2]) or "a protected nature area"
-    # only a buffer zone raises; a thin overlap (a share below EDGE_SHARE) just borders the area and stays neutral. An
-    # overlap whose size is unknown (no outline from the service) counts as a real one: the safe side.
-    buffer_only = inside and bool(areas) and all(str(a.get("kind", "")).endswith("buffer zone") for a in areas)
-    share = prot.get("overlap_share") if inside else None
+    core_areas = [a for a in areas if not str(a.get("kind", "")).endswith("buffer zone")]
+    names = ", ".join(_area_name(a) for a in (core_areas or areas)[:2]) or "a protected nature area"
+    # only a buffer zone raises; a thin overlap (a share below EDGE_SHARE) just borders the area and stays neutral. A
+    # buffer zone is not a protected area, so it never counts toward the share (``core_overlap_share``). An overlap
+    # whose size is unknown (no outline from the service) counts as a real one: the safe side.
+    buffer_only = inside and bool(areas) and not core_areas
+    share = prot.get("core_overlap_share", prot.get("overlap_share")) if inside else None
     edge = inside and not buffer_only and share is not None and share < EDGE_SHARE
     real_inside = inside and not buffer_only and not edge
     zone, planned = _zoning(zon)
@@ -156,7 +175,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     fire_recorded = _ok(fire) and bool(fire.get("recorded"))
     fire_explains = fire_recorded and ctype in FIRE_TYPES
     assessment_missing = _ok(off) and bool(off.get("assessment_required")) and not off.get("assessment_completed")
-    actions = list(off.get("actions") or []) if _ok(off) else []
+    actions = [a for a in (off.get("actions") or []) if isinstance(a, dict)] if _ok(off) else []
     action_keys = [f"{_action_code(a.get('kind'))}:{i}" for i, a in enumerate(actions)]
     small_uncertain = area < MID_HA and change.get("confidence") == "low"
 
@@ -187,7 +206,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
             verdict, decisive = "review", "protected_buffer"
         elif solar_pending and not matching:
             verdict, decisive = "review", "solar_application_pending"
-        elif actions and not small_uncertain:
+        elif actions:
             verdict, decisive = "review", action_keys[0]
 
     # ---- every reason that applies, then the deciding one goes first
@@ -228,7 +247,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         facts["cadastre_building_found"] = _reason(
             "cadastre_building_found", f"{built} new building(s) are registered here since the change.", "lowers", cad)
     if solar_good:
-        ha = solar_good[0].get("ha_in_municipality") or solar_good[0].get("ha")
+        ha = _plant_ha(solar_good[0])
         facts["solar_plant_listed"] = _reason(
             "solar_plant_listed",
             f"A solar plant of about {ha:g} ha is listed for this municipality (the list gives no exact location).",
@@ -298,7 +317,11 @@ def _explain(change: dict, verdict: str, reasons: list[dict]) -> str:
         if r["effect"] == direction and r["code"] not in ("small_area", "small_uncertain", "records_unavailable"):
             texts.append(r["text"])
             break
-    return " ".join([_first_sentence(change.get("explain"))] + texts).strip()
+    base = _first_sentence(change.get("explain"))
+    previous = [r.get("text") for r in change.get("reasons") or [] if isinstance(r, dict)]
+    if base in previous:  # a change judged before that had no radar sentence: its explain is our own text, not radar
+        base = ""
+    return " ".join([base] + texts).strip()
 
 
 # ---- hand-entered records (sites outside Catalonia, offline runs, tests) ----------------------------------------
@@ -319,7 +342,12 @@ def _in_scope(geometry: dict, scope: dict) -> bool:
         from shapely.geometry import shape
     except ImportError as exc:  # pragma: no cover - shapely is in the "verdict" extra
         raise SystemExit("records with a 'scope' need shapely: pip install -e '.[verdict]'") from exc
-    g, s = shape(geometry), shape(scope)
+    if not isinstance(scope, dict) or scope.get("type") not in ("Polygon", "MultiPolygon"):
+        raise ValueError("a record's scope must be a GeoJSON Polygon or MultiPolygon")
+    try:
+        g, s = shape(geometry), shape(scope)
+    except (ValueError, TypeError, KeyError, IndexError) as exc:
+        raise ValueError(f"a record's scope is not a valid GeoJSON polygon: {exc}") from exc
     return g.intersects(s) and not g.touches(s)  # sharing only a border is outside
 
 

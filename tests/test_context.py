@@ -109,6 +109,38 @@ def test_arcgis_rings_with_a_hole_become_a_polygon_with_a_hole():
     assert protected._shape({"rings": []}) is None and protected._shape(None) is None
 
 
+def test_a_self_crossing_change_polygon_keeps_both_lobes():
+    """Reviewer case: ``to_utm`` used ``buffer(0)``, which dropped a lobe of a bowtie change polygon."""
+    lon, lat, d = 1.85, 41.45, 0.002  # a bowtie ~330 m wide: lobes of unequal size
+    bowtie = {"type": "Polygon", "coordinates": [[[lon, lat], [lon + d, lat + d], [lon + d, lat],
+                                                  [lon, lat + d / 2], [lon, lat]]]}
+    g = _common.to_utm(bowtie)
+    assert g.is_valid and g.geom_type in ("Polygon", "MultiPolygon")
+    unit =_common.to_utm({"type": "Polygon", "coordinates": [[[lon, lat], [lon + d, lat], [lon + d, lat + d],
+                                                               [lon, lat + d], [lon, lat]]]}).area
+    assert g.area == pytest.approx(unit * 0.4167, rel=0.02)  # 4,167 of the 10,000 units of the bounding square
+
+
+def test_buffer_zones_do_not_count_toward_core_overlap_share(monkeypatch):
+    g = _common.to_utm(AGROPARC)
+    x0, y0, x1, y1 = g.bounds
+    everything = box(x0 - 100, y0 - 100, x1 + 100, y1 + 100)
+    core_strip = box(x0 - 100, y0 - 100, x0 + 8, y1 + 100)
+
+    def fake(layer, esri):
+        if layer == 0:
+            return [({"NOM_PEIN": "Riu", "CODI_PEIN": "RIU"}, core_strip)]
+        if layer == 3:
+            return [({"NOM_ESPAI": "Parc X", "CODI_ESPAI": "zpnat"}, everything)]
+        return []
+
+    monkeypatch.setattr(protected, "_query", fake)
+    r = protected.lookup(AGROPARC)
+    assert r["overlap_share"] == pytest.approx(1.0, abs=1e-3)       # with the buffer zone
+    assert 0 < r["core_overlap_share"] < 0.02                        # without it: only the thin real strip
+    assert [a["kind"] for a in r["areas"]] == ["PEIN", "natural park buffer zone"]
+
+
 def test_a_self_crossing_outline_keeps_both_lobes():
     """``buffer(0)`` can drop the smaller lobe of a bowtie and underestimate the share; ``make_valid`` keeps both."""
     bowtie = [[0, 0], [100, 100], [100, 0], [0, 50], [0, 0]]  # lobes of 3,333 and 833 m², crossing at (33, 33)

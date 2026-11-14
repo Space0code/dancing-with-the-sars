@@ -65,8 +65,9 @@ def _query(layer: int, esri_geom: str) -> list[tuple[dict, object]]:
 @safe(SOURCE, VIEWER)
 def lookup(geometry: dict, **options) -> dict:
     """``inside`` (bool: the polygon touches at least one protected area), ``areas`` ([{name, kind, code,
-    overlap_share}]) and ``overlap_share`` (share of the polygon inside any protected area, 0-1). A 1 m² edge touch has
-    a share near 0 and a real overlap near 1; ``None`` if the service sent no outline for some area."""
+    overlap_share}]), ``overlap_share`` (share of the polygon inside any protected area, 0-1) and
+    ``core_overlap_share`` (the same without buffer zones, which are not protected areas themselves). A 1 m² edge touch
+    has a share near 0 and a real overlap near 1; ``None`` if the service sent no outline for an area involved."""
     g = to_utm(geometry).simplify(1.0)
     esri = _esri_polygon(g)
     areas, shapes = [], []
@@ -86,10 +87,15 @@ def lookup(geometry: dict, **options) -> dict:
             out["url"] = a["FND_ZEC"].strip()  # official Natura 2000 site sheet: a page a human can open
     for a, shp in _query(3, esri):
         add(a, shp, "NOM_ESPAI", ENPE_KINDS.get(a["CODI_ESPAI"], a["CODI_ESPAI"]), "CODI_ESPAI")
-    known = [make_valid(s) for s in shapes if s is not None]  # not buffer(0): that can drop a lobe of a bowtie
-    overall = None
-    if areas and len(known) == len(shapes):
-        overall = round(unary_union(known).intersection(g).area / g.area, 4)
-    elif not areas:
-        overall = 0.0
-    return {**out, "inside": bool(areas), "areas": areas, "overlap_share": overall}
+    def share_of(parts) -> float | None:
+        """Share of the polygon inside the union of ``parts`` (None if an outline is missing, 0.0 if no parts)."""
+        if not parts:
+            return 0.0
+        if any(s is None for s in parts):
+            return None
+        # make_valid, not buffer(0): buffer(0) can drop a lobe of a self-crossing outline
+        return round(unary_union([make_valid(s) for s in parts]).intersection(g).area / g.area, 4)
+
+    core = [s for a, s in zip(areas, shapes) if not str(a["kind"]).endswith("buffer zone")]
+    return {**out, "inside": bool(areas), "areas": areas, "overlap_share": share_of(shapes),
+            "core_overlap_share": share_of(core)}
