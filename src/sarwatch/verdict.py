@@ -87,7 +87,7 @@ def _fire_text(fire: dict, explains: bool) -> str:
     return f"A recorded wildfire burned here{where}, but it does not explain a new building or ground movement."
 
 
-SENSOR_NAMES = {"OPERA DIST-ALERT": "NASA optical alerts (Landsat + Sentinel-2)"}
+SENSOR_NAMES = {"OPERA DIST-ALERT": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)"}  # Landsat is NASA/USGS, Sentinel-2 is ESA, the OPERA product is NASA's
 
 
 def _detector(change: dict) -> str:
