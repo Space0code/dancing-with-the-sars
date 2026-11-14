@@ -119,20 +119,24 @@ SITES = {
     # Agroparc Penedes earthworks; Sentinel-1 gives the years before NISAR, about one scene a month.
     "agroparc": Site(
         id="agroparc", bbox=(1.79, 41.41, 1.91, 41.49),
-        nisar=NisarSettings(start=date(2026, 6, 1), track=130, frame=22, direction="ASCENDING"),
+        # NISAR (#36): two rain passes (9 and 21 Oct) add ~3 dB on fields, so each pass is levelled to the scene
+        # (normalize) and a change must hold in every late pass (hold); 1 ha minimum keeps the farmland quiet.
+        nisar=NisarSettings(start=date(2026, 6, 1), track=130, frame=22, direction="ASCENDING",
+                            params=ChangeParams(threshold_db=3.0, min_area_ha=1.0, normalize=True, hold=True)),
         s1=S1Settings(start=date(2024, 1, 1), min_gap_days=28),
     ),
 }
 
 
-def _params(site: Site, sensor: str, threshold_db=None, min_area_ha=None) -> ChangeParams:
+def _params(site: Site, sensor: str, threshold_db=None, min_area_ha=None, **flags) -> ChangeParams:
     """The sensor's defaults, then the site's overrides, then the command line's."""
     params = (site.nisar if sensor == NISAR else site.s1).params
     known = {f.name for f in dataclasses.fields(ChangeParams)}
     if set(site.params) - known:
         raise PipelineError(f"{site.id}: unknown change parameter(s) {sorted(set(site.params) - known)}; "
                             f"known: {sorted(known)}")
-    cli = {k: v for k, v in (("threshold_db", threshold_db), ("min_area_ha", min_area_ha)) if v is not None}
+    cli = {k: v for k, v in (("threshold_db", threshold_db), ("min_area_ha", min_area_ha), *flags.items())
+           if v is not None}
     return dataclasses.replace(params, **{**site.params, **cli})
 
 
@@ -578,7 +582,7 @@ def _tally(site_dir: Path, key: str) -> dict:
 
 
 def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1), offline=False, fetch_only=False,
-        max_new=None, threshold_db=None, min_area_ha=None, skip_dates=None) -> int:
+        max_new=None, threshold_db=None, min_area_ha=None, skip_dates=None, normalize=None, hold=None) -> int:
     """The whole site run; prints a summary. Returns 0 if the data passes the contract, 1 if not."""
     site = SITES[site_id]
     out, cache = Path(out), Path(cache)
@@ -587,7 +591,7 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         raise PipelineError(f"{site_id}: no sensor left to run")
     entry = None if fetch_only else _site_entry(out / "sites.json", site_id)  # fail before spending data
     spans = _skip_spans(site, skip_dates)  # typos in the settings fail here too, not after the downloads
-    params = {s: _params(site, s, threshold_db, min_area_ha) for s in use}
+    params = {s: _params(site, s, threshold_db, min_area_ha, normalize=normalize, hold=hold) for s in use}
     token = None if offline else load_token()
     meter, days = Meter(), {}
     for sensor in use:
@@ -656,6 +660,10 @@ def main(argv=None) -> int:
     p.add_argument("--min-area-ha", type=float, help="smallest change kept, hectares (default: the site's, else 0.5)")
     p.add_argument("--skip-dates", metavar="D1,D2", help="comma-separated YYYY-MM-DD or YYYY-MM-DD..YYYY-MM-DD "
                    "passes to leave out of detection; replaces the site's own list ('' = use every date)")
+    p.add_argument("--normalize", action="store_true", default=None,
+                   help="remove each pass's scene-wide dB shift (rain, drought) before comparing")
+    p.add_argument("--hold", action="store_true", default=None,
+                   help="a change must show in every one of the last passes, not just their median")
     args = p.parse_args(argv)
     if args.fetch_only and args.offline:
         p.error("--fetch-only and --offline exclude each other")
@@ -667,7 +675,7 @@ def main(argv=None) -> int:
     try:
         return run(args.site, args.out, args.cache, sensors=sensors, offline=args.offline,
                    fetch_only=args.fetch_only, max_new=args.max_dates, threshold_db=args.threshold_db,
-                   min_area_ha=args.min_area_ha,
+                   min_area_ha=args.min_area_ha, normalize=args.normalize, hold=args.hold,
                    skip_dates=None if args.skip_dates is None else tuple(args.skip_dates.split(",")))
     except (PipelineError, PermissionError) as exc:  # PermissionError: the archive refused the token
         print(f"error: {exc}", file=sys.stderr)
