@@ -609,7 +609,7 @@ def test_part_drop_needs_a_lasting_drop_of_the_threshold():
     run, params = _s1_run(change_pass=5)
     part = np.zeros(S_SHAPE, bool)
     part[S_RECT] = True
-    assert pipeline._part_drop(run, part, 3, params) == 5
+    assert pipeline._part_drop(run, part, 3, params) == (5, 4)  # dated pass 5, unchanged on pass 4
     late, _ = _s1_run(change_pass=9)  # only the last pass: not a lasting drop
     assert pipeline._part_drop(late, part, 3, params) is None
 

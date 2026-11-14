@@ -712,10 +712,11 @@ def _part_mask(run, outline: dict) -> np.ndarray:
 
 
 def _part_drop(run, part: np.ndarray, n_early: int, params: ChangeParams):
-    """Index of the first pass after the baseline from which the part's mean cross-pol echo, relative to the window
+    """(t, k): t = the first pass after the baseline from which the part's mean cross-pol echo, relative to the window
     median of that pass (scene-wide wet or frozen shifts removed), stays at least threshold_db below its baseline
-    for `persist` passes (all inside the record: one last odd pass is not a date); None if it never does."""
-    from .change import CROSSPOL
+    for `persist` passes (all inside the record: one last odd pass is not a date), k = the last pass before t that
+    still looked unchanged; None if it never drops."""
+    from .change import CROSSPOL, DATING_FRACTION
 
     pol = next((p for p in run.stack if p.upper() in CROSSPOL), next(iter(run.stack)))
     arr = run.stack[pol]
@@ -734,7 +735,10 @@ def _part_drop(run, part: np.ndarray, n_early: int, params: ChangeParams):
     persist = max(1, params.persist)
     for t in range(n_early, len(rel) - persist + 1):
         if down[t:t + persist].all():
-            return t
+            # not before: the last pass that still looked unchanged (less than half the threshold down); a pass
+            # already half way down (a cut under snow showing through) does not count, so the window stays open
+            unchanged = [k for k in range(t) if dev[k] > -DATING_FRACTION * params.threshold_db]
+            return t, max(unchanged) if unchanged else None
     return None
 
 
@@ -783,15 +787,16 @@ def _primary_parts(dets: list, runs: list, n_early: dict, params: dict, site_lis
                                     share=None, note=note))
                 continue
             # the radar's own date for the part: its mean vegetation echo must drop by the detector's threshold
-            t = _part_drop(run, part, n_early[run.sensor], params[run.sensor])
-            if t is None:
+            found = _part_drop(run, part, n_early[run.sensor], params[run.sensor])
+            if found is None:
                 entries.append(dict(sensor=s.name, kind="radar", role="not_seen", first_date=None, last_date=None,
                                     not_before=None, confidence=None, area_ha=round(share * total, 2),
                                     share=round(float(share), 3),
                                     note=f"{short} radar flagged {share:.0%} of it, but its echo over the whole part "
                                          "did not drop enough to date it."))
                 continue
-            first = run.dates[t]
+            t, k = found
+            first, radar_nb = run.dates[t], None if k is None else run.dates[k]
             labels, counts = np.unique(run.result.labels[hit], return_counts=True)
             grade = {r.label: r.confidence for r in run.result.regions}[int(labels[np.argmax(counts)])]
             if not_before is not None and first <= not_before:
@@ -803,7 +808,7 @@ def _primary_parts(dets: list, runs: list, n_early: dict, params: dict, site_lis
             clauses.append((first, text))
             agree |= share >= merge.SHARE_AGREES
             entries.append(dict(sensor=s.name, kind="radar", role="detected", first_date=first.isoformat(),
-                                last_date=first.isoformat(), not_before=run.dates[t - 1].isoformat(), confidence=grade,
+                                last_date=first.isoformat(), not_before=radar_nb and radar_nb.isoformat(), confidence=grade,
                                 area_ha=round(share * total, 2), share=round(float(share), 3),
                                 note=text[0].upper() + text[1:] + f" (it flagged {share:.0%} of the area)."))
             if best is None or share > best:
