@@ -119,6 +119,8 @@ class Site:
                                       # source, one change per month of first detection, radar attached as sources
     layer_bytes: int | None = None  # a large window: site pictures above this many bytes get a 256-colour palette
                                     # (None = export.MAX_PNG_BYTES)
+    exclude_points: tuple = ()    # (lon, lat) per merged change to drop (a known false alarm, e.g. a moored ship);
+                                  # a change is dropped when its outline contains the point; applied before max_changes
     max_changes: int | None = None  # a large window: keep only this many changes (largest first, low confidence
                                     # counted at half its area); needs `sources` (applies to the merged changes)
 
@@ -206,8 +208,11 @@ SITES = {
         sources=(
             ("Sentinel-1 C-band", "radar", "2016-06-05", None, 12, ("clearing", "structure", "earthworks", "other"),
              ()),
-            ("NISAR L-band", "radar", "2026-06-23", None, 12, ("clearing", "structure", "earthworks", "other"), ()),
+            # NISAR's "other" class is dropped for this site (NisarSettings.keep_types), so it does not claim it
+            ("NISAR L-band", "radar", "2026-06-23", None, 12, ("clearing", "structure", "earthworks"), ()),
         ),
+        # Port of Barcelona, a berth: NISAR's "earthworks" there is most likely a moored ship, not ground works
+        exclude_points=((2.1705, 41.3525),),
         max_changes=100, layer_bytes=2_000_000,
     ),
 }
@@ -706,8 +711,8 @@ def _sentence(group: list, change, best, sites: dict) -> str:
         by_source.setdefault(d.source, []).append(d)
     if change.late_start_only:
         began = sites[setter].start if setter in sites else change.first_date
-        head = (f"{SHORT.get(setter, setter)} began watching on {_say_day(began)} and shows the ground already changed, "
-                f"{PATTERNS.get(change.type, PATTERNS['other'])}; the start date is not known")
+        head = (f"This change was already under way when {SHORT.get(setter, setter)} began watching on "
+                f"{_say_day(began)}, so this record cannot say when it started")
     elif by_source[setter][0].kind == "optical":
         head = f"An optical alert found vegetation loss here {change.when}"
     else:
@@ -1309,6 +1314,11 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
         sources = site_sources_json(site)
         log.info("merged: %d changes from %s", len(merged), ", ".join(SHORT.get(r.sensor, r.sensor) for r in runs)
                  + (" and the optical alerts" if optical else ""))
+        if site.exclude_points:
+            from shapely.geometry import Point, shape
+            hit = [m for m in merged if any(shape(m.geometry).contains(Point(pt)) for pt in site.exclude_points)]
+            merged = [m for m in merged if m not in hit]
+            log.info("left out %d change(s) at the site's exclude_points", len(hit))
         if site.max_changes is not None and len(merged) > site.max_changes:
             merged = top_changes(merged, site.max_changes)
             log.info("kept the %d largest changes (max_changes)", len(merged))
