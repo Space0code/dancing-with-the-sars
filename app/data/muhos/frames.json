@@ -21,7 +21,7 @@
   {
    "id": "radar",
    "title": "Radar",
-   "caption": "Dark = bare ground or water. Bright = forest and buildings.",
+   "caption": "Radar picture. Grey: unchanged since summer 2025. Orange: the echo from trees and plants dropped here.",
    "frames": [
     {
      "date": "2025-06-02",

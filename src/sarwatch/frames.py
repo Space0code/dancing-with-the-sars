@@ -1,6 +1,7 @@
 """Picture frames for the app's time-lapse and before / after swipe (issue #89, format: kb/data-contract.md).
 
-One radar picture per Sentinel-1 pass (cross-pol VH in dB, speckle-smoothed, the same grey stretch for every date)
+One radar picture per Sentinel-1 pass (cross-pol VH in dB, speckle-smoothed in space and over neighbouring passes, one grey stretch for every date,
+with the pixels that lost echo since summer 2025 tinted orange)
 and real colour photos (NASA HLS, cloud-free days only, one fixed colour stretch), all warped to one north-up grid
 over the site window. Output: app/data/<site>/frames/{radar,photo}/<date>.jpg + app/data/<site>/frames.json.
 
@@ -36,7 +37,15 @@ PHOTO_RANGE = (0.0, 0.22)            # reflectance mapped to 0..1 before the gam
 PHOTO_GAMMA = 1.0 / 1.8
 PHOTO_MIN_CLEAR = 0.9
 PHOTO_MIN_GAP_DAYS = 3               # thin photo days closer together than this (keep the clearer one)
-RADAR_CAPTION = "Dark = bare ground or water. Bright = forest and buildings."
+TIME_MAX_GAP_DAYS = 15               # temporal average: neighbours further away in time (snow gap) are not used
+BASELINE_SPAN = (date(2025, 6, 1), date(2025, 9, 30))   # snow-free summer: per-pixel median = "unchanged" level
+TINT_FROM_DB = 2.0                   # tint where VH is this far below the baseline ...
+TINT_FULL_DB = 5.0                   # ... full strength at this drop
+TINT_MIN_ALPHA, TINT_MAX_ALPHA = 0.35, 0.9
+MIN_PATCH_HA = 1.0                   # smaller tinted patches are dropped
+WATER_DB = -22.0                     # baseline darker than this = water, never tinted
+TINT_RGB = (255, 70, 0)              # orange-red
+RADAR_CAPTION = "Radar picture. Grey: unchanged since summer 2025. Orange: the echo from trees and plants dropped here."
 PHOTO_CAPTION = "Colour images from Landsat and Sentinel-2 (NASA HLS), cloud-free days only."
 
 
@@ -114,22 +123,58 @@ def smooth_linear(power: np.ndarray, box: int = SPECKLE_BOX) -> np.ndarray:
     return out.astype(np.float32)
 
 
-def vh_db(power: np.ndarray) -> np.ndarray:
-    """3x3-mean smoothed VH, in dB; NaN where invalid or not positive."""
-    sm = smooth_linear(power)
+def to_db(power: np.ndarray) -> np.ndarray:
+    """Linear power -> dB; NaN where invalid or not positive."""
     with np.errstate(invalid="ignore", divide="ignore"):
-        db = 10.0 * np.log10(np.where(sm > 0, sm, np.nan))
-    return db.astype(np.float32)
+        return (10.0 * np.log10(np.where(power > 0, power, np.nan))).astype(np.float32)
 
 
 def radar_stretch(db: np.ndarray, lo: float = RADAR_RANGE_DB[0], hi: float = RADAR_RANGE_DB[1]) -> np.ndarray:
-    """dB -> uint8 grey with one fixed stretch; NaN -> 0 (black)."""
-    g = np.clip((db - lo) / (hi - lo), 0.0, 1.0)
-    return np.round(np.nan_to_num(g, nan=0.0) * 255).astype(np.uint8)
+    """dB -> grey in 0..1 with one fixed stretch; NaN -> 0 (black)."""
+    return np.nan_to_num(np.clip((db - lo) / (hi - lo), 0.0, 1.0), nan=0.0)
 
 
-def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans) -> list:
-    """Write one grey JPEG per usable Sentinel-1 pass; returns [{date, sensor, url}] sorted by date."""
+def time_average(stack: list, days: list, max_gap: int = TIME_MAX_GAP_DAYS) -> list:
+    """Weights 1-2-1 over (pass before, pass, pass after) in linear power. A neighbour more than max_gap days away
+    (the snow gap) is left out; NaN pixels of a neighbour are ignored."""
+    out = []
+    for i, arr in enumerate(stack):
+        num, den = 2.0 * np.nan_to_num(arr), 2.0 * np.isfinite(arr)
+        for j in (i - 1, i + 1):
+            if 0 <= j < len(stack) and abs((days[j] - days[i]).days) <= max_gap:
+                num = num + np.nan_to_num(stack[j])
+                den = den + np.isfinite(stack[j])
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out.append(np.where(np.isfinite(arr) & (den > 0), num / den, np.nan).astype(np.float32))
+    return out
+
+
+def lost_alpha(drop_db: np.ndarray, baseline_db: np.ndarray, pixel_ha: float) -> np.ndarray:
+    """Tint strength 0..1 per pixel: 0 below TINT_FROM_DB of drop, full at TINT_FULL_DB. Patches smaller than
+    MIN_PATCH_HA and water (very dark in the baseline) get none."""
+    from scipy import ndimage
+
+    ok = np.isfinite(drop_db) & (baseline_db > WATER_DB)
+    d = np.where(ok, drop_db, 0.0)
+    mask = d >= TINT_FROM_DB
+    labels, n = ndimage.label(mask, structure=np.ones((3, 3)))
+    if n:
+        size = ndimage.sum(mask, labels, index=np.arange(1, n + 1))
+        mask &= np.isin(labels, 1 + np.flatnonzero(size * pixel_ha >= MIN_PATCH_HA))
+    alpha = np.clip((d - TINT_FROM_DB) / (TINT_FULL_DB - TINT_FROM_DB), 0.0, 1.0)
+    alpha = TINT_MIN_ALPHA + (TINT_MAX_ALPHA - TINT_MIN_ALPHA) * alpha
+    return np.where(mask, alpha, 0.0).astype(np.float32)
+
+
+def tint(grey: np.ndarray, alpha: np.ndarray) -> np.ndarray:
+    """grey (h, w) 0..1 and alpha (h, w) -> uint8 RGB with TINT_RGB blended over the grey picture."""
+    rgb = np.asarray(TINT_RGB, np.float32) / 255.0
+    out = grey[..., None] * (1 - alpha[..., None]) + rgb * alpha[..., None]
+    return np.round(out * 255).astype(np.uint8)
+
+
+def radar_series(site_id: str, stacks, window, skip_spans) -> tuple:
+    """(days, db, baseline, pixel_ha): the smoothed, per-date levelled VH of every usable pass on the common grid."""
     cache = Path(stacks) / site_id / "s1"
     days = [d for d in pipeline.cached_days(cache) if not any(lo <= d <= hi for lo, hi in skip_spans)]
     if not days:
@@ -138,15 +183,32 @@ def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans) -> lis
     warped = []
     for day in days:
         fr = pipeline.load_frame(pipeline.cache_path(cache, day))
-        warped.append(warp(vh_db(fr.data["VH"]), fr.transform, fr.epsg, dst_t, w, h))
-    medians = np.array([np.nanmedian(a) for a in warped])  # one offset per date: wet / dry days must not flicker
+        warped.append(warp(smooth_linear(fr.data["VH"]), fr.transform, fr.epsg, dst_t, w, h, "bilinear"))
+    warped = time_average(warped, days)
+    dbs = [to_db(a) for a in warped]
+    medians = np.array([np.nanmedian(a) for a in dbs])  # one offset per date: wet / dry days must not flicker
     ref = float(np.median(medians))
     log.info("radar: %d passes, per-date median %.1f .. %.1f dB (reference %.1f)", len(days), medians.min(),
              medians.max(), ref)
+    dbs = [a - m + ref for a, m in zip(dbs, medians)]
+    base = [a for a, d in zip(dbs, days) if BASELINE_SPAN[0] <= d <= BASELINE_SPAN[1]]
+    if not base:
+        raise pipeline.PipelineError("no summer 2025 passes for the baseline")
+    baseline = np.nanmedian(np.stack(base), axis=0)
+    west, south, east, north = window
+    mid = math.radians((north + south) / 2)
+    pixel_ha = (east - west) * 111_320 * math.cos(mid) / w * (north - south) * 110_574 / h / 1e4
+    return days, dbs, baseline, pixel_ha
+
+
+def radar_frames(site_id: str, stacks, out_dir: Path, window, skip_spans) -> list:
+    """Write one JPEG per usable Sentinel-1 pass (grey radar, lost vegetation echo tinted); returns
+    [{date, sensor, url}] sorted by date."""
+    days, dbs, baseline, pixel_ha = radar_series(site_id, stacks, window, skip_spans)
     out_dir.mkdir(parents=True, exist_ok=True)
     frames = []
-    for day, db, med in zip(days, warped, medians):
-        data = jpeg_bytes(radar_stretch(db - med + ref))
+    for day, db in zip(days, dbs):
+        data = jpeg_bytes(tint(radar_stretch(db), lost_alpha(baseline - db, baseline, pixel_ha)))
         (out_dir / f"{day.isoformat()}.jpg").write_bytes(data)
         frames.append({"date": day.isoformat(), "sensor": "Sentinel-1", "url": f"frames/radar/{day.isoformat()}.jpg"})
         if len(data) > MAX_FRAME_BYTES:

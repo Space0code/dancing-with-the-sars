@@ -1,8 +1,11 @@
 """Contact sheet of the Muhos picture frames: every 5th radar frame and all photos, dated, clearing outline on one.
 
     python explore/muhos/frames_contact.py   ->  explore/muhos/frames_contact.jpg
+    python explore/muhos/frames_contact.py --radar 4   ->  explore/muhos/frames_contact_v2.jpg (radar only, every 4th,
+                                                           outline on the last frame)
 """
 import json
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -26,16 +29,22 @@ def outline_pixels(coords, size):
 def main():
     doc = json.loads((SITE / "frames.json").read_text(encoding="utf-8"))
     sets = {s["id"]: s["frames"] for s in doc["sets"]}
-    tiles = [("radar", f) for f in sets["radar"][::5]] + [("photo", f) for f in sets["photo"]]
-    first = True
+    radar_step = int(sys.argv[2]) if sys.argv[1:2] == ["--radar"] else 0
+    if radar_step:
+        radar = sets["radar"][::radar_step]
+        radar = radar if radar[-1] is sets["radar"][-1] else radar + sets["radar"][-1:]
+        tiles = [("radar", f) for f in radar]
+    else:
+        tiles = [("radar", f) for f in sets["radar"][::5]] + [("photo", f) for f in sets["photo"]]
+    first = not radar_step
     images = []
     for kind, f in tiles:
         im = Image.open(SITE / f["url"]).convert("RGB")
         im = im.resize((THUMB, round(THUMB * im.height / im.width)))
         d = ImageDraw.Draw(im)
-        if first or (kind == "photo" and f is sets["photo"][-1]):
+        if first or (radar_step and f is tiles[-1][1]) or (kind == "photo" and f is sets["photo"][-1]):
             for poly in outline_pixels(doc["coordinates"], im.size):
-                d.line(poly, fill=(255, 40, 40), width=1)
+                d.line(poly, fill=(40, 200, 255) if radar_step else (255, 40, 40), width=1)
             first = False
         d.rectangle((0, 0, 120, 14), fill=(0, 0, 0))
         d.text((3, 2), f"{kind} {f['date']}", fill=(255, 255, 255))
@@ -45,7 +54,7 @@ def main():
     sheet = Image.new("RGB", (COLS * (THUMB + 4), rows * (th + 4)), (30, 30, 30))
     for i, im in enumerate(images):
         sheet.paste(im, ((i % COLS) * (THUMB + 4), (i // COLS) * (th + 4)))
-    out = ROOT / "explore" / "muhos" / "frames_contact.jpg"
+    out = ROOT / "explore" / "muhos" / ("frames_contact_v2.jpg" if radar_step else "frames_contact.jpg")
     sheet.save(out, quality=82)
     print(out, sheet.size, len(images))
 
