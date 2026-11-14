@@ -11,6 +11,10 @@ Data comes from `app/data/` (format: `kb/data-contract.md`). Sites with `ready: 
 Layout: `index.html` · `css/style.css` · `js/` (`main.js` wires `map.js`, `picture.js` (the big picture), `timeline.js`, `panel.js`, `inbox.js` (the "Changes" tab: sort, filters, list); the card uses
 `chart.js` (SVG signal chart); wording and colors in `format.js`).
 Missing series files show a message instead of a broken box.
+Look: one system in `css/style.css` (tokens at the top: colour roles, six type sizes, 4-32px spacing, radii, shadows,
+motion). Fonts: Funnel Sans and Funnel Display, self-hosted in `fonts/` (OFL); the system font takes over if they fail.
+The interface stays neutral (ink on white, one green for the main action, links and focus); strong colour is kept for the
+verdicts, the radar picture's pink and the timeline's red bars.
 
 - **Name and pitch:** `APP` in `js/format.js` (one place). Explainer text: the `<dialog>` in `index.html`.
 - **Timeline** (`js/timeline.js`): the slider steps through the site's `snapshots` (one stop per image date; without them: the change dates plus both ends of `time_range`). A red bar crosses the track at every stop where changes first show (click = jump there); story events are grey flags. Dates from the tour or a link snap to the stop on or before them.
