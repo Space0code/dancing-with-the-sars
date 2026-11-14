@@ -9,11 +9,12 @@ moved, ground sinking) and tells a regulator in plain language **which changes l
 with the evidence.
 
 ## Why
-- **The Finland case.** In 2026 Google's Finnish subsidiary cleared about 330 ha of forest near Muhos and about 200 ha at
-  Kajaani-Otanmäki for planned AI datacenters, **before the mandatory environmental impact assessment was finished**.
-  Late Oct 2026: police opened a criminal investigation and regulators halted the work. Local streams turned brown from
-  runoff. These are news reports; details and coordinates are in `project-context.md` §7. The change was large and
-  physical, yet nobody flagged it until it was done.
+- **The Finland case (verified).** From Mar to Aug 2026 Google's Finnish subsidiary cleared ~330 ha of forest at Muhos
+  and just under 200 ha at Kajaani-Otanmäki for planned AI datacenters, **before the mandatory environmental impact
+  assessment was finished**. It kept cutting after being told in May that an assessment was required. 6 Oct: the
+  permit regulator ordered a stop. 29 Oct: police opened a preliminary investigation into suspected environmental damage,
+  including drainage failures. That's months of large physical change, visible from orbit, before anyone stepped in.
+  Details and coordinates: `project-context.md` §7.
 - **Regulators can't inspect everything.** Changes that match no plan or permit go unnoticed until the damage is done.
 - **Radar sees through clouds and works at night**, so monitoring doesn't stall in bad weather or in winter.
   Over Catalonia NISAR gives each point a new look **roughly every 5–6 days**, and adding Sentinel-1 makes it more
@@ -93,7 +94,7 @@ downloads unless subsetting fails. Precompute everything the demo shows.
   Sentinel-1 / optical.
 
 ## Left to the planner
-Tech stack (web map + where processing runs) · which 2–3 hotspots (candidates in `project-context.md` §7) · rule
+Tech stack (web map + where processing runs) · which 2–3 hotspots (research pick in `project-context.md` §7: Agroparc Penedès, Alcarràs solar, Gavarres fire) · rule
 thresholds · pitch format (video / slides) · questions for the geoscience specialist (see AGENTS.md).
 
 <sub>Written by Claude</sub>

@@ -75,19 +75,42 @@ Simple, robust analysis ideas: HV/HH ratio maps, backscatter difference/ratio be
 - Challenge partner data: CSA **RADARSAT Constellation (RCM)** & RADARSAT-1, CONAE **SAOCOM** (L-band, registration needed).
 - Optical context: Sentinel-2 / HLS (NDVI before/after), high-res basemaps (Esri/Google) for validation.
 
-## 7. Candidate study sites (coordinates approximate — verify before use)
-| Site | Where | Why | Approx lat, lon |
-|---|---|---|---|
-| OpenAI/Oracle **Stargate I** | Abilene, TX | 1.2 GW, built 2024–26, ~3.5 km² | 32.5, −99.8 |
-| Meta **Hyperion** | Richland Parish (Holly Ridge), LA | 2→5 GW, ~11 km² former farmland, under construction | ~32.47, −91.7 |
-| xAI **Colossus 1/2** | South Memphis, TN | built in months, 2024–26 | 35.06, −90.15 |
-| AWS **Project Rainier** | New Carlisle, IN | 2.2 GW, 2024–25 | ~41.7, −86.5 |
-| **Data Center Alley** | Ashburn / Loudoun Co., VA | world's densest cluster, continuous sprawl | 39.02, −77.48 |
-| **Aragón cluster** (AWS, Microsoft, Blackstone) | Zaragoza/Huesca, Spain — Villanueva de Gállego, El Burgo de Ebro, Walqa, La Muela, Puerto Venecia | Europe's fastest-growing hub, local relevance (water/energy debate), ~2 h from Barcelona | Zaragoza ≈ 41.65, −0.88 |
+## 7. Cases: Finland test case + Catalonia candidates (research 14 Nov; coordinates approximate)
+Verdict labels as in `product.md`: **HC** = high concern · **NR** = needs review · **EX** = expected / natural.
+Data windows: **S1** = Sentinel-1 only (2015→) · **NB** = NISAR beta (Oct 2025→) · **NC** = NISAR calibrated (Jun 2026→).
+Exact outlines are not published: draw them from Sentinel-2 / ICGC orthophotos before measuring anything.
 
-NISAR coverage verified via ASF search API on 14 Nov 2026: Abilene → 35 GCOV products; Zaragoza → 38 GCOV; Ashburn → 43 GUNW. ✅
+**Finland (verified).** Tuike Finland (Google) cleared ~330 ha at **Muhos** (Leppiniemi, NE of centre, ~64.843, 26.044)
+and just under 200 ha at **Kajaani-Otanmäki** (~64.109, 27.107) before the EIAs were done (reports due end 2026).
+Muhos cutting ran **Mar–Aug 2026**. On 30 Apr Tuike asked to skip the EIA, was told in May that one was required, and kept
+cutting. The permit regulator ordered a stop on 6 Oct; Oulu police opened a preliminary investigation on 29 Oct.
+Otanmäki dates (unverified). Radar: Sentinel-1 + NISAR beta cover the whole clearing, calibrated NISAR only Jun–Aug.
+March cutting happened **under snow** (changes backscatter). Sources: https://yle.fi/a/74-20254086 ·
+https://www.kaleva.fi/hs-google-yritti-saada-poikkeusluvan-muhoksen-hakk/13686840
 
-Trackers for site lists & dates: Epoch AI Frontier Data Centers Hub, FAS "Tracking Hyperscale AI Data Center Growth", Baxtel, PNNL data center atlas.
+| Case (lat, lon) | Change · size | Official status | Label | Radar signal · visible? | Window | Source |
+|---|---|---|---|---|---|---|
+| **Agroparc Penedès**, Gelida (~41.45, 1.85) | earthworks for a 258-ha project, 724,482 m³ of earth, 2025–27 | court partly halted it Jul 2025 (protected eagles); prosecutor dropped the complaint Aug 2026; works ongoing | NR | coherence loss → double-bounce; easily | S1+NB+NC | [Vilaweb](https://www.vilaweb.cat/noticies/ametller-origen-paralitza-els-treballs-a-lagroparc-de-gelida-per-la-pressio-veinal-i-la-resolucio-judicial/) · [Ara](https://en.ara.cat/economy/the-prosecution-files-the-complaint-against-the-works-of-agroparc-of-ametller-origen_25_5816220.html) |
+| **Alcarràs solar**, finca Montagut (~41.62, 0.51) | 8 adjoining parks, 656 ha, ~400 MW, connected Feb–May 2026 | authorised, but a court is investigating whether one project was split into 8 permits | NR | panel rows change backscatter; coherence loss while built; very large | S1+NB | [APD](https://www.apdnoticies.com/en/lleida/656-hectares-and-almost-400-mw-eight-solar-parks-in-alcarras-were-processed-separately-despite-being-connected_5375_102.html) |
+| Waste buried in farmland, Sant Esteve Sesrovires (town 41.49, 1.87; plots not public) | ≥46,000 t buried ~2022–26; area unknown | 4 arrests Jul 2026; €814,900 fine proposed | HC | coherence loss; depends on size | S1 (+NB?) | [Ara](https://en.ara.cat/society/arrested-for-burying-46-000-tons-of-waste-from-france-in-sant-esteve-sesrovires_1_5797735.html) |
+| Fir cutting + earthworks, Espinelves, Osona (town 41.87, 2.42) | 200 firs, 3,000 m³; 0.8 ha vs 8 ha (sources conflict) | Agents Rurals complaint + stop order, Oct 2026 | HC | HV drop + coherence loss; marginal if 0.8 ha | NC | [3Cat](https://www.3cat.cat/3catinfo/els-agents-rurals-denuncien-una-tala-illegal-de-200-avets-a-espinelves/noticia/3433424/) |
+| Aigua Xelida villas, Palafrugell (41.925, 3.210) | ~700 trees, Dec 2018, ~3 ha (unverified) | halted, in litigation | NR | HV drop | S1 | [Nació](https://naciodigital.cat/societat/talen-mes-de-700-arbres-del-paisatge-preferit-de-catalunya-sense-permis-de-lajuntament.html) |
+| Cogulló salt tailings pile, Sallent (~41.81, 1.88) | ~48 Mt pile; dumping stopped 2019 | Catalan high court (TSJC) final ruling Sep 2026: ICL must remove it | HC | InSAR slope creep; height loss once removal starts | S1+NB+NC | [Ara](https://en.ara.cat/economy/the-end-of-20-years-of-litigation-justice-concludes-that-icl-must-remove-the-salt-mine-waste-dump-from-sallent_25_5837471.html) |
+| Barri de l'Estació, Sallent (41.82, 1.896) | old potash-mine cavity; 12–18 cm/yr sinking in 2009; homes demolished | pre-alert monitoring | HC (mining legacy) | InSAR; current rate (unverified) | S1+NB+NC | [Nació](https://naciodigital.cat/manresa/societat/tancat-el-risc-de-subsidencies-del-barri-de-lestacio-de-sallent.html) |
+| Cardona salt mountain (41.906, 1.678) | salt dome rising 2–3.5 cm/yr; sinkholes | 2025 InSAR study | EX (natural) | InSAR, strong: **check our numbers against the published rates** | S1+NB+NC | [Unizar](https://zaguan.unizar.es/record/153673) |
+| Ebro Delta, Trabucador (40.61, 0.72) | subsidence 1–3 mm/yr; Storm Gloria Jan 2020 | ICGC monitoring | NR (hazard) | shoreline from amplitude yes; InSAR marginal (rice fields lose coherence) | S1+NB+NC | [ICGC](https://www.icgc.cat/en/Innovation/RDi-projects/Life-EBRO-ADMICLIM) |
+| Panattoni datacenter, Cerdanyola (~41.486, 2.108) | 6.8-ha plot; first phase Q4 2026 | licensed | EX (clean permitted build) | new double-bounce | NB+NC | [Baxtel](https://baxtel.com/data-center/panattoni-barcelona-1) |
+| **Gavarres wildfire**, Calonge (~41.90, 3.05) | 2,200 ha, 3–7 Jul 2026 | accidental (angle-grinder spark) | EX (natural/accident) | **same HV drop as clearing**: tests false positives | NC | [3Cat](https://www.3cat.cat/3catinfo/incendi-a-les-gavarres-la-calor-i-el-vent-principals-obstacles-per-donar-el-foc-per-controlat/noticia/3418793/) |
+| Burn scars: Ribera d'Ebre (41.19, 0.63; Jun 2019, ~5–6k ha), Pont de Vilomara (41.70, 1.87; Jul 2022, 1,743 ha) | — | — | EX | HV drop | S1 | [DdT](https://www.diaridetarragona.com/sucesos/216100/el-fiscal-demana-6-anys-de-preso-per-causar-el-gran-foc-de-la-ribera-d-ebre-de-2019-el19746277.html) |
+| Sau reservoir (41.973, 2.393) | <2% full Mar 2024 → ~72% Apr 2025 | drought | EX | dark water vs exposed bed | S1 | [Catalan News](https://www.catalannews.com/society-science/item/sau-reservoir-drought-empty-sinking-church-11-april-2025) |
+| Watchlist, no change yet: La Ricarda runway (41.30, 2.11; works 2029+), Hard Rock, Móra la Nova AI gigafactory, Flix datacenter (41.231, 0.537) | — | in permitting | — | baseline for later | NC | [Ara](https://es.ara.cat/economia/aerolineas/aena-continua-dando-pasos-ampliacion-aeropuerto-barcelona-comience-2029_1_5791388.html) |
+
+Seasonal farming example: Ebro Delta rice paddies flood every year (calendar unverified).
+**Gap:** no documented *illegal* clearing / landfill / quarry ≥5 ha in the NISAR window. Espinelves is the only one, and
+it's small. Agents Rurals offences are mostly small (2025: 3,134 clearing/felling cases → 236 formal complaints).
+**Research pick for the demo:** Agroparc Penedès (big earthworks, in all 3 windows, textbook "needs review") ·
+Alcarràs solar (biggest change; permitted ≠ fine; pair with Panattoni as a clean build) · Gavarres fire (false-positive
+test: must come out "expected"). Runner-up: Cardona, to check our InSAR against published rates.
 
 ## 8. Resources from the challenge page
 - NASA Earthdata Search — https://search.earthdata.nasa.gov/search
@@ -111,8 +134,9 @@ Trackers for site lists & dates: Epoch AI Frontier Data Centers Hub, FAS "Tracki
 - Front-end idea: static web app (Leaflet/MapLibre + swipe slider + time-series chart), COG/PNG tiles precomputed.
 
 ## 10. Open decisions / next steps
-- [ ] Pick 1 hero site (+ maybe 1–2 comparison sites). Aragón = local story; Stargate/Hyperion = dramatic scale.
-- [ ] Decide the question: land converted? speed of buildout? secondary infrastructure? subsidence/water?
-- [ ] Get Earthdata logins for the team (onboarding issue); download a first GCOV subset over the hero site.
-- [ ] Long baseline from OPERA RTC-S1 (2022→) to show pre-construction state.
-- [ ] Choose presentation format (web app + 30-s video/slides for submission).
+- [ ] Pick 2–3 Catalonia hotspots (research pick in §7: Agroparc Penedès, Alcarràs solar, Gavarres fire).
+- [ ] Finland: Muhos cutting Mar–Aug 2026 → calibrated NISAR covers only Jun–Aug; use NISAR beta + Sentinel-1 for
+      Mar–May and expect snow effects in March.
+- [ ] Tech stack (web map + where processing runs) and the "date first changed" map behind the timeline: planner.
+- [ ] Verdict-rule thresholds: ask the specialist (#7).
+- [ ] Earthdata logins for the team (#2). Pitch format (web app + video / slides).
