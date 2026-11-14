@@ -48,10 +48,10 @@
     {"date": "2026-09-03", "sensor": "NISAR L-band"}, {"date": "2026-09-15", "sensor": "NISAR L-band"}, {"date": "2026-09-18", "sensor": "Sentinel-1 C-band"},
     {"date": "2026-09-27", "sensor": "NISAR L-band"}, {"date": "2026-10-09", "sensor": "NISAR L-band"}, {"date": "2026-10-21", "sensor": "NISAR L-band"},
     {"date": "2026-11-02", "sensor": "NISAR L-band"}]},
-  {"id": "catalonia", "name": "Catalonia overview", "country": "ES", "ready": false,
+  {"id": "catalonia", "name": "Catalonia overview", "country": "ES", "ready": false, "hidden": true,
    "center": [1.6, 41.8], "zoom": 7.5, "bbox": [0.16, 40.52, 3.33, 42.86],
    "time_range": ["2023-01-01", "2026-11-05"]},
-  {"id": "fixture", "name": "Fake example (not real data)", "country": "ES", "ready": true, "hidden": true, "fixture": true,
+  {"id": "fixture", "name": "Fake example (not real data)", "country": "ES", "ready": true, "fixture": true,
    "center": [1.85, 41.45], "zoom": 13, "bbox": [1.80, 41.42, 1.90, 41.48],
    "time_range": ["2024-01-01", "2026-11-02"],
    "snapshots": [

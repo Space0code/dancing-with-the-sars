@@ -23,7 +23,7 @@ data, the app shows a badge) · `center` `[lon, lat]` · `zoom` · `bbox` `[west
 `time_range` `[start, end]` (the timeline's ends).
 
 **`hidden`** (optional bool): a `ready` site that stays out of the app's site menu (kept as a worked example, e.g.
-`agroparc`, `fixture`). Files are still checked.
+`agroparc`; also set on `catalonia`, which has no files yet). Files are still checked.
 
 **`snapshots`** (optional, per site): the timeline's stops, `[{"date": "YYYY-MM-DD", "sensor": "<name>"}, ...]`, one per
 image date actually used, strictly sorted by date (a date two sensors share is one stop, sensor `"A + B"`), every date

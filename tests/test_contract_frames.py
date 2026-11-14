@@ -73,8 +73,8 @@ def test_hidden_must_be_boolean(data):
     assert validate(data) != []
 
 
-def test_agroparc_and_fixture_are_hidden():
+def test_agroparc_and_catalonia_are_hidden():
     sites = {s["id"]: s for s in json.loads((DATA / "sites.json").read_text(encoding="utf-8"))["sites"]}
-    assert sites["agroparc"]["hidden"] is True and sites["fixture"]["hidden"] is True
-    assert sites["agroparc"]["ready"] and sites["fixture"]["ready"]
-    assert not sites["muhos"].get("hidden")
+    assert sites["agroparc"]["hidden"] is True and sites["catalonia"]["hidden"] is True
+    assert sites["agroparc"]["ready"]
+    assert not sites["muhos"].get("hidden") and not sites["fixture"].get("hidden")
