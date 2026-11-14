@@ -316,7 +316,7 @@ def test_deciding_reason_comes_first_and_explain_never_contradicts_the_label():
         wrong = "raises" if verdict == "expected" else "lowers"
         assert all(r["text"] not in explain for r in reasons if r["effect"] == wrong)
     verdict, reasons, explain = judge(change(area=1), records(zone=None))
-    assert verdict == "expected" and codes(reasons)[0] == "small_area" and "No registered building" not in explain
+    assert verdict == "expected" and codes(reasons)[0] == "small_area" and "No building registered" not in explain
 
 
 def test_protected_buffer_zone_raises_but_a_thin_edge_overlap_is_neutral():
@@ -509,6 +509,27 @@ def test_a_pending_solar_application_is_not_an_authorisation():
     # an authorised plant or a building record still wins over a pending one
     both = judge(change(area=12), records(zone="urban", plants=[pending, plant(status="Autoritzat")]))
     assert both[0] == "expected" and "solar_application_pending" not in codes(both[1])
+
+
+def test_a_half_developable_half_non_buildable_place_is_both_and_says_so():
+    """Reviewer case (agroparc-0004): 51 % developable, 49 % non-buildable. Label stays review (row 5)."""
+    recs = records(zone="developable")
+    recs["zoning"]["shares"] = {"developable": 0.51, "non_buildable": 0.49}
+    verdict, reasons, explain = judge(change(area=1.2, ctype="structure"), recs)
+    assert verdict == "review" and codes(reasons)[0] == "zoning_non_buildable"
+    assert "planned_sector" in codes(reasons) and "no_record_found" not in codes(reasons)  # a planned area is a match
+    text = {r["code"]: r["text"] for r in reasons}
+    assert text["zoning_non_buildable"] == "About 49 % of the place is zoned as non-buildable."
+    assert text["planned_sector"] == "About 51 % of the place is inside a planned development area."
+    plain = records(zone="non_buildable")
+    plain["zoning"]["shares"] = {"non_buildable": 0.97}
+    assert judge(change(area=1.2), plain)[1][0]["text"] == "The land is zoned as non-buildable."  # nearly all: plain
+
+
+def test_no_record_reason_does_not_overclaim_about_the_registry():
+    reasons = judge(change(area=9), records(zone="urban"))[1]
+    text = next(r["text"] for r in reasons if r["code"] == "no_record_found")
+    assert "months late" in text and "since the change" in text and "No registered building" not in text
 
 
 def test_a_buffer_zone_never_counts_toward_the_real_overlap_share():

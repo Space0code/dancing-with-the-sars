@@ -175,7 +175,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.472768&longitud=1.842699&zoom=18",
       "effect": "raises"
@@ -188,7 +188,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 6 dB between 5 and 17 Jul 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No registered building, listed solar plant or planned development area matches this change.",
+    "explain": "Radar saw the surface echo rise by 6 dB between 5 and 17 Jul 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
     "evidence": {
      "before": "evidence/agroparc-0002_before.png",
      "after": "evidence/agroparc-0002_after.png",
@@ -333,24 +333,17 @@
     "reasons": [
      {
       "code": "zoning_non_buildable",
-      "text": "The land is zoned as non-buildable.",
+      "text": "About 49 % of the place is zoned as non-buildable.",
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "raises"
      },
      {
-      "code": "solar_application_pending",
-      "text": "An application for a solar plant here is being processed; it is not authorised yet.",
-      "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
-      "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
-      "effect": "raises"
-     },
-     {
-      "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
-      "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
-      "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.449145&longitud=1.845324&zoom=18",
-      "effect": "raises"
+      "code": "planned_sector",
+      "text": "About 51 % of the place is inside a planned development area.",
+      "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
+      "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
+      "effect": "lowers"
      },
      {
       "code": "small_area",
@@ -360,7 +353,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 6 dB between 5 and 17 Jul 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. An application for a solar plant here is being processed; it is not authorised yet.",
+    "explain": "Radar saw the surface echo rise by 6 dB between 5 and 17 Jul 2026, the pattern of new walls, roofs or metal structures. About 49 % of the place is zoned as non-buildable.",
     "evidence": {
      "before": "evidence/agroparc-0004_before.png",
      "after": "evidence/agroparc-0004_after.png",
@@ -639,13 +632,13 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.426761&longitud=1.838043&zoom=18",
       "effect": "raises"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 6 dB between 17 Jul and 10 Aug 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No registered building, listed solar plant or planned development area matches this change.",
+    "explain": "Radar saw the surface echo rise by 6 dB between 17 Jul and 10 Aug 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
     "evidence": {
      "before": "evidence/agroparc-0006_before.png",
      "after": "evidence/agroparc-0006_after.png",
@@ -765,7 +758,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.445054&longitud=1.839502&zoom=18",
       "effect": "raises"
@@ -859,7 +852,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.462034&longitud=1.838125&zoom=18",
       "effect": "raises"
@@ -944,7 +937,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.435239&longitud=1.816828&zoom=18",
       "effect": "raises"
@@ -1095,13 +1088,13 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.458752&longitud=1.830190&zoom=18",
       "effect": "raises"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 7 dB between 3 and 15 Sep 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No registered building, listed solar plant or planned development area matches this change.",
+    "explain": "Radar saw the surface echo rise by 7 dB between 3 and 15 Sep 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
     "evidence": {
      "before": "evidence/agroparc-0010_before.png",
      "after": "evidence/agroparc-0010_after.png",
@@ -1302,7 +1295,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.461945&longitud=1.813854&zoom=18",
       "effect": "raises"
@@ -1315,7 +1308,7 @@
       "effect": "lowers"
      }
     ],
-    "explain": "Radar saw the surface echo rise by 6 dB between 3 and 15 Sep 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No registered building, listed solar plant or planned development area matches this change.",
+    "explain": "Radar saw the surface echo rise by 6 dB between 3 and 15 Sep 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
     "evidence": {
      "before": "evidence/agroparc-0012_before.png",
      "after": "evidence/agroparc-0012_after.png",
@@ -1458,7 +1451,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.440036&longitud=1.810397&zoom=18",
       "effect": "raises"
@@ -1568,7 +1561,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.419569&longitud=1.790628&zoom=18",
       "effect": "raises"
@@ -1662,7 +1655,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.479668&longitud=1.810348&zoom=18",
       "effect": "raises"
@@ -1740,7 +1733,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.423172&longitud=1.852709&zoom=18",
       "effect": "raises"
@@ -1842,7 +1835,7 @@
      },
      {
       "code": "no_record_found",
-      "text": "No registered building, listed solar plant or planned development area matches this change.",
+      "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.470553&longitud=1.845629&zoom=18",
       "effect": "raises"
