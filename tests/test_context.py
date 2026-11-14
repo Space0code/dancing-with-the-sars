@@ -90,7 +90,9 @@ def test_solar(results):
 
 
 @pytest.mark.parametrize("fn", list(context.LOOKUPS.values()))
-def test_never_raises(fn):
+def test_never_raises(fn, monkeypatch, tmp_path):
+    monkeypatch.setattr(_common, "OFFLINE", True)       # also in re-record mode: the last square must stay a miss
+    monkeypatch.setattr(_common, "CACHE_DIR", tmp_path)
     for bad in ({"type": "Point", "coordinates": [1.85, 41.45]}, None, square(1.0, 41.0, 100)):  # last: not cached
         r = fn(bad)
         assert r["checked"] is False and r["error"] and r["source"] and r["url"]

@@ -13,6 +13,7 @@ import os
 import time
 from pathlib import Path
 
+import numpy as np
 import requests
 import shapely
 from pyproj import Transformer
@@ -82,7 +83,7 @@ def to_utm(geometry: dict):
     """GeoJSON Polygon / MultiPolygon in EPSG:4326 (lon, lat) -> shapely geometry in EPSG:25831 metres."""
     if not isinstance(geometry, dict) or geometry.get("type") not in ("Polygon", "MultiPolygon"):
         raise ValueError("geometry must be a GeoJSON Polygon or MultiPolygon")
-    g = shapely.transform(shape(geometry), lambda x, y: _to_utm(x, y), interleaved=False)
+    g = shapely.transform(shape(geometry), lambda xy: np.column_stack(_to_utm(xy[:, 0], xy[:, 1])))  # shapely ≥ 2.0
     if g.is_empty:
         raise ValueError("empty geometry")
     return g if g.is_valid else g.buffer(0)
