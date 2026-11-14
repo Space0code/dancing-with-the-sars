@@ -21,13 +21,10 @@ export function renderStory(story) {
   box.hidden = false;
   box.open = true;
   const sources = (story.sources ?? []).filter((s) => safeUrl(s.url));
-  box.replaceChildren(
-    h("summary", {}, story.headline),
-    ...story.story.map((p) => h("p", {}, p)),
-    sources.length
-      ? h("p", { class: "sources" }, "Sources: ", sources.flatMap((s, i) => [i ? " · " : "", h("a", { href: s.url, target: "_blank", rel: "noopener" }, s.title)]))
-      : null
-  );
+  const sourceLine = sources.length
+    ? [h("p", { class: "sources" }, "Sources: ", sources.flatMap((s, i) => [i ? " · " : "", h("a", { href: s.url, target: "_blank", rel: "noopener" }, s.title)]))]
+    : []; // an array, not null: replaceChildren(null) would print the word "null"
+  box.replaceChildren(h("summary", {}, story.headline), ...story.story.map((p) => h("p", {}, p)), ...sourceLine);
 }
 
 function when(p) {
@@ -122,5 +119,5 @@ export function showCard(feature, site, onClose) {
       chartSlot
     )
   );
-  $("panel").scrollTop = 0;
+  $("details-view").scrollTop = 0;
 }
