@@ -117,6 +117,8 @@ class Site:
     sources: tuple = ()           # merge.SiteSource per source: with them, detections become one change per place
     primary_scope: str | None = None  # GeoJSON outline (repo path): inside it the optical alerts are the primary
                                       # source, one change per month of first detection, radar attached as sources
+    layer_bytes: int | None = None  # a large window: site pictures above this many bytes get a 256-colour palette
+                                    # (None = export.MAX_PNG_BYTES)
     max_changes: int | None = None  # a large window: keep only this many changes (largest first, low confidence
                                     # counted at half its area); needs `sources` (applies to the merged changes)
 
@@ -206,7 +208,7 @@ SITES = {
              ()),
             ("NISAR L-band", "radar", "2026-06-23", None, 12, ("clearing", "structure", "earthworks", "other"), ()),
         ),
-        max_changes=100,
+        max_changes=100, layer_bytes=2_000_000,
     ),
 }
 
@@ -1191,7 +1193,9 @@ def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, s
     nl = "\r\n" if "\r\n" in text else "\n"
     m = re.search(r'\{\s*"id":\s*' + re.escape(json.dumps(site_id)), text)
     if m:  # edit the values in place (this site's first of each key), so the hand-written layout survives
-        head, block = text[:m.start()], text[m.start():]
+        nxt = re.search(r'\{\s*"id":', text[m.end():])  # the block ends where the next site begins
+        end = len(text) if nxt is None else m.end() + nxt.start()
+        head, block, tail = text[:m.start()], text[m.start():end], text[end:]
         block, n1 = re.subn(r'"ready":\s*(?:true|false)', '"ready": true', block, count=1)
         block, n2 = re.subn(r'"time_range":\s*\[[^\]]*\]', lambda _: '"time_range": ' + json.dumps(entry["time_range"]),
                             block, count=1)
@@ -1213,7 +1217,7 @@ def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None, s
                 block, n5 = re.subn(r'("time_range":\s*\[[^\]]*\])', lambda g: g.group(1) + "," + nl + "   " + line,
                                     block, count=1)
         if n1 == n2 == n3 == n4 == n5 == 1:
-            new = head + block
+            new = head + block + tail
     if new is None or json.loads(new) != index:
         new = _format_sites(index, nl)
     index_path.write_bytes(new.encode("utf-8"))
@@ -1311,7 +1315,7 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
             optical_days = [d for d in optical_days if any(m.first_date == d for m in merged)]
     elif site.max_changes is not None:
         raise PipelineError(f"{site_id}: max_changes needs the site's `sources` (it applies to the merged changes)")
-    written = write_site(site_dir, site_id, runs, merged=merged)
+    written = write_site(site_dir, site_id, runs, merged=merged, layer_bytes=site.layer_bytes)
     if merged and write_stages(site_dir, site):
         log.info("wrote %s", site_dir / "stages.geojson")
     (first, last), bbox = written["time_range"], written["bbox"]  # first to last pass used; around all changes

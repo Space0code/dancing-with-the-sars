@@ -298,6 +298,29 @@ def test_snapshots_are_written_in_place_and_replaced_on_a_rerun(tmp_path):
     assert [s for s in after["sites"] if s["id"] != "agroparc"] == [s for s in before["sites"] if s["id"] != "agroparc"]
 
 
+def test_a_first_write_edits_only_its_own_site_block(tmp_path):
+    """A site without snapshots or sources yet, followed by a site that has both: the first write adds them to its
+    own block and leaves every other line of the file as it was."""
+    path = tmp_path / "sites.json"
+    nl = "\n"
+    text = ('{\n "version": 1,\n "sites": [\n'
+            '  {"id": "new", "name": "New", "country": "ES", "ready": false,\n   "center": [2, 41], "zoom": 10, '
+            '"bbox": [1, 40, 3, 42],\n   "time_range": ["2016-01-01", "2026-01-01"]},\n'
+            '  {"id": "old", "name": "Old", "country": "ES", "ready": true,\n   "center": [2, 41], "zoom": 10, '
+            '"bbox": [1, 40, 3, 42],\n   "time_range": ["2016-01-01", "2026-01-01"], "sources": [{"sensor": "x"}],\n'
+            '   "snapshots": [\n    {"date": "2016-01-01", "sensor": "x"}]}\n ]\n}\n')
+    path.write_text(text, encoding="utf-8")
+    snaps = [{"date": "2016-06-05", "sensor": "Sentinel-1 C-band"}]
+    sources = [{"sensor": "Sentinel-1 C-band"}]
+    pipeline.update_sites_index(path, "new", ("2016-06-05", "2026-09-30"), snapshots=snaps, sources=sources)
+    out = path.read_text(encoding="utf-8")
+    old_block = text[text.index('  {"id": "old"'):]
+    assert out.endswith(old_block)  # the other site's lines untouched, not reformatted
+    entry = site_entry(tmp_path, "new")
+    assert entry["ready"] is True and entry["snapshots"] == snaps and entry["sources"] == sources
+    assert nl.join(out.splitlines()[:3]) == nl.join(text.splitlines()[:3])
+
+
 def test_sites_json_bbox_is_edited_in_place(tmp_path):
     path = tmp_path / "sites.json"
     original = (REPO / "app" / "data" / "sites.json").read_bytes()
