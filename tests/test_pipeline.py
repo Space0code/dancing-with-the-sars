@@ -387,6 +387,16 @@ def test_sensor_defaults_and_overrides():
     assert site.s1.params.threshold_db == 3.0  # the site definition is not modified
 
 
+def test_s1_months_keep_the_same_season_every_year():
+    site = pipeline.Site(id="x", bbox=(0, 0, 1, 1), nisar=None,
+                         s1=pipeline.S1Settings(start=date(2016, 1, 1), months=(6, 7, 8, 9)))
+    days = [date(2016, 5, 31), date(2016, 6, 1), date(2017, 9, 30), date(2017, 10, 1), date(2026, 7, 4)]
+    assert pipeline._in_season(site, "s1", days) == [date(2016, 6, 1), date(2017, 9, 30), date(2026, 7, 4)]
+    assert pipeline._in_season(site, "nisar", days) == days  # NISAR dates are not filtered
+    site.s1.months = None
+    assert pipeline._in_season(site, "s1", days) == days
+
+
 def test_site_overrides_then_command_line_overrides(monkeypatch):
     site = pipeline.SITES["agroparc"]
     monkeypatch.setattr(site, "params", {"boxcar": 7, "threshold_db": 2.5})
@@ -474,3 +484,26 @@ def test_regions_dated_inside_the_baseline_are_dropped():
     assert out.labels[1, 1] == 1 and out.labels[0, 0] == 0 and out.labels[2, 2] == 0 and out.labels.max() == 1
     assert out.first_change_idx[1, 1] == 5 and out.first_change_idx[0, 0] == -1
     assert pipeline._drop_baseline_dated(result, date(2025, 6, 1)) is result
+
+
+def test_s1_months_that_leave_nothing_to_compare_are_an_error():
+    for bad in ((), (0, 6), (13,), (6.5,)):
+        with pytest.raises(ValueError, match="months"):
+            pipeline.S1Settings(start=date(2016, 1, 1), months=bad)
+    assert pipeline.S1Settings(start=date(2016, 1, 1), months=(6, 7)).months == (6, 7)
+
+
+def test_s1_months_filter_emptying_the_stack_stops_the_run(fake, monkeypatch, capsys):
+    site = pipeline.SITES["muhos"]
+    monkeypatch.setattr(site, "skip_dates", ())
+    monkeypatch.setattr(site, "s1", pipeline.S1Settings(start=date(2026, 1, 1), max_dates=30, months=(12,)))
+    assert pipeline.main(["muhos", "--no-nisar", *fake.args]) == 2  # online: the search keeps nothing
+    err = capsys.readouterr().err
+    assert "months (12,) keep 0 of" in err and "nothing to compare" in err
+
+    monkeypatch.setattr(site.s1, "months", None)
+    assert pipeline.main(["muhos", "--no-nisar", *fake.args]) == 0  # fill the cache
+    monkeypatch.setattr(site.s1, "months", (12,))
+    capsys.readouterr()
+    assert pipeline.main(["muhos", "--no-nisar", "--offline", *fake.args]) == 2  # offline: the cache keeps nothing
+    assert "keep 0 of 10 dates" in capsys.readouterr().err

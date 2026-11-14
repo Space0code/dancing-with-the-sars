@@ -49,6 +49,56 @@
     ]
    ],
    "caption": "3 passes, 9 Oct to 2 Nov 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "sentinel_1_c_band_before",
+   "title": "Sentinel-1 radar, before",
+   "date": "2016-08-04",
+   "url": "layers/sentinel_1_c_band_before.png",
+   "coordinates": [
+    [
+     1.788279,
+     41.490066
+    ],
+    [
+     1.910087,
+     41.491285
+    ],
+    [
+     1.911448,
+     41.409962
+    ],
+    [
+     1.789791,
+     41.408746
+    ]
+   ],
+   "caption": "3 passes, 29 Jun to 9 Sep 2016. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
+  },
+  {
+   "id": "sentinel_1_c_band_after",
+   "title": "Sentinel-1 radar, after",
+   "date": "2026-08-19",
+   "url": "layers/sentinel_1_c_band_after.png",
+   "coordinates": [
+    [
+     1.788279,
+     41.490066
+    ],
+    [
+     1.910087,
+     41.491285
+    ],
+    [
+     1.911448,
+     41.409962
+    ],
+    [
+     1.789791,
+     41.408746
+    ]
+   ],
+   "caption": "3 passes, 20 Jul to 18 Sep 2026. Yellow-green = trees, purple-blue = bare ground, pink-white = buildings, dark = water."
   }
  ]
 }
