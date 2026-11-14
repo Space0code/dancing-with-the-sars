@@ -89,7 +89,10 @@ latest, covering Muhos and Kajaani (LVV press release; Yle dates it 7-8 Oct). Ou
 investigation on 29 Oct (suspected environmental damage). Verified 14 Nov for the site stories (#39): the 330 ha and the
 Mar-Aug window come from the HS/Kaleva article (it does not say "Leppiniemi"). All sources: `app/data/muhos/story.json`.
 Otanmäki dates (unverified). Radar: Sentinel-1 + NISAR beta cover the whole clearing, calibrated NISAR only Jun–Aug.
-March cutting happened **under snow** (changes backscatter). Sources: https://yle.fi/a/74-20254086 ·
+March cutting under snow (unverified: no source says so; keep it out of the story). **Measured** (details and limits:
+`evidence-check.md`): Sentinel-1 first shows the block in the 18–30 Mar 2026 passes (PR #55); NASA optical alerts show
+one block of 358 ha by October, 137 ha by end of May, about half first seen from July on (#44); NISAR shows its edge
+still moving in Jul–Aug (#55). Hectares from NISAR and optical disagree in June: never add them up. Sources: https://yle.fi/a/74-20254086 ·
 https://www.kaleva.fi/hs-google-yritti-saada-poikkeusluvan-muhoksen-hakk/13686840
 
 | Case (lat, lon) | Change · size | Official status | Label | Radar signal · visible? | Window | Source |

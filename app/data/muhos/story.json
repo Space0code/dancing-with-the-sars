@@ -1,12 +1,14 @@
 {
- "headline": "Muhos, Finland: about 330 hectares of forest cleared without a completed environmental assessment, as reported",
+ "headline": "Muhos, Finland: a forest clearing of about 330 hectares, as reported, that satellites show still growing after an environmental assessment was required",
  "story": [
   "Between March and August 2026, forest at Muhos was cleared for a data centre project prepared by Tuike Finland, the company behind Google's data centre plans there. Helsingin Sanomat reported the cleared area as about 330 hectares. On 30 April the company asked the permit and supervisory agency (Lupa- ja valvontavirasto, LVV) to decide that the clearing did not need a full environmental impact assessment; according to Helsingin Sanomat the agency did not agree, and in May the company learned that one was required. The clearing continued until August.",
   "On 6 October the agency called on the company to suspend the work immediately and no later than 23 October; the notice covered the Muhos and Kajaani projects. On 14 October the company confirmed that it had suspended the preparatory work at both sites. On 29 October Yle reported that the Oulu Police Department had opened a preliminary investigation, at the agency's request, under the heading of suspected environmental damage; the police point to irregularities and shortcomings in drainage and water management at the site. These are the authorities' steps as reported; this app does not judge them.",
-  "What the radar adds: it sees the ground through cloud, and shows where the vegetation signal dropped and when that first showed. Cut forest leaves such a drop (that is our hypothesis for the cause); ordinary forestry and open ground can look similar, so the map speaks of the cleared block, not of who did it. NISAR's calibrated record only starts in late June 2026, so the earlier months come from Sentinel-1. On the map, look at when the changes first appear, compare that with the dates on the timeline, and open a change to see the before and after pictures."
+  "What the satellites add is the timing, measured pass by pass. Sentinel-1 radar first shows the cleared block in its passes of 18 to 30 March 2026. NASA's optical vegetation-loss alerts (OPERA DIST-ALERT) show one block of about 358 hectares by October, close to the reported 330: about 137 hectares had been first seen by the end of May, and about half of the block was first seen from July on, two months after the company learned an assessment was required. NISAR, whose calibrated record starts in late June 2026, keeps seeing the ground through cloud and shows the block's edge still moving in July and August.",
+  "What they cannot say: a first-seen date is the first clear view, not the day of cutting, and clouds push optical dates later. The radar sees a drop in the vegetation echo; that cut forest causes it is our hypothesis, and ordinary forestry or open ground nearby can look similar. The project boundary is not published, so the map speaks of the cleared block, not of who cleared it. The two sources also disagree on hectares in June (radar marks more low-echo ground than the optical alerts count as new loss), so the app shows each with its own name and never adds them up."
  ],
  "events": [
   {"date": "2026-03-01", "label": "Clearing begins (day in March not published)"},
+  {"date": "2026-03-18", "label": "Sentinel-1 radar first shows the cleared block (passes of 18 to 30 March)"},
   {"date": "2026-04-30", "label": "Tuike Finland asks the permit agency (LVV) to decide that a full environmental impact assessment is not needed"},
   {"date": "2026-05-01", "label": "The company learns an environmental impact assessment is required (day in May not published); clearing continues"},
   {"date": "2026-08-01", "label": "Clearing reported to have continued until August (exact day not published)"},
@@ -18,6 +20,9 @@
   {"title": "Yle News: Police open preliminary probe into Google's data centre site activities in Muhos (29 Oct 2026)", "url": "https://yle.fi/a/74-20254086"},
   {"title": "Kaleva / Helsingin Sanomat: Google yritti saada poikkeusluvan Muhoksen hakkuisiin (28 Sep 2026)", "url": "https://www.kaleva.fi/hs-google-yritti-saada-poikkeusluvan-muhoksen-hakk/13686840"},
   {"title": "Lupa- ja valvontavirasto: press release asking Tuike Finland Oy to suspend the Muhos and Kajaani preparations (6 Oct 2026)", "url": "https://www.sttinfo.fi/tiedote/72390663/lupa-ja-valvontavirasto-kehottaa-tuike-finland-oyta-keskeyttamaan-muhoksen-ja-kajaanin-datakeskushankkeiden-valmistelutoimet"},
-  {"title": "NISAR mission documentation (ASF)", "url": "https://nisar-docs.asf.alaska.edu/"}
+  {"title": "NASA OPERA DIST-ALERT-HLS: optical vegetation-loss alerts (LP DAAC product page)", "url": "https://lpdaac.usgs.gov/products/opera_l3_dist-alert-hls_v1v001/"},
+  {"title": "Copernicus Sentinel-1 radar mission (ESA SentiWiki)", "url": "https://sentiwiki.copernicus.eu/web/s1-mission"},
+  {"title": "NISAR mission documentation (ASF)", "url": "https://nisar-docs.asf.alaska.edu/"},
+  {"title": "Our measurements and their limits: evidence page of this project (kb/evidence-check.md)", "url": "https://github.com/Space0code/dancing-with-the-sars/blob/main/kb/evidence-check.md"}
  ]
 }
