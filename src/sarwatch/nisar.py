@@ -257,7 +257,7 @@ def _open(url, token=None) -> "_BlockFile":
         if not token:
             raise PermissionError("reading NISAR from ASF needs an Earthdata Login token: set EARTHDATA_TOKEN")
         src = _HttpSource(url, token)
-        return _BlockFile(src.fetch, src.size, BLOCK_SIZE)
+        return _BlockFile(src.fetch, src.size, BLOCK_SIZE, on_close=src.session.close)
     f = open(url, "rb")
 
     def fetch(start, stop):
