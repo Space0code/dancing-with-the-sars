@@ -11,7 +11,7 @@ export function renderLayerControl(layers, map) {
           type: "range", min: "0", max: "100", value: "70", "aria-label": `Opacity of ${l.title}`,
           oninput: (e) => map.setOverlayOpacity(l.id, e.target.value / 100),
         });
-        const shown = l.date && !l.title.includes(formatDate(l.date)); // some titles already carry the date
+        const shown = l.date && !l.title.includes(l.date.slice(0, 4)); // a title naming its dates ("25 Jun to 19 Jul 2026") needs no extra one
         const long = l.caption && l.caption.length > LONG_CAPTION; // real captions explain the colors: keep them one click away
         return h("div", { class: "layer-item" },
           h("label", {}, check, shown ? `${l.title} · ${formatDate(l.date)}` : l.title),
