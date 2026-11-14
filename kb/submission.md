@@ -1,8 +1,8 @@
 # Submission pack (Finland as the worked example)
 
 Everything the Space Apps 2026 project form asks for, drafted so the humans edit instead of writing from zero.
-Last updated 2026-11-14 (#49; rewritten around Finland per Tian's 17:24 note on #9). Numbers that depend on the final
-radar run are `[TBD: …]`; every other number is in `evidence-check.md`. Wording rules: `product.md`.
+Last updated 2026-11-14 (#49; rewritten around Finland per Tian's 17:24 note on #9). All numbers are from the final Muhos data
+(PRs #95, #100, #107) and `evidence-check.md`. Wording rules: `product.md`.
 
 ## 1. What the form requires (read from the official guides, 14 Nov 2026)
 Sources: [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) ·
@@ -105,7 +105,11 @@ look, with the evidence attached; the app never says a change is unlawful.
   after the assessment was required.
 - NISAR shows the block still growing between its passes of 7 July and 12 August.
 - The app's chart (`app/data/muhos/story_series.json`) draws the three sources as separate lines, never added up.
-- Labels on the final data: [TBD: counts per label after Tian posts "Muhos data final on main"].
+- Labels on the final data (19 changes, PR #107): the clearing's **7 dated parts (359 ha) are High concern**: inside
+  the area of the regulator's notice while an assessment was required. Outside it, **9 small cuts (2–3 ha) are
+  Expected** ("too small to flag on its own; no land records connected for Finland") and **3 are Needs review** (two
+  clearings of 5–6 ha and one 2 ha "other" change): with no Finnish register to check, their size alone puts them on
+  the list.
 - Limits we state: a first-seen date is the first clear view, not the cutting day; the project boundary is not
   published; we processed the data in November, nothing was detected live.
 
