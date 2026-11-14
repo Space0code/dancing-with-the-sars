@@ -63,8 +63,10 @@ markers on the timeline (e.g. "Told an assessment was required").
 `YYYY-MM-DD`; `title` (≤ 60 chars) and `note` (≤ 160 chars) are plain language. Feature properties: `label` (always:
 the text shown on click) and, where they apply, `class` (zoning: `buildable` · `non_buildable` · `planned`;
 protected: `natura2000` · `pein` · `other`), `year` (buildings: construction year), `name`, `status`, `area_ha`.
-A site without the folder has no record layers. Each file ≤ 1 MB. Made in #45, shown in #52; the validator does not
-check this folder yet.
+Records without map positions (the solar-plant list only names municipalities) are not a layer but an entry in an
+optional `"notes": [{kind, source, url, checked, note}]` next to `layers`, e.g. the plants filed in the box's towns.
+A site without the folder has no record layers. Each file ≤ 1 MB. Made in #45 (`python -m sarwatch.context.layers
+<site>`), shown in #52; the validator does not check this folder yet.
 
 ## Size and hygiene
 Every file under 10 MB (the validator checks); pictures are PNG; nothing here needs credentials or the network.
