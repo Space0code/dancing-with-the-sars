@@ -9,12 +9,16 @@ const SHORT_KIND = { // short names for chips and rows; the card has the full wo
   ground_motion: "Ground movement", fire: "Burned area", other: "Other change",
 };
 const kindName = (type) => SHORT_KIND[type] ?? changeLabel(type);
+// verdictKey as a map expression: null or an unknown verdict counts as "none", like in the list
+const JUDGED = Object.keys(VERDICTS).filter((key) => key !== "none");
+const JUDGED_KEY = ["match", ["get", "verdict"], JUDGED, ["get", "verdict"], "none"];
 const SORTS = {
   concern: { label: "Concern", cmp: (a, b) => concernRank(a) - concernRank(b) || b.properties.area_ha - a.properties.area_ha },
   size: { label: "Size (largest first)", cmp: (a, b) => b.properties.area_ha - a.properties.area_ha },
   date: { label: "Date (newest first)", cmp: (a, b) => b.properties.first_date.localeCompare(a.properties.first_date) },
 };
-const concernRank = (f) => CONCERN_ORDER.indexOf(verdictKey(f.properties.verdict));
+const CONCERN_RANK = new Map(CONCERN_ORDER.map((key, i) => [key, i]));
+const concernRank = (f) => CONCERN_RANK.get(verdictKey(f.properties.verdict)) ?? CONCERN_RANK.get("none"); // anything unknown ranks as "not judged yet"
 
 /** `onOpen(feature)`: a row was clicked. `onFilters()`: the user changed a filter. */
 export function createInbox({ onOpen, onFilters }) {
@@ -161,7 +165,7 @@ export function createInbox({ onOpen, onFilters }) {
     /** MapLibre filter expression for the user's filters (the date is filtered separately), or null. */
     mapFilter() {
       const parts = [];
-      if (verdicts.size) parts.push(["in", ["coalesce", ["get", "verdict"], "none"], ["literal", [...verdicts]]]);
+      if (verdicts.size) parts.push(["in", JUDGED_KEY, ["literal", [...verdicts]]]);
       if (kinds.size) parts.push(["in", ["get", "type"], ["literal", [...kinds]]]);
       return parts.length ? ["all", ...parts] : null;
     },
