@@ -293,6 +293,8 @@ def _check_series(site_dir: Path, rel: str, errors: list[str]) -> None:
         for key in ("name", "unit", "sensor"):
             if not isinstance(s.get(key), str):
                 errors.append(f"{where}: {key} must be a string")
+        if "note" in s and (not isinstance(s["note"], str) or not s["note"]):
+            errors.append(f"{where}: note (optional) must be a non-empty string")
         dates, values = s.get("dates"), s.get("values")
         if not (isinstance(dates, list) and all(_is_date(d) for d in dates)):
             errors.append(f"{where}: dates must be a list of YYYY-MM-DD")

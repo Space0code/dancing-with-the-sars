@@ -42,5 +42,6 @@ One line each: `date · decision · why · issue`. Newest at the bottom.
 - 2026-11-14 · Muhos review fixes: inside the clearing outline the optical date and outline win, and the window opens at a radar's last unchanged pass where that radar saw the whole part changed earlier; undated radar shares get roles that match their notes; part outlines are smoothed (holes under 1 ha filled, 1-pixel gaps closed, area within 3 %) · multi-sensor-design §2 exception · #27, #95
 - 2026-11-14 · App look: one token system in `style.css`, Funnel fonts self-hosted, neutral chrome with one green action colour; the Marked areas switch hides the overlay; new changes appear without a glow · the map picture is the hero, strong colour stays reserved for verdicts, radar pink and red bars · #41
 - 2026-11-14 · Barcelona site (50 × 39 km): Sentinel-1 reads the three IW2 bursts of track 132 as one mosaic per date (one 30 m lattice, no resampling) instead of tiles; NISAR 130 / 22 covers it whole · one stack = one detection, no seams; same track as Agroparc · #44, PR #110
+- 2026-11-14 · The product name is Parallax (was the working title SARwatch) · decided by Tian; the Python package, folders and commands keep `sarwatch` · #112
 
 <sub>Written by Claude</sub>

@@ -80,7 +80,8 @@ members exist. Written by the pipeline (`pipeline.write_stages`); the verdict st
 ## `series/<change id>.json`
 `{"series": [{name, unit, sensor, dates[], values[]}], "events": [{date, label}]}`. Each series has its own dates
 (NISAR and Sentinel-1 pass on different days); `values` are numbers or null, the same length as `dates`. `name` is
-already plain language (e.g. "Vegetation echo (HV)").
+already plain language (e.g. "Vegetation echo (HV)"). Optional `note` (non-empty string) per series: the caveats
+that are too long for the legend; the story curve shows each one as a line of small text under the chart.
 
 ## `story.json`
 `{"headline", "story": [paragraph, ...], "events": [{date, label}], "sources": [{title, url}]}`. Events are shown as

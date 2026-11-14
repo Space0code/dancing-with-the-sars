@@ -1,7 +1,8 @@
 {
  "series": [
   {
-   "name": "Optical alerts: vegetation loss confirmed, cumulative, inside the clearing outline (450 ha)",
+   "name": "Optical alerts",
+  "note": "Optical alerts: vegetation loss confirmed, cumulative, inside the clearing outline (450 ha).",
    "unit": "ha",
    "sensor": "OPERA DIST-ALERT",
    "dates": [
@@ -26,7 +27,8 @@
    ]
   },
   {
-   "name": "Sentinel-1 radar: ground flagged as changed, cumulative, inside the clearing outline (450 ha) (winter 2025-26 not observed; edges dated early)",
+   "name": "Sentinel-1 radar",
+  "note": "Sentinel-1 radar: ground flagged as changed, cumulative, inside the clearing outline (450 ha). Winter 2025-26 was not observed and edges are dated early.",
    "unit": "ha",
    "sensor": "Sentinel-1 C-band",
    "dates": [
@@ -97,7 +99,8 @@
    ]
   },
   {
-   "name": "NISAR radar: bare-looking ground on each pass, inside the clearing outline (450 ha) (true ground area)",
+   "name": "NISAR radar",
+  "note": "NISAR radar: bare-looking ground on each pass, inside the clearing outline (450 ha), as true ground area.",
    "unit": "ha",
    "sensor": "NISAR L-band",
    "dates": [
