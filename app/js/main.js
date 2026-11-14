@@ -121,18 +121,21 @@ async function main() {
   // The headline figure over the timeline. A site with stages shows its clearing so far (the member changes of the latest
   // stage, which is the sum the story quotes); any other site shows the hectares marked so far. It counts to the new
   // value instead of flashing, and just jumps when the visitor prefers reduced motion.
-  const figure = { box: $("figure"), num: $("figure-num"), cap: $("figure-cap"), shown: 0, raf: 0 };
+  const figure = { box: $("figure"), num: $("figure-num"), cap: $("figure-cap"), shown: 0, raf: 0, fresh: true }; // fresh: a new site, so no count from the old site's number
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const drawFigure = (ha) => {
     figure.shown = ha;
-    figure.num.textContent = ha >= 10 ? String(Math.round(ha)) : ha.toFixed(1);
+    figure.num.textContent = ha >= 10 ? String(Math.round(ha)) : ha === 0 ? "0" : ha.toFixed(1);
   };
   function showFigure(ha, caption) {
     figure.box.hidden = false;
     figure.cap.textContent = caption;
     cancelAnimationFrame(figure.raf);
     const from = figure.shown;
-    if (reduced.matches || from === ha) return drawFigure(ha);
+    if (reduced.matches || from === ha || figure.fresh) {
+      figure.fresh = false;
+      return drawFigure(ha);
+    }
     const t0 = performance.now();
     const step = (t) => {
       const k = Math.min(1, (t - t0) / 520);
@@ -225,6 +228,8 @@ async function main() {
     map.showOverview(overview);
     timeline.clear();
     figure.box.hidden = true;
+    cancelAnimationFrame(figure.raf);
+    figure.fresh = true;
     lastDateForFigure = null;
   }
 
@@ -242,6 +247,7 @@ async function main() {
     loading = true;
     try {
       current = await loadSite(site);
+      figure.fresh = true;
       renderStory(current.story, current.base); // first: it changes the map's size on phones
       showHint();
       inbox.setSite(current.changes.features);

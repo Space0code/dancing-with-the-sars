@@ -454,6 +454,9 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
   box-shadow: 0 0 0 3px var(--raised);
 }
 #slider:active::-webkit-slider-thumb { transform: scale(1.18); }
+#slider:focus-visible { outline: none; box-shadow: none; }
+#slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--raised), 0 0 0 5px var(--ink); }
+#slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--raised), 0 0 0 5px var(--ink); }
 #slider:disabled { cursor: default; }
 .events { position: relative; height: 16px; margin: -4px 9px 0; }
 .event-marker {
@@ -525,7 +528,7 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
   }
   .view-caption { grid-row: 3; display: none; margin: 0; font-size: var(--t-small); }
   .view-caption.open { display: block; }
-  .legend { left: var(--s-3); bottom: calc(var(--r-lg) + 26px); padding: 0; }
+  .legend { left: var(--s-3); right: auto; bottom: calc(var(--r-lg) + 26px); padding: 0; }
   .legend-btn {
     display: block; height: 32px; padding: 0 var(--s-3); border: 0; background: none; font-size: var(--t-small); font-weight: 600; color: var(--ink);
   }
@@ -537,13 +540,15 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
   .maplibregl-ctrl-bottom-right { bottom: var(--r-lg); }
   .timeline { grid-template-columns: minmax(0, 1fr); row-gap: var(--s-3); padding: var(--s-3) var(--s-3) calc(var(--s-2) + env(safe-area-inset-bottom)); }
   .figure { grid-template-columns: auto 1fr; align-items: end; column-gap: var(--s-3); }
-  .figure-num { font-size: 52px; }
-  .figure-unit { font-size: 20px; }
-  .figure-cap { max-width: none; }
-  .timeline-top { margin-bottom: var(--s-4); }
+  .figure { padding-bottom: 0; }
+  .figure-num { font-size: 40px; }
+  .figure-unit { font-size: 18px; }
+  .figure-cap { max-width: none; font-size: var(--t-label); }
+  .timeline-top { margin-bottom: var(--s-3); }
   .ticks.labelled .change-bar::after { display: none; } /* the labels would collide at this width */
   .date-label { font-size: 16px; }
-  .total { margin-left: 0; font-size: var(--t-small); }
+  .total { margin-left: auto; font-size: var(--t-small); }
+  .date-sub { display: none; } /* "image 68 of 68" gives way, so the date and the total share one line */
   .explainer { padding: var(--s-4) var(--s-4) var(--s-5); }
 }
 
