@@ -137,7 +137,7 @@ def before_after(scope):
 def curve():
     doc = json.loads((SITE / "story_series.json").read_text())
     series = doc["series"]
-    w, h, left, right, top, bottom = 900, 420, 70, 230, 50, 50
+    w, h, left, right, top, bottom = 1060, 440, 70, 330, 50, 50
     out = Image.new("RGB", (w, h), rgb(PANEL))
     d = ImageDraw.Draw(out)
     d0 = date(2025, 9, 1).toordinal()
@@ -157,11 +157,15 @@ def curve():
         x = xy(m, 0)[0]
         d.line([(x, h - bottom), (x, h - bottom + 5)], fill=rgb(INK))
         d.text((x - 20, h - bottom + 8), f"{date.fromisoformat(m):%b %Y}", fill=rgb(INK), font=SMALL)
+    g0, g1 = xy("2025-10-01", 0)[0], xy("2026-03-31", 0)[0]  # no usable passes: winter, left out
+    d.rectangle([g0, top, g1, h - bottom], fill=(236, 236, 233))
+    d.multiline_text((g0 + 8, top + 6), "winter: no usable\nradar or optical looks", fill=rgb(INK), font=SMALL)
     colours = ["#2a6fdb", "#e0661c", "#1a9e5a"]
     for s, c in zip(series, colours):
         pts = [xy(day, v) for day, v in zip(s["dates"], s["values"]) if v is not None]
-        if len(pts) > 1:
-            d.line(pts, fill=rgb(c), width=3)
+        for a, b in zip(pts, pts[1:]):
+            if b[0] - a[0] < (g1 - g0) / 2:  # never draw a line across the winter gap
+                d.line([a, b], fill=rgb(c), width=3)
         for p in pts:
             d.ellipse([p[0] - 3, p[1] - 3, p[0] + 3, p[1] + 3], fill=rgb(c))
     ly = top
