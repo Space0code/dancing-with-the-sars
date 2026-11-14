@@ -2,8 +2,8 @@
  "layers": [
   {
    "id": "nisar_l_band_before",
-   "title": "NISAR radar, before (25 Jun 2026)",
-   "date": "2026-06-25",
+   "title": "NISAR radar, before (25 Jun to 19 Jul 2026)",
+   "date": "2026-07-07",
    "url": "layers/nisar_l_band_before.png",
    "coordinates": [
     [
@@ -23,12 +23,12 @@
      64.880418
     ]
    ],
-   "caption": "Radar picture from NISAR: the typical echo of 1 pass, 25 Jun 2026. Red = surface echo (HH), strong from bare ground and buildings. Green = vegetation echo (HV), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
+   "caption": "Radar picture from NISAR: the typical echo of 3 passes, 25 Jun to 19 Jul 2026. Red = surface echo (HH), strong from bare ground and buildings. Green = vegetation echo (HV), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
   },
   {
    "id": "nisar_l_band_after",
-   "title": "NISAR radar, after (4 Nov 2026)",
-   "date": "2026-11-04",
+   "title": "NISAR radar, after (29 Sep to 23 Oct 2026)",
+   "date": "2026-10-11",
    "url": "layers/nisar_l_band_after.png",
    "coordinates": [
     [
@@ -48,7 +48,7 @@
      64.880418
     ]
    ],
-   "caption": "Radar picture from NISAR: the typical echo of 1 pass, 4 Nov 2026. Red = surface echo (HH), strong from bare ground and buildings. Green = vegetation echo (HV), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
+   "caption": "Radar picture from NISAR: the typical echo of 3 passes, 29 Sep to 23 Oct 2026. Red = surface echo (HH), strong from bare ground and buildings. Green = vegetation echo (HV), strong from trees. Blue = how much stronger the surface echo is than the vegetation echo. Woodland looks green-yellow, bare or farmed ground purple-blue, buildings light pink to white, water dark blue. Transparent = no data."
   }
  ]
 }
