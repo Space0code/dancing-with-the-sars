@@ -13,8 +13,20 @@ const STYLE = {
       maxzoom: 19,
       attribution: "Background imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community",
     },
+    // Light grey base map (Esri Light Gray Canvas, no key). CARTO's free Positron tiles now answer "API KEY REQUIRED".
+    // Only fetched while its layer is visible. Its native detail ends at zoom 16; closer in, the tiles are stretched.
+    light: {
+      type: "raster",
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"],
+      tileSize: 256,
+      maxzoom: 16,
+      attribution: "Background map © Esri, HERE, Garmin, © OpenStreetMap contributors and the GIS User Community",
+    },
   },
-  layers: [{ id: "base-satellite", type: "raster", source: "satellite" }],
+  layers: [
+    { id: "base-satellite", type: "raster", source: "satellite" },
+    { id: "base-light", type: "raster", source: "light", layout: { visibility: "none" } },
+  ],
 };
 
 const verdictColor = [
@@ -89,7 +101,9 @@ export function createChangeMap(container, { onSelect, bounds }) {
   });
 
   let extraFilter = null; // the inbox's verdict / kind filters, as a MapLibre expression
-  const withExtra = (filter) => (extraFilter ? ["all", filter, extraFilter] : filter);
+  let shownIds = null; // the selection's changes (selection.js): only these are drawn; null = all
+  const idFilter = () => (shownIds ? ["in", ["get", "id"], ["literal", [...shownIds]]] : null);
+  const withExtra = (filter) => { const parts = [filter, extraFilter, idFilter()].filter(Boolean); return parts.length > 1 ? ["all", ...parts] : filter; };
 
   function applyDateFilter() {
     const filter = withExtra(["<=", ["get", "first_date"], dateIso]);
@@ -98,7 +112,7 @@ export function createChangeMap(container, { onSelect, bounds }) {
 
   /** The stage to draw at the slider date: the latest one at or before it (none before the first). */
   function applyStage() {
-    const now = stages.filter((f) => f.properties.date <= dateIso).at(-1);
+    const now = stages.filter((f) => f.properties.date <= dateIso && (!shownIds || f.properties.members.some((id) => shownIds.has(id)))).at(-1);
     map.getSource("stage").setData(now ? { type: "FeatureCollection", features: [now] } : EMPTY);
   }
 
@@ -174,7 +188,7 @@ export function createChangeMap(container, { onSelect, bounds }) {
           map.removeSource("frame");
         }
         map.addSource("frame", { type: "canvas", canvas, coordinates, animate: false });
-        map.addLayer({ id: "frame", type: "raster", source: "frame", paint: { "raster-fade-duration": 0 } }, map.getStyle().layers[1]?.id); // right above the satellite, so record layers (records.js) and change shapes stay on top
+        map.addLayer({ id: "frame", type: "raster", source: "frame", paint: { "raster-fade-duration": 0 } }, map.getStyle().layers.find((l) => !l.id.startsWith("base-"))?.id); // right above the base maps, so record layers (records.js) and change shapes stay on top
       } else {
         if (JSON.stringify(source.coordinates) !== JSON.stringify(coordinates)) source.setCoordinates(coordinates);
         source.play(); // play + pause = copy the canvas to the map once
@@ -182,6 +196,10 @@ export function createChangeMap(container, { onSelect, bounds }) {
       }
       map.setLayoutProperty("frame", "visibility", "visible");
       map.triggerRepaint();
+    },
+    /** Show one base map, "satellite" or "light"; the picture, marked areas and record layers stay as they are. */
+    setBase(id) {
+      for (const base of ["satellite", "light"]) map.setLayoutProperty(`base-${base}`, "visibility", base === id ? "visible" : "none");
     },
     /** Screen position (px from the map's top-left) of a [lon, lat] point. */
     project(lonLat) {
@@ -214,6 +232,37 @@ export function createChangeMap(container, { onSelect, bounds }) {
       selectedId = feature ? feature.properties.id : "";
       map.setFilter("changes-selected", ["all", ["==", ["get", "id"], selectedId], OWN_OUTLINE]);
       showPart();
+    },
+    /** Draw only the changes with these ids (a Set), or all of them with null. */
+    setShownIds(ids) {
+      shownIds = ids;
+      applyDateFilter();
+      applyStage();
+    },
+    /** The selected area as a thin dashed outline above the picture, below the marked areas; null removes it. */
+    setAreaOutline(geometry) {
+      const data = geometry ? { type: "Feature", properties: {}, geometry } : EMPTY;
+      const source = map.getSource("area");
+      if (source) return source.setData(data);
+      map.addSource("area", { type: "geojson", data });
+      map.addLayer({ id: "area-casing", type: "line", source: "area", layout: { "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": 3.5 } }, "stage-fill");
+      map.addLayer({ id: "area-line", type: "line", source: "area", layout: { "line-join": "round" }, paint: { "line-color": "#0a0a0a", "line-width": 1.6, "line-dasharray": [3, 2] } }, "stage-fill");
+    },
+    /**
+     * PNG data URL of the map as it is on screen now (picture, marked areas, record layers, area outline). MapLibre's canvas
+     * is only readable right after a render, so this repaints and reads it inside that render event.
+     */
+    snapshot() {
+      return new Promise((resolve, reject) => {
+        map.once("render", () => {
+          try {
+            resolve(map.getCanvas().toDataURL("image/png"));
+          } catch (err) {
+            reject(err);
+          }
+        });
+        map.triggerRepaint();
+      });
     },
     setExtraFilter(expression) {
       extraFilter = expression;
