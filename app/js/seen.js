@@ -86,22 +86,31 @@ const MARKS = {
 };
 const ORDER = { detected: 0, late_start: 1, not_seen: 2, not_watching: 3 };
 
+// A source can see a change without being able to date it (first_date null): then it shows no date, never "1 Jan 1970".
 function dates(s) {
+  if (!s.first_date) return "";
   if (s.role === "detected") return s.not_before && s.not_before < s.first_date ? dateRange(s.not_before, s.first_date, "–") : formatDate(s.first_date);
   if (s.role === "late_start") return `by ${formatDate(s.first_date)}`;
   return "";
 }
 
+// "not_seen" with a share above 0 means the source flagged a small part of the change: say so, don't say "did not flag it".
+const partly = (s) => s.role === "not_seen" && s.share > 0;
+
 /** "Seen by": one row per source: marker, plain name, dates, role in words, then the source's own sentence. */
 export function seenBy(p) {
   if (!hasSources(p)) return null;
-  const detectedDates = p.sources.filter((s) => s.role === "detected").map((s) => s.first_date).sort();
-  const roleWord = (s) =>
-    ({ detected: s.first_date > detectedDates[0] ? "confirms" : "first", late_start: "already under way", not_seen: "did not flag it", not_watching: "not watching" })[s.role] ?? "";
+  const detectedDates = p.sources.filter((s) => s.role === "detected" && s.first_date).map((s) => s.first_date).sort();
+  const roleWord = (s) => {
+    if (partly(s)) return "flagged only a small part";
+    if (s.role === "detected") return !s.first_date ? "saw it, date unknown" : s.first_date > detectedDates[0] ? "confirms" : "first";
+    return { late_start: "already under way", not_seen: "did not flag it", not_watching: "not watching" }[s.role] ?? "";
+  };
+  const dated = (s) => s.first_date ?? "9999-12-31"; // undated rows go last within their group
   const rows = [...p.sources]
-    .sort((a, b) => (ORDER[a.role] ?? 9) - (ORDER[b.role] ?? 9) || (a.first_date ?? "").localeCompare(b.first_date ?? ""))
+    .sort((a, b) => (ORDER[a.role] ?? 9) - (ORDER[b.role] ?? 9) || dated(a).localeCompare(dated(b)))
     .map((s) => {
-      const m = MARKS[s.role] ?? MARKS.not_seen;
+      const m = partly(s) ? { mark: "○", label: "was watching and flagged only a small part" } : MARKS[s.role] ?? { mark: "○", label: "" };
       return h("li", { class: `seen-row ${s.role}` },
         h("span", { class: "seen-mark", role: "img", "aria-label": m.label }, m.mark),
         h("span", { class: "seen-main" },
