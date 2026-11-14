@@ -3,7 +3,7 @@ import { APP, VERDICTS, setVerdictColors, runningTotal, h } from "./format.js";
 import { loadSites, loadSite, loadJson } from "./data.js";
 import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
-import { renderIntro, renderStory, showCard, showHint } from "./panel.js";
+import { renderIntro, renderStory, setStoryDate, showCard, showHint } from "./panel.js";
 import { createInbox } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
@@ -144,6 +144,7 @@ async function main() {
       map.flash(fresh);
       picture.setDate(iso);
       inbox.setDate(iso);
+      setStoryDate(iso);
       refreshTotal();
       writeHash();
       if (fresh.length) bump($("total"));
@@ -207,7 +208,7 @@ async function main() {
     loading = true;
     try {
       current = await loadSite(site);
-      renderStory(current.story); // first: it changes the map's size on phones
+      renderStory(current.story, current.base); // first: it changes the map's size on phones
       showHint();
       inbox.setSite(current.changes.features);
       map.setExtraFilter(null);
