@@ -28,7 +28,8 @@ SOLAR_AUTHORISED = ("autoritzat", "en servei", "aprovat")  # plant statuses that
 SOLAR_PENDING = ("en tramitaci",)  # "En tramitació": an application still being processed is not an authorisation
 RECORD_TYPES = ("clearing", "earthworks", "structure")  # change types a solar-plant listing can explain
 FIRE_TYPES = ("fire", "clearing", "other")  # change types a recorded wildfire can explain
-KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official")
+KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system")
+SYSTEM_SHARE = 0.5  # a change counts as on port or airport land when at least this much of it lies on it
 
 # record key -> name shown when that service could not be checked
 LABELS = {
@@ -175,7 +176,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not area > 0:  # also catches NaN
         raise ValueError(f"change {change.get('id')!r}: area_ha must be a positive number")
     ctype = change.get("type")
-    prot, cad, zon, sol, fire, off = (records.get(k) for k in KEYS)
+    prot, cad, zon, sol, fire, off, sysl = (records.get(k) for k in KEYS)
 
     # ---- facts
     areas = list(prot.get("areas") or []) if _ok(prot) else []
@@ -190,9 +191,18 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     edge = inside and not buffer_only and share is not None and share < EDGE_SHARE
     real_inside = inside and not buffer_only and not edge
     zone, planned, zshares = _zoning(zon)
-    built = int(cad.get("built_since") or 0) if _ok(cad) else 0
+    # a late start was already under way when the sensor began watching: the record cannot date it, so the registry is
+    # asked for buildings of any year (undated) instead of "built since the change"
+    late_start = any(isinstance(src, dict) and src.get("role") == "late_start" for src in change.get("sources") or [])
+    built = int(cad.get("buildings" if late_start else "built_since") or 0) if _ok(cad) else 0
+    system_kind = None
+    if _ok(sysl) and ctype in RECORD_TYPES:
+        shares = sysl.get("shares") or {}
+        best = max(shares, key=shares.get) if shares else None
+        system_kind = best if best and shares[best] >= SYSTEM_SHARE else None
+    system_land = system_kind is not None
     solar_good, solar_pending, solar_other = _solar(sol, area, ctype)
-    matching = built > 0 or planned or bool(solar_good)
+    matching = built > 0 or planned or bool(solar_good) or system_land
     fire_recorded = _ok(fire) and bool(fire.get("recorded"))
     fire_explains = fire_recorded and ctype in FIRE_TYPES
     assessment_missing = _ok(off) and bool(off.get("assessment_required")) and not off.get("assessment_completed")
@@ -215,14 +225,15 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         verdict, decisive = "high_concern", "protected_area"
     elif assessment_missing and big_enough and ctype in ("clearing", "earthworks"):
         verdict, decisive = "high_concern", "assessment_missing"
-    elif zone == "non_buildable" and not small_uncertain:
+    elif zone == "non_buildable" and not small_uncertain and not system_land:  # port land is often classed non-buildable
         big = area >= BIG_HA and ctype in ("clearing", "earthworks") and not matching
         verdict, decisive = ("high_concern" if big else "review"), "zoning_non_buildable"
     elif assessment_missing and (area >= MID_HA or in_scope):
         verdict, decisive = "review", "assessment_missing"
     elif matching:
         verdict = "expected"
-        decisive = "cadastre_building_found" if built > 0 else "planned_sector" if planned else "solar_plant_listed"
+        decisive = ("cadastre_building_found" if built > 0 else "planned_sector" if planned
+                    else "system_land" if system_land else "solar_plant_listed")  # the plant list is per municipality
     elif small_forestry and not solar_pending:
         verdict, decisive = "expected", "small_no_records"
     elif area >= MID_HA:
@@ -281,9 +292,17 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if built > 0:
         facts["cadastre_building_found"] = _reason(
             "cadastre_building_found",
-            f"{built} building(s) registered here date from {change_year} or later, the year the change was first seen "
+            f"{built} building(s) are registered here (their years are not compared: this change began before the "
+            "record does)." if late_start
+            else f"{built} building(s) registered here date from {change_year} or later, the year the change was first seen "
             "(the registry gives construction years only)." if change_year
             else f"{built} building(s) are registered here since the change.", "lowers", cad)
+    if system_land:
+        noun = "port" if system_kind == "port" else "airport"
+        facts["system_land"] = _reason(
+            "system_land",
+            f"The land is {noun} system land in the urban plan (MUC), where works like this are part of its use.",
+            "lowers", sysl)
     if solar_good:
         ha = _plant_ha(solar_good[0])
         facts["solar_plant_listed"] = _reason(
@@ -303,8 +322,10 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not matching and _ok(cad):
         facts["no_record_found"] = _reason(
             "no_record_found",
-            "No building registered since the change (the land registry often records new buildings months late), "
-            "no authorised solar plant and no planned development area match this change.",
+            ("No building is registered here, and no authorised solar plant or planned development area matches this change."
+             if late_start else
+             "No building registered since the change (the land registry often records new buildings months late), "
+             "no authorised solar plant and no planned development area match this change."),
             "raises", cad)
     detector = _detector(change)
     if decisive == "small_no_records":
@@ -345,6 +366,12 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         for key in LABELS
         if not _ok(records.get(key)) and not (records.get(key) or {}).get("not_applicable")
     ]
+    # a port / airport lookup that failed is reported; an absent one was simply not asked
+    if isinstance(sysl, dict) and not _ok(sysl) and not sysl.get("not_applicable"):
+        unavailable.append(_reason(
+            "records_unavailable",
+            "The port and airport land map could not be checked, so works there may be flagged.",
+            "neutral", sysl, source="Port and airport land map"))
     # a fire lookup that failed is reported; an absent one was simply not asked
     if isinstance(fire, dict) and not _ok(fire) and not fire.get("not_applicable"):
         unavailable.append(_reason(

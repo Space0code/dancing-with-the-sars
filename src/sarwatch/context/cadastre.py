@@ -9,6 +9,7 @@ compared by year. ``beginLifespanVersion`` is the date the record was last edite
 from __future__ import annotations
 
 import math
+import re
 import xml.etree.ElementTree as ET
 
 from pyproj import Transformer
@@ -27,6 +28,13 @@ NS = {"gml": "http://www.opengis.net/gml/3.2",
 _to_wgs = Transformer.from_crs(UTM, 4326, always_xy=True).transform
 
 
+def _date(text: str | None) -> str | None:
+    """``YYYY-MM-DD`` from the registry's text, or None when it is missing or malformed (a few records carry a
+    placeholder such as ``1-01-01``): such a building counts, but has no construction year."""
+    head = (text or "")[:10]
+    return head if re.fullmatch(r"[12]\d{3}-\d{2}-\d{2}", head) else None
+
+
 def _parse(body: bytes) -> list[dict]:
     root = ET.fromstring(body)
     out = []
@@ -39,7 +47,7 @@ def _parse(body: bytes) -> list[dict]:
                 parts.append(Polygon(list(zip(v[0::2], v[1::2]))))
         out.append({
             "id": b.get(f"{{{NS['gml']}}}id"),
-            "date": begin.text[:10] if begin is not None and begin.text else None,
+            "date": _date(begin.text) if begin is not None else None,
             "parts": parts,
         })
     return out
@@ -49,7 +57,7 @@ def _tile(x0: float, y0: float, x1: float, y1: float) -> list[dict]:
     body = fetch("cadastre", SERVICE, {
         "service": "WFS", "version": "2.0.0", "request": "GetFeature", "typeNames": "BU:Building",
         "srsName": "EPSG::25831", "bbox": f"{x0:.0f},{y0:.0f},{x1:.0f},{y1:.0f}",
-    })
+    }, timeout=120)  # dense industrial tiles answer slowly
     feats = _parse(body)
     if len(feats) >= MAX_FEATURES:  # truncated: split in four
         xm, ym = (x0 + x1) / 2, (y0 + y1) / 2

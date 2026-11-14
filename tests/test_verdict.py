@@ -737,3 +737,55 @@ def test_zoning_without_a_developable_share_is_not_a_planned_area_just_because_t
     assert "planned_sector" not in codes(reasons)
     alone = judge(change(area=12, ctype="earthworks"), records(zoning=ok(zone="developable")))  # no shares at all
     assert "planned_sector" in codes(alone[1])
+
+
+# ---- Barcelona: port and airport land, late starts ----
+
+
+def system_rec(kind="port", share=0.9):
+    return {"system": ok(system=kind, shares={kind: share})}
+
+
+def test_a_structure_on_port_land_is_expected_even_when_the_zoning_says_non_buildable():
+    verdict, reasons, _ = judge(change(area=23, ctype="structure"),
+                                {**records(zone="non_buildable"), **system_rec()})
+    assert verdict == "expected" and codes(reasons)[0] == "system_land"
+    assert reasons[0]["effect"] == "lowers" and "port system land" in reasons[0]["text"]
+    assert "zoning_non_buildable" in codes(reasons)  # still listed: the card shows both records
+    air = judge(change(area=9, ctype="earthworks"), {**records(zone="urban"), **system_rec("airport")})
+    assert air[0] == "expected" and "airport system land" in air[1][0]["text"]
+
+
+def test_port_land_does_not_hide_a_protected_area_or_a_buffer_zone():
+    assert judge(change(area=8), {**records(inside=True), **system_rec()})[0] == "high_concern"
+    buffer = {"protected": ok(inside=True, areas=[{"name": "Delta", "kind": "Natura 2000 buffer zone"}])}
+    assert judge(change(area=8), {**records(), **buffer, **system_rec()})[0] == "review"
+
+
+def test_port_land_needs_most_of_the_change_and_a_change_type_works_can_explain():
+    assert judge(change(area=8, ctype="structure"), {**records(zone="urban"), **system_rec(share=0.4)})[0] == "review"
+    assert judge(change(area=8, ctype="other"), {**records(zone="urban"), **system_rec()})[0] == "review"
+    assert judge(change(area=8), {**records(zone="urban"), "system": ok(system=None, shares={})})[0] == "review"
+    assert judge(change(area=8), records(zone="urban"))[0] == "review"  # no system record at all: as before
+
+
+def test_a_failed_port_lookup_is_reported_and_changes_nothing_else():
+    failed = {"system": {"source": "MUC", "url": None, "checked": False, "error": "boom"}}
+    verdict, reasons, _ = judge(change(area=8), {**records(zone="urban"), **failed})
+    assert verdict == "review" and any("port and airport land map could not be checked" in r["text"] for r in reasons)
+
+
+def late(**kw):
+    return {**change(**kw), "sources": [{"role": "late_start"}, {"role": "not_watching"}]}
+
+
+def test_a_late_start_is_not_compared_by_building_year():
+    cad = {"cadastre": ok(buildings=3, built_since=0)}  # three buildings, all older than the sensor's first pass
+    dated = judge(change(area=8), {**records(zone="urban"), **cad})
+    undated = judge(late(area=8), {**records(zone="urban"), **cad})
+    assert dated[0] == "review" and "No building registered since the change" in dated[1][0]["text"]
+    assert undated[0] == "expected" and codes(undated[1])[0] == "cadastre_building_found"
+    assert "years are not compared" in undated[1][0]["text"] and "since the change" not in undated[1][0]["text"]
+    none = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=0, built_since=0)})
+    assert none[0] == "review" and none[1][0]["text"].startswith("No building is registered here")
+    assert "since the change" not in none[1][0]["text"]
