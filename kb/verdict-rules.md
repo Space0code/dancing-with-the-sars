@@ -77,7 +77,8 @@ python -m sarwatch.contract app/data                            # always check t
 - **Solar listing is weak evidence** (municipality-level, no location): only an authorised plant at least half as large as the change counts, and a plant that is still an application never makes a change "expected". Open question for the specialist (#7): is even an authorised listing enough to call a large change "expected"?
 - **Protected areas:** a buffer-zone-only overlap raises to "needs review"; an overlap below 10 % of the change only borders the area (neutral). `overlap_share` is computed from the service's outlines (simplified to 5 m) in metres.
 - **Official steps** (a stop notice, an investigation) lift an "expected" to at least "needs review", because a regulator has already acted on the site; they are reasons, not a judgement.
-- **Mixed zoning:** a quarter or more non-buildable counts as non-buildable (conservative: it brings a human look, not an accusation).
+- **Mixed zoning:** a quarter or more non-buildable counts as non-buildable (conservative: it brings a human look, not an accusation). A planned development area is judged on its own share (at least half developable) *before* that override, so a place that is 51 % developable and 49 % non-buildable has both reasons, and the texts give the share ("About 49 % of the place is zoned as non-buildable"); the label stays "needs review" (row 5).
+- **`no_record_found` says what it can know:** "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change." Older buildings may stand on the site: the registry only dates buildings by year.
 - Caveat: cadastre dates are year-only and can lag the real construction by months, so a recent change can show "no record" for a while. That is why this is "needs review", not an accusation.
 
 <sub>Written by Claude</sub>

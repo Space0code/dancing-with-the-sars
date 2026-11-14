@@ -95,13 +95,24 @@ def _zoning(zon) -> tuple[str | None, bool]:
     substantial non-buildable part makes the whole change count as non-buildable. ``zone: None`` with ``checked``
     true means no zoning polygon there (e.g. the sea): unknown, not a failure."""
     if not _ok(zon):
-        return None, False
+        return None, False, {}
     shares = zon.get("shares") or {}
     zone = zon.get("zone")
+    # "planned development area" is judged on its own share, before a non-buildable part overrides the zone: a place
+    # that is 51 % developable and 49 % non-buildable is both (and the label stays "needs review": rule row 5)
+    planned = shares.get("developable", 1.0 if zone == "developable" else 0.0) >= PLANNED_SHARE
     if shares.get("non_buildable", 0) >= NON_BUILDABLE_SHARE:
         zone = "non_buildable"
-    planned = zone == "developable" and shares.get("developable", 1.0) >= PLANNED_SHARE
-    return zone, planned
+    return zone, planned, shares
+
+
+def _zoning_text(shares: dict, key: str, whole: str, part: str) -> str:
+    """``whole`` when (almost) all of the polygon is in that class (or the share is unknown), else "About 49 % of the
+    place …": the card must not call a half-and-half place plain non-buildable."""
+    share = shares.get(key)
+    if share is None or share >= 0.9:
+        return whole
+    return f"About {round(100 * share)} % of the place {part}"
 
 
 def _plant_ha(plant: dict) -> float | None:
@@ -168,7 +179,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     share = prot.get("core_overlap_share", prot.get("overlap_share")) if inside else None
     edge = inside and not buffer_only and share is not None and share < EDGE_SHARE
     real_inside = inside and not buffer_only and not edge
-    zone, planned = _zoning(zon)
+    zone, planned, zshares = _zoning(zon)
     built = int(cad.get("built_since") or 0) if _ok(cad) else 0
     solar_good, solar_pending, solar_other = _solar(sol, area, ctype)
     matching = built > 0 or planned or bool(solar_good)
@@ -178,6 +189,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     actions = [a for a in (off.get("actions") or []) if isinstance(a, dict)] if _ok(off) else []
     action_keys = [f"{_action_code(a.get('kind'))}:{i}" for i, a in enumerate(actions)]
     small_uncertain = area < MID_HA and change.get("confidence") == "low"
+    change_year = str(change.get("first_date") or "")[:4]
+    change_year = change_year if change_year.isdigit() else ""
 
     # ---- the verdict, and the code of the reason that decides it
     if fire_explains:
@@ -237,15 +250,22 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
             "raises", off, source="Official records")
     if zone == "non_buildable":
         facts["zoning_non_buildable"] = _reason(
-            "zoning_non_buildable", "The land is zoned as non-buildable.", "raises", zon)
+            "zoning_non_buildable",
+            _zoning_text(zshares, "non_buildable", "The land is zoned as non-buildable.",
+                         "is zoned as non-buildable."), "raises", zon)
     elif zone == "urban":
         facts["zoning_urban"] = _reason("zoning_urban", "The land is zoned as urban.", "lowers", zon)
     if planned:
         facts["planned_sector"] = _reason(
-            "planned_sector", "The land is inside a planned development area.", "lowers", zon)
+            "planned_sector",
+            _zoning_text(zshares, "developable", "The land is inside a planned development area.",
+                         "is inside a planned development area."), "lowers", zon)
     if built > 0:
         facts["cadastre_building_found"] = _reason(
-            "cadastre_building_found", f"{built} new building(s) are registered here since the change.", "lowers", cad)
+            "cadastre_building_found",
+            f"{built} building(s) registered here date from {change_year} or later, the year the change was first seen "
+            "(the registry gives construction years only)." if change_year
+            else f"{built} building(s) are registered here since the change.", "lowers", cad)
     if solar_good:
         ha = _plant_ha(solar_good[0])
         facts["solar_plant_listed"] = _reason(
@@ -255,7 +275,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if solar_pending and not matching:
         facts["solar_application_pending"] = _reason(
             "solar_application_pending",
-            "An application for a solar plant here is being processed; it is not authorised yet.", "raises", sol)
+            "An application for a solar plant in this municipality (the list gives no exact location) is being "
+            "processed; it is not authorised yet.", "raises", sol)
     if solar_other and not solar_good:
         facts["solar_plant_other"] = _reason(
             "solar_plant_other",
@@ -264,7 +285,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not matching and _ok(cad):
         facts["no_record_found"] = _reason(
             "no_record_found",
-            "No registered building, listed solar plant or planned development area matches this change.",
+            "No building registered since the change (the land registry often records new buildings months late), "
+            "no authorised solar plant and no planned development area match this change.",
             "raises", cad)
     if decisive == "size_only":
         no_records = (cad or {}).get("not_applicable")  # outside Spain the Catalan registry does not apply
