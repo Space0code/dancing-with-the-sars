@@ -1,6 +1,6 @@
 # NASA Space Apps 2026 — "Dancing with the SARs" — project context
 
-_Project background, copied from the founding context doc. Last updated 2026-11-14 (hackathon day 1). Written by Claude; agents keep it current._
+_Project background: challenge, NISAR facts, cases, resources. What we build is in `product.md`. Last updated 2026-11-14 (pivot, #6). Written by Claude; agents keep it current._
 
 ## 1. The event
 - NASA Space Apps Challenge 2026, **14–15 Nov 2026**, Barcelona local event. Global judging starts **16 Nov**.
@@ -15,11 +15,14 @@ Suggested flow: (1) pick a study area, (2) download free NISAR data (+ optional 
 Optional considerations explicitly listed (good for judging):
 - multiple polarizations and/or **other sensors / frequencies** (so Sentinel-1 C-band is allowed as a complement)
 - **time series** + ancillary data (population, land cover…)
-- **human drivers (agriculture, industry…) impacting natural resources** ← our datacenter angle fits this directly
+- **human drivers (agriculture, industry…) impacting natural resources** ← our change monitor fits this directly
 - interactive summary (sliders, web maps)
 
-## 3. Our direction
-Something interesting about **datacenters** — e.g. the impact of the recent intensive buildout of datacenters (land conversion, construction footprint, surrounding infrastructure, possibly ground deformation / water). Not yet narrowed down.
+## 3. Our direction (pivot 14 Nov, #6)
+A **radar land-change monitor for regulators**: detect forest clearing, new buildings, earthworks and ground height
+change, then flag each as expected / needs review / high concern by checking public government data (fallback: simple
+rules). Pilot: **Catalonia** (overview + 2–3 hotspots); test case: Google's Finland clear-cut. Full brief: `product.md`.
+The earlier datacenter-buildout angle is dropped (datacenters remain one possible *cause* of change).
 
 ## 4. NISAR in one screen
 | | |
@@ -51,8 +54,8 @@ Something interesting about **datacenters** — e.g. the impact of the recent in
 
 Collection naming: `NISAR_L2_GCOV_PROVISIONAL_V1` (BETA / PROVISIONAL / validated = no suffix).
 
-## 5. Why SAR "sees" datacenter construction (the physics story)
-Radar backscatter depends on **roughness/geometry** and **dielectric constant (moisture)**. A datacenter lifecycle has distinct signatures:
+## 5. Why SAR "sees" land change (the physics story)
+Radar backscatter depends on **roughness/geometry** and **dielectric constant (moisture)**. A construction lifecycle (here a datacenter; same for any large build) has distinct signatures:
 
 1. **Vegetation / farmland** → moderate co-pol (HH), relatively high **cross-pol (HV)** from volume scattering.
 2. **Land clearing & grading** → HV drops sharply (no vegetation volume); bare smooth soil is dark; **coherence** fluctuates strongly (surface constantly disturbed).
