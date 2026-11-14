@@ -1,0 +1,17 @@
+{
+ "version": 1,
+ "sites": [
+  {"id": "muhos", "name": "Muhos, Finland", "country": "FI", "ready": false,
+   "center": [26.044, 64.843], "zoom": 12, "bbox": [25.94, 64.80, 26.15, 64.89],
+   "time_range": ["2026-03-01", "2026-11-04"]},
+  {"id": "agroparc", "name": "Agroparc Penedès, Catalonia", "country": "ES", "ready": false,
+   "center": [1.85, 41.45], "zoom": 13, "bbox": [1.79, 41.41, 1.91, 41.49],
+   "time_range": ["2024-01-01", "2026-11-02"]},
+  {"id": "catalonia", "name": "Catalonia overview", "country": "ES", "ready": false,
+   "center": [1.6, 41.8], "zoom": 7.5, "bbox": [0.16, 40.52, 3.33, 42.86],
+   "time_range": ["2023-01-01", "2026-11-05"]},
+  {"id": "fixture", "name": "Fake example (not real data)", "country": "ES", "ready": true, "fixture": true,
+   "center": [1.85, 41.45], "zoom": 13, "bbox": [1.80, 41.42, 1.90, 41.48],
+   "time_range": ["2024-01-01", "2026-11-02"]}
+ ]
+}
