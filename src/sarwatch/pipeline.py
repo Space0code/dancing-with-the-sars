@@ -440,8 +440,9 @@ def _format_sites(index: dict, nl: str) -> str:
     return nl.join(out + [f",{nl}".join(blocks), " ]", "}"]) + nl
 
 
-def update_sites_index(index_path, site_id: str, time_range: tuple) -> dict:
-    """Set the site's ready = true and time_range; every other site and field stays as it was (text included)."""
+def update_sites_index(index_path, site_id: str, time_range: tuple, bbox=None) -> dict:
+    """Set the site's ready = true, time_range and (if given) bbox; every other site and field stays as it was
+    (text included)."""
     index_path = Path(index_path)
     _site_entry(index_path, site_id)
     text = index_path.read_bytes().decode("utf-8")
@@ -449,12 +450,17 @@ def update_sites_index(index_path, site_id: str, time_range: tuple) -> dict:
     entry = next(s for s in index["sites"] if s.get("id") == site_id)
     entry["ready"] = True
     entry["time_range"] = [str(time_range[0]), str(time_range[1])]
+    if bbox is not None:
+        entry["bbox"] = [float(v) for v in bbox]
     new = None
     m = re.search(r'\{[^{}]*"id":\s*' + re.escape(json.dumps(site_id)) + r"[^{}]*\}", text)
-    if m:  # edit the two values in place, so the hand-written layout survives
+    if m:  # edit the values in place, so the hand-written layout survives
         block, n1 = re.subn(r'"ready":\s*(?:true|false)', '"ready": true', m.group(0))
         block, n2 = re.subn(r'"time_range":\s*\[[^\]]*\]', '"time_range": ' + json.dumps(entry["time_range"]), block)
-        if n1 == n2 == 1:
+        n3 = 1
+        if bbox is not None:
+            block, n3 = re.subn(r'"bbox":\s*\[[^\]]*\]', '"bbox": ' + json.dumps(entry["bbox"]), block)
+        if n1 == n2 == n3 == 1:
             new = text[:m.start()] + block + text[m.end():]
     if new is None or json.loads(new) != index:
         new = _format_sites(index, "\r\n" if "\r\n" in text else "\n")
@@ -527,9 +533,9 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     from .export import write_site
 
     site_dir = out / site_id
-    write_site(site_dir, site_id, runs)
-    first, last = min(r.dates[0] for r in runs), max(r.dates[-1] for r in runs)
-    update_sites_index(out / "sites.json", site_id, (first, last))
+    written = write_site(site_dir, site_id, runs)
+    (first, last), bbox = written["time_range"], written["bbox"]  # first to last pass used; around all changes
+    update_sites_index(out / "sites.json", site_id, (first, last), bbox)
     if ensure_story(site_dir, entry.get("name") or site_id):
         log.info("wrote a placeholder %s", site_dir / "story.json")
     problems = validate(out)
@@ -539,7 +545,7 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
     kinds = ", ".join(f"{k} {n} = {ha:.1f} ha" for k, (n, ha) in by_type.items())
     lines = summary(_tally(site_dir, "sensor"))
     lines.append(f"  changes: {total}" + (f"  ({kinds})" if kinds else ""))
-    lines.append(f"  sites.json: {site_id} ready, time_range {first} .. {last}")
+    lines.append(f"  sites.json: {site_id} ready, time_range {first} .. {last}, bbox {bbox}")
     lines.append("  contract: OK" if not problems else f"  contract: {len(problems)} problem(s)")
     lines += [f"    {p}" for p in problems]
     print("\n".join(lines))

@@ -156,6 +156,9 @@ def test_run_builds_a_valid_site_and_a_rerun_fetches_nothing(fake, capsys):
     assert 25 <= clearing[0]["area_ha"] <= 45  # 875 px of 0.04 ha = 35 ha on the grid
     entry = site_entry(fake.data, "muhos")
     assert entry["ready"] is True and entry["time_range"] == [str(N_DAYS[0]), str(N_DAYS[-1])]
+    layer_lons = [pt[0] for layer in json.loads((fake.data / "muhos" / "layers.json").read_text(encoding="utf-8"))[
+        "layers"] for pt in layer["coordinates"]]
+    assert entry["bbox"][0] < min(layer_lons) and entry["bbox"][2] > max(layer_lons)  # the rotated picture fits
     story = json.loads((fake.data / "muhos" / "story.json").read_text(encoding="utf-8"))
     assert story["headline"] == "Muhos, Finland"
     assert validate(fake.data) == []
@@ -267,6 +270,18 @@ def test_sites_json_update_keeps_other_sites_untouched(tmp_path):
     assert len(old_lines) == len(new_lines) and changed  # same layout and line endings, edited in place
     start = next(i for i, line in enumerate(old_lines) if '"id": "agroparc"' in line)
     assert all(start <= i < start + 3 for i in changed)
+
+
+def test_sites_json_bbox_is_edited_in_place(tmp_path):
+    path = tmp_path / "sites.json"
+    original = (REPO / "app" / "data" / "sites.json").read_bytes()
+    path.write_bytes(original)
+
+    pipeline.update_sites_index(path, "muhos", ("2026-06-25", "2026-11-04"), [25.8813, 64.7802, 26.2201, 64.9102])
+
+    entry = site_entry(tmp_path, "muhos")
+    assert entry["bbox"] == [25.8813, 64.7802, 26.2201, 64.9102] and entry["time_range"] == ["2026-06-25", "2026-11-04"]
+    assert len(original.decode().splitlines()) == len(path.read_bytes().decode().splitlines())  # layout kept
 
 
 def test_sites_json_falls_back_to_the_house_style_when_it_cannot_edit_in_place(tmp_path):
