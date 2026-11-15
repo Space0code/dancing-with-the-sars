@@ -17,7 +17,7 @@ What we know, written for engineers (CS / math / EE), not geologists. One line p
 | [glossary.md](glossary.md) | Remote-sensing jargon → engineering meaning |
 | [submission.md](submission.md) | Space Apps submission: form checklist, demo rules (≤30 s / ≤7 slides), judging criteria, drafts of every field |
 | [official-rules.md](official-rules.md) | Organizers' emails, guides and forum checked 15 Nov: **Barcelona deadline Sun 16:00**, eligibility traps, team page, awards, the challenge's own questions, questions for 09:00 |
-| [demo-strategy.md](demo-strategy.md) | What wins: the one-sentence claim, the 30 s video storyboard, the 3-minute live pitch, the project page, what we leave out |
+| [demo-strategy.md](demo-strategy.md) | What wins: the one-sentence claim, **the 7-slide deck + 2–3 min talk decision (15 Nov, no 30 s video)**, the live pitch, the project page, what we leave out |
 | [evidence-check.md](evidence-check.md) | Sceptical check of every demo claim against our results: support, rival explanations, defensible wording, go / no-go per site, fallbacks, what to measure next |
 | [report-proxy.md](report-proxy.md) | Cloudflare Worker that writes the AI summary for the PDF report: schema, guard rails, rate limit, deploy and key rotation |
 | [report.md](report.md) | The PDF report: contents, the priority rule (also the planned alert trigger), AI vs rule-based summary |
