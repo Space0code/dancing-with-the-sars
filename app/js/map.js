@@ -94,6 +94,9 @@ export function createChangeMap(container, { onSelect, bounds }) {
       map.on("mousemove", "changes-fill", (e) => hover(e.features?.[0]?.properties.grouped ? e.features[0].properties.id : ""));
       map.on("click", (e) => {
         const hit = map.queryRenderedFeatures(e.point, { layers: ["changes-fill"] })[0];
+        // A click on a record layer (records.js) opens that record's popup: it must not count as "empty map" and close the drawer.
+        const records = map.getStyle().layers.filter((l) => l.id.startsWith("rec-") && l.id.endsWith("-fill")).map((l) => l.id);
+        if (!hit && records.length && map.queryRenderedFeatures(e.point, { layers: records }).length) return;
         onSelect(hit ? features.get(hit.properties.id) : null);
       });
       resolve();

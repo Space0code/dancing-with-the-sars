@@ -1,5 +1,5 @@
 {
- "about": "Guided tour, the same for every site (no site names here). Each step: title, text, optional date and play_to (a YYYY-MM-DD date, or \"start\" / \"end\" for the site's first and last day), note (shown on the timeline), and change_verdict (opens the largest change with that label; without one, the largest change).",
+ "about": "Guided tour, the same for every site (no site names here). Each step: title, text (one sentence), optional date and play_to (a YYYY-MM-DD date, or \"start\" / \"end\" for the site's first and last day), note (shown on the timeline), change_verdict (opens the largest change with that label; without one, the largest change), show (\"filter\": open the site drawer on the list of changes, where the Filter block is) and focus (a CSS selector of the control to outline).",
  "steps": [
   {
    "title": "Marked areas",
@@ -21,6 +21,25 @@
    "title": "Why a label",
    "text": "Open a change to see its label, reasons and sources.",
    "change_verdict": "high_concern"
+  },
+  {
+   "title": "Filter",
+   "text": "Pick a time frame and draw, type or upload an area to see only the changes inside it.",
+   "date": "end",
+   "show": "filter",
+   "focus": "#tools-filter"
+  },
+  {
+   "title": "Export",
+   "text": "Download the changes you see as CSV, GeoJSON, shapefile or GeoTIFF.",
+   "date": "end",
+   "focus": "#export-btn"
+  },
+  {
+   "title": "Base map",
+   "text": "Switch the map behind the picture between Satellite and Light.",
+   "date": "end",
+   "focus": "#basemap-box"
   }
  ]
 }
