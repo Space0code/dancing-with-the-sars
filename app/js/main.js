@@ -16,6 +16,7 @@ import { createExport } from "./export.js";
 import "./report.js"; // registers the "PDF report" export format
 import "./download.js"; // registers the GeoJSON, Shapefile and GeoTIFF formats
 import { createBasemap } from "./basemap.js";
+import { createLeftPanel } from "./leftpanel.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -93,6 +94,7 @@ async function main() {
       if (picture.view !== "radar" && picture.stops()) params.set("view", "satellite"); // a site without photos stays in Radar
       if (selectedId) params.set("change", selectedId);
       if (basemap.value !== "satellite") params.set("base", basemap.value);
+      if (!leftPanel.shown) params.set("panel", "0");
       timeFrame.toParams(params);
       aoi.toParams(params);
       try {
@@ -143,6 +145,7 @@ async function main() {
   $("changes-btn").addEventListener("click", () => (drawer.mode && drawer.mode !== "card" ? drawer.close() : (select(null), showSiteDrawer())));
   await map.ready;
   const records = createRecords(map.maplibre, $("records-box"));
+  const leftPanel = createLeftPanel({ onChange: () => writeHash() });
   const basemap = createBasemap(map, $("basemap-box"), { onChange: () => writeHash() });
 
   // Filter block (time frame and area) in the site drawer; the draw tool moves the drawer out of the way.
@@ -260,6 +263,7 @@ async function main() {
         else drawer.close();
         map.view(current.site, tourRoom());
       }
+      if (step.focus && document.querySelector(step.focus)?.closest("#leftpanel")) leftPanel.set(true); // a step about the left card opens it first
       if (step.focus) document.querySelector(step.focus)?.classList.add("tour-focus"); // outline the control the step talks about
     },
   });
@@ -351,6 +355,7 @@ async function main() {
     timeFrame.fromParams(params); // unknown or bad values are ignored
     if (params.get("bbox")) aoi.fromParams(params, { zoom: !wantsChange });
     else if (getSelection().area) setArea(null);
+    if (params.has("panel")) leftPanel.set(params.get("panel") !== "0");
     basemap.set(params.get("base")); // anything but "light" is the default satellite map
     const view = params.get("view");
     if (view === "radar" || view === "satellite") picture.setView(view === "satellite" ? "photo" : "radar"); // anything else is ignored; before the date, so the slider has the view's stops

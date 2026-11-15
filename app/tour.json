@@ -4,7 +4,8 @@
   {
    "title": "Marked areas",
    "text": "Each shape is a place where the land changed.",
-   "date": "end"
+   "date": "end",
+   "focus": "#overlay-btn"
   },
   {
    "title": "Watch it happen",
@@ -15,7 +16,8 @@
   {
    "title": "Radar and Satellite",
    "text": "Switch the picture, or drag Compare to see before and after.",
-   "date": "end"
+   "date": "end",
+   "focus": "#viewbox"
   },
   {
    "title": "Why a label",
@@ -37,7 +39,7 @@
   },
   {
    "title": "Base map",
-   "text": "Switch the map behind the picture between Satellite and Light.",
+   "text": "Switch the map behind the picture between Imagery and Light.",
    "date": "end",
    "focus": "#basemap-box"
   }

@@ -1,15 +1,15 @@
-// Written by Claude. Base map switch (Satellite | Light) in the legend box. The tiles and the swap itself live in map.js (setBase);
+// Written by Claude. Base map switch (Imagery | Light) in the legend box. The tiles and the swap itself live in map.js (setBase);
 // this file draws the two buttons and keeps the choice. The choice goes in the link as `base=light` (satellite is the default).
 import { h } from "./format.js";
 
-const BASES = [["satellite", "Satellite"], ["light", "Light"]];
+const BASES = [["satellite", "Imagery"], ["light", "Light"]];
 
 /** `map` = the change map (map.js); `box` = the element the switch goes in; `onChange` is called after a user's choice. */
 export function createBasemap(map, box, { onChange } = {}) {
   let current = "satellite";
   const buttons = BASES.map(([id, label]) =>
     h("button", { type: "button", role: "radio", "aria-checked": "false", onclick: () => choose(id, true) }, label));
-  box.replaceChildren(h("span", { class: "basemap-label" }, "Base map"), h("div", { class: "switch", role: "radiogroup", "aria-label": "Base map" }, ...buttons));
+  box.replaceChildren(h("span", { class: "group-label" }, "Base map"), h("div", { class: "switch", role: "radiogroup", "aria-label": "Base map" }, ...buttons));
 
   function choose(id, byUser = false) {
     current = BASES.some(([b]) => b === id) ? id : "satellite"; // anything unknown falls back to the default
