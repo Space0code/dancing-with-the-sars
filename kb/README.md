@@ -20,6 +20,7 @@ What we know, written for engineers (CS / math / EE), not geologists. One line p
 | [demo-strategy.md](demo-strategy.md) | What wins: the one-sentence claim, the 30 s video storyboard, the 3-minute live pitch, the project page, what we leave out |
 | [evidence-check.md](evidence-check.md) | Sceptical check of every demo claim against our results: support, rival explanations, defensible wording, go / no-go per site, fallbacks, what to measure next |
 | [report-proxy.md](report-proxy.md) | Cloudflare Worker that writes the AI summary for the PDF report: schema, guard rails, rate limit, deploy and key rotation |
+| [mentor-feedback.md](mentor-feedback.md) | Our mentor's eleven points: one row each with what we did and where (PRs), and what we deliberately did not build and why |
 | [decisions.md](decisions.md) | One line per team decision + why |
 
 <sub>Written by Claude; agents keep this index current.</sub>
