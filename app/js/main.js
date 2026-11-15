@@ -195,6 +195,7 @@ async function main() {
   onSelectionChange(() => writeHash()); // the link carries the time frame and the box
   $("filter-clear").addEventListener("click", clearSelection);
   const timeline = createTimeline({
+    describe: (iso) => picture.position(iso),
     onDate(iso) {
       map.setDate(iso);
       picture.setDate(iso);
@@ -208,8 +209,11 @@ async function main() {
   });
 
   // Tour steps are the same for every site: they run on the open site, or on the first real one.
+  const clearTourFocus = () => document.querySelectorAll(".tour-focus").forEach((el) => el.classList.remove("tour-focus"));
   const tour = createTour(tourData.steps ?? [], {
+    onEnd: clearTourFocus,
     async runStep(step) {
+      clearTourFocus();
       if (!current) await openSite((sites.find((s) => !s.fixture) ?? sites[0]).id);
       const feature = findStepChange(current.changes.features, step);
       const day = (d) => ({ start: current.site.time_range[0], end: current.site.time_range[1] })[d] ?? d;
@@ -221,9 +225,11 @@ async function main() {
         map.focus(feature, room());
       } else {
         select(null);
-        drawer.close();
+        if (step.show === "filter") showSiteDrawer("inbox"); // the Filter block lives above the list of changes
+        else drawer.close();
         map.view(current.site, tourRoom());
       }
+      if (step.focus) document.querySelector(step.focus)?.classList.add("tour-focus"); // outline the control the step talks about
     },
   });
   $("tour-btn").addEventListener("click", () => tour.start());
