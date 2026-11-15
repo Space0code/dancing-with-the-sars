@@ -177,6 +177,7 @@ export function createAoi(mount, { map, getSite, hideDrawer, showDrawer, room })
     setArea(geometry);
     showStatus();
     const box = geometryBox(geometry);
+    if (box) bboxInput.value = box.map((n) => Number(n.toFixed(5))).join(", "); // the open form shows the area now chosen
     const outside = outsideNote(box);
     say(outside ?? note, outside ? "error" : "info");
     if (zoom) zoomTo(box);

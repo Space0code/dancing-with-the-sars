@@ -38,7 +38,7 @@
 
     <details>
       <summary>What do the colours mean?</summary>
-      <p>Blue is <b>Expected</b>: a public record explains the change. Yellow is <b>Needs review</b>: nothing we could check explains it. Orange is <b>High concern</b>: it is inside a protected area, or it is large and on land where building is not allowed with nothing to explain it. Grey means not labelled yet. The label is also written as a word on every card.</p>
+      <p>Blue is <b>Expected</b>: a public record explains the change. Yellow is <b>Needs review</b>: nothing we could check explains it. Orange is <b>High concern</b>: it is inside a protected area, or it is large and on land where building is not allowed with nothing to explain it, or an official record shows that a required assessment or permit was not finished when the work happened. Grey means not labelled yet. The label is also written as a word on every card.</p>
     </details>
 
     <details>
@@ -91,5 +91,12 @@
       <p>Open the change and read "Why this label?": every reason names its source and links to it. The card also shows the before and after pictures and the radar signal over time, so you can compare them with what you know of the place.</p>
     </details>
   </main>
+  <script>
+    // "Map" brings the user back to the site, filter and base map they left (saved by the app in main.js).
+    try {
+      const h = sessionStorage.getItem("parallax-hash");
+      if (h && /^#[\w=&.,%:-]*$/.test(h)) for (const a of document.querySelectorAll('a[href="./"]')) a.href = "./" + h;
+    } catch {}
+  </script>
 </body>
 </html>
