@@ -5,17 +5,18 @@ import { h, formatArea, safeUrl } from "./format.js";
 // Each question the rules ask: which reason codes answer it, and what to say when none of them is present.
 const QUESTIONS = [
   { key: "protected", q: "Protected natural area?", codes: ["protected_area", "protected_buffer"], none: "Not inside a protected area.", regional: true },
-  { key: "zoning", q: "What does the zoning say?", codes: ["zoning_non_buildable", "zoning_urban", "planned_sector"], none: "Nothing in the zoning changes the label.", regional: true },
+  { key: "zoning", q: "What does the zoning say?", codes: ["zoning_non_buildable", "zoning_urban", "planned_sector", "system_land"], none: "Nothing in the zoning changes the label.", regional: true },
   { key: "cadastre", q: "On the land registry?", codes: ["cadastre_building_found", "no_record_found"], none: "No new building on record.", regional: true },
   { key: "solar", q: "A listed solar plant?", codes: ["solar_plant_listed", "solar_plant_other"], none: "No listed solar plant explains this change.", regional: true },
   { key: "fire", q: "A recorded wildfire?", codes: ["fire_recorded"], none: "No wildfire in the records we have." },
   { key: "official", q: "Any official record (assessment, orders)?", codes: ["assessment_missing", "official_stop_order", "official_investigation", "official_action"], none: "None in the records we have (official records are entered by hand)." },
+  { key: "surface", q: "Snow or flood?", codes: ["snow_caution", "water_after", "surface_clear"], none: "No snow or water check for this change." },
   { key: "size", q: "How big?", codes: ["small_area", "small_uncertain", "small_no_records", "size_only"], none: null },
 ];
 
 // `records_unavailable` reasons: verdict.py writes "The <service> could not be checked…" ("land registry", …),
 // while `source` is the service's own name, so match on both. Each goes to its question's row.
-const UNAVAILABLE = [["protected", "protected"], ["land registry", "cadastre"], ["urban-planning", "zoning"], ["solar", "solar"], ["wildfire", "fire"]];
+const UNAVAILABLE = [["protected", "protected"], ["land registry", "cadastre"], ["urban-planning", "zoning"], ["port and airport", "zoning"], ["solar", "solar"], ["wildfire", "fire"]];
 
 const MARKS = {
   lowers: { mark: "✓", text: "Points to expected" },

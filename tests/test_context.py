@@ -29,6 +29,8 @@ def square(lon, lat, half_m):
 AGROPARC = square(1.85, 41.45, 250)      # Agroparc Penedès, Gelida: ~500 m square
 MONTSENY = square(2.43, 41.77, 50)       # inside Montseny (PEIN + Natura 2000 + natural park)
 BARCELONA = square(2.1635, 41.3915, 50)  # Eixample blocks, central Barcelona
+PORT = square(2.155, 41.345, 120)        # container yards, Port of Barcelona (Zona Franca side)
+AIRPORT = square(2.0785, 41.2975, 120)   # El Prat airport, terminal area
 
 
 COLERA = square(3.15734, 42.41229, 100)  # inside the Colera wildfire (Alt Empordà), 4 Aug 2023, 541 ha
@@ -278,3 +280,17 @@ def test_live_smoke(monkeypatch, tmp_path):
     assert r["fire"]["recorded"] is False  # no fire at Agroparc
     colera = fire.lookup(COLERA)  # a service change (layer, field names, axis order) would show up here
     assert colera["checked"] and colera["recorded"] is True and colera["fires"][0]["area_ha"] == 541
+
+
+def test_port_and_airport_land_are_found_from_the_qualification_layer():
+    port, airport, city = (context.system.lookup(g) for g in (PORT, AIRPORT, BARCELONA))
+    assert port["checked"] and port["system"] == "port" and port["shares"]["port"] > 0.9
+    assert airport["checked"] and airport["system"] == "airport" and airport["shares"]["airport"] > 0.9
+    assert city["checked"] and city["system"] is None and city["shares"] == {}
+    assert "Sistemes, Portuari" in port["classes"]
+
+
+def test_a_malformed_construction_date_is_dropped_not_fatal():
+    assert cadastre._date("1-01-01") is None  # a placeholder some records carry: the building counts, with no year
+    assert cadastre._date(None) is None and cadastre._date("") is None
+    assert cadastre._date("2019-01-01T00:00:00") == "2019-01-01"
