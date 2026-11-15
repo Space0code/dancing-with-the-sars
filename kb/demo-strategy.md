@@ -12,7 +12,7 @@ The claim, the 30-second video, the 3-minute live pitch, the project page and wh
 **Wording check:** `evidence-check.md` decides what may be asserted; this page was brought in line with the final Muhos data (PR #95) on 14 Nov. Finland is the one worked example; Catalonia and Agroparc are "next step" (sections 4–7 mention them only as that).
 
 ## 1. What decides the score
-- Five criteria, 1–5 each, equal weight: Impact, Creativity, Validity, Relevance, Presentation. Global judges see **the project page and a ≤ 30 s video**, among hundreds of projects. The page carries most of the score; the video decides whether the page gets read.
+- Five criteria, 1–5 each, equal weight: Impact, Creativity, Validity, Relevance, Presentation. Global judges see **the project page and the demo (our ≤ 7-slide deck)**, among hundreds of projects. The page carries most of the score; the deck decides whether the page gets read.
 - Every team in this challenge shows a NISAR change map. **A change map is the entry ticket, not the win.** Our difference is the step after it: a short, explained list for one named user (a regulator), with the public record checked and the uncertainty said out loud.
 - Where the points are still open for us:
   | Criterion | Risk today | What earns the point |
