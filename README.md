@@ -5,11 +5,40 @@ the land surface changed, and to tell a regulator **which changes look expected 
 place: a site is a folder of plain data files, and the app shows whichever sites it finds. Built for the NASA Space Apps
 Challenge 2026.
 
-![The app showing the fake example site: coloured outlines on the map, a time slider below](docs/screenshots/48-readme.jpg)
+**Try it live: <https://space0code.github.io/dancing-with-the-sars/>** (in the browser, nothing to install). Two real
+sites: a forest area near Muhos in northern Finland, and Barcelona and its region in Catalonia. A third, clearly labelled
+fake example site is there for testing.
 
-*The app on its clearly labelled fake example site (the screenshot shows no real data).*
+![Parallax on Muhos, Finland, in the Radar view: a large cleared block outlined in orange, smaller changes outlined in blue and yellow, the legend on the left, the timeline below](docs/screenshots/submission/01-finland-radar.png)
 
-Example sites: a forest area in northern Finland and the Barcelona metropolitan region.
+*Muhos, Finland, in the Radar view (NISAR radar picture of 23 Oct 2026). The large cleared block is outlined in orange
+(High concern), smaller changes in blue (Expected) and yellow (Needs review); the red marks on the timeline are the
+dates changes were first seen.*
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/finland-card-label-and-reasons.png" alt="The card of the cleared block: the High concern label, dates, size, confidence and the satellites that saw it; further down, Why this label? with a record and its source"><br>
+Click a change to open its card: the label, dates, size and which satellites saw it (left). Further down,
+<b>Why this label?</b> lists each check on the public records, with its source (right).</td>
+<td width="50%"><img src="docs/screenshots/submission/03-finland-compare.png" alt="Compare at Muhos: a slider splits the map between a Sentinel-1 picture of 2 Jun 2025 and a NISAR picture of 23 Oct 2026"><br>
+<b>Compare</b>: drag the slider between a before picture (Sentinel-1, 2 Jun 2025) and an after picture (NISAR,
+23 Oct 2026). The cleared block shows up as a dark patch in the after picture.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/barcelona-record-layers.jpg" alt="Barcelona in the Radar view with the protected nature areas and zoning layers on, and changes outlined in their label colours"><br>
+Barcelona: changes in their label colours, with two record layers on: protected nature areas (green) and zoning
+(where building is allowed).</td>
+<td width="50%"><img src="docs/screenshots/submission/07-filter-export.png" alt="The Export dialog over the map, with PDF report, CSV, GeoJSON, shapefile and GeoTIFF to choose from, and the change list filtered to High concern"><br>
+Filter the changes (here: High concern only) and export them as a PDF report, CSV, GeoJSON, shapefile or
+GeoTIFF.</td>
+</tr>
+<tr>
+<td colspan="2"><img src="docs/pitch/barcelona-demo-large.gif" alt="Animation: the Barcelona timeline steps from 2016 to 2026 while changes appear, then a click on a new building opens its card"><br>
+Barcelona in motion: the timeline steps from 2016 to Nov 2026 and changes appear as they are first seen. A click on a
+new building (Expected) opens its card: first the radar signal over time, then <b>Why this label?</b> with the
+sources.</td>
+</tr>
+</table>
 
 ## What it does
 
@@ -18,7 +47,8 @@ Example sites: a forest area in northern Finland and the Barcelona metropolitan 
 - Public records give each change a label: **expected**, **needs review** or **high concern**, in plain language, with
   the reasons (protected areas, zoning, cadastre, solar-plant list, other official records) and their sources next to
   the radar evidence. The app shows reasons; it never judges legality.
-- Click a change to see a before/after swipe and the radar signal over time; move the time slider to replay the site.
+- Click a change to open its card (label, reasons, the radar signal over time); **Compare** swipes between a before
+  and an after radar picture; move the time slider to replay the site.
 - **Choose dates and an area:** draw a box, type coordinates or upload a file, and everything follows the selection.
 - **Export** a PDF report (map picture, key numbers, summary) or data files: CSV, GeoJSON, shapefile, GeoTIFF.
 - **NDVI** (greenness from NASA's optical data) on each change, over time.
