@@ -3537,7 +3537,7 @@
      },
      {
       "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.81 to 0.49: optical photos show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.81 to 0.49, which fits vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -3686,7 +3686,7 @@
     "area_ha": 3.24,
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -3705,7 +3705,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.45 → 0.61): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.43 → 0.61). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -3757,9 +3757,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -4066,7 +4064,7 @@
     "area_ha": 3.06,
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -4085,7 +4083,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.64 → 0.74): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.65 → 0.74). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -4137,9 +4135,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -4350,7 +4346,7 @@
     "area_ha": 2.88,
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -4369,7 +4365,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.52 → 0.62): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.58 → 0.62). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -4421,9 +4417,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -4613,7 +4607,7 @@
      },
      {
       "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.80 → 0.74): not enough to confirm vegetation loss.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell slightly (0.80 → 0.74), not enough on its own to show vegetation loss. NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -4844,7 +4838,7 @@
     "area_ha": 2.61,
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -4863,7 +4857,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.76 → 0.72): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.76 → 0.72). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -4915,9 +4909,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -5022,7 +5014,7 @@
     "area_ha": 2.43,
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -5041,7 +5033,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.44 → 0.56): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.44 → 0.56). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -5093,9 +5085,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -5242,7 +5232,7 @@
     "area_ha": 2.34,
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -5261,7 +5251,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.53 → 0.77): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.53 → 0.77). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -5313,9 +5303,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -8238,7 +8226,7 @@
      },
      {
       "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.80 to 0.44: optical photos show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.81 to 0.43, which fits vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12687,7 +12675,7 @@
      },
      {
       "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.78 to 0.48: optical photos show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.81 to 0.48, which fits vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12860,7 +12848,7 @@
     "area_ha": 2.07,
     "sensor": "OPERA DIST-ALERT",
     "signal": null,
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -12879,7 +12867,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.67 → 0.79): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.77 → 0.79). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12931,9 +12919,7 @@
       "share": null,
       "note": "NISAR L-band did not flag it."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -17800,7 +17786,7 @@
      },
      {
       "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.69 to 0.37: optical photos show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.80 to 0.37, which fits vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -18137,8 +18123,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.62 → 0.48): not enough to confirm vegetation loss.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -18322,7 +18308,7 @@
      },
      {
       "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.63 → 0.52): not enough to confirm vegetation loss.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell slightly (0.63 → 0.52), not enough on its own to show vegetation loss. NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -20761,7 +20747,7 @@
      },
      {
       "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.70 to 0.40: optical photos show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.80 to 0.41, which fits vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -25136,8 +25122,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.67 → 0.54): not enough to confirm vegetation loss.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -25386,8 +25372,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.69 to 0.54: optical photos show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"

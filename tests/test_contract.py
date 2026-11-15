@@ -162,3 +162,16 @@ def test_valid_ndvi_and_surface_blocks_pass(copy):
 def test_bad_ndvi_or_surface_is_rejected(copy, blocks, message):
     _write_series(copy, **blocks)
     assert any(message in e for e in validate(copy))
+
+
+def test_confidence_base_and_ndvi_reason_are_optional_but_checked_together(copy):
+    doc = json.loads((copy / "fixture" / "changes.geojson").read_text(encoding="utf-8"))
+    conf = doc["features"][0]["properties"]["confidence"]
+    other = "low" if conf != "low" else "medium"
+    _edit_first_change(copy, confidence_base=other, confidence_ndvi="photos from the same time of year show the vegetation index falling")
+    assert validate(copy) == []
+    for props in ({"confidence_ndvi": None}, {"confidence_base": None}, {"confidence_base": "certain"},
+                  {"confidence_base": conf}, {"confidence_ndvi": ""}, {"confidence_ndvi": 3}):
+        _edit_first_change(copy, **props)
+        assert validate(copy) != [], props
+        _edit_first_change(copy, confidence_base=other, confidence_ndvi="reason")

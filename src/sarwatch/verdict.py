@@ -14,7 +14,7 @@ import json
 import re
 import sys
 from collections import Counter
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 SCOPE_MAIN_SHARE = 0.5  # a change counts as part of the record's outline when at least this much of it lies inside
@@ -36,6 +36,9 @@ SURFACE_URL = "https://lpdaac.usgs.gov/products/hlss30v002/"
 NDVI_SOURCE = "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)"
 NDVI_FELL = 0.15      # a drop in NDVI (median before minus median after) of at least this confirms vegetation loss
 NDVI_FLAT = 0.05      # a drop below this (or a rise) means the photos show no vegetation loss; in between is "slightly"
+NDVI_BARE = 0.2       # a before-median under this: little vegetation to lose, NDVI cannot show the change
+NDVI_MIN_DATES = 2    # clear dates needed on each side, after matching the time of year
+NDVI_WINDOW_DAYS = 365
 NDVI_GREEN = 0.4      # before-value from which the ground counts as "was green" (a crop or field cycle is then plausible)
 CONFIDENCE_STEPS = ("low", "medium", "high")
 LATE_START_LEAD_YEARS = 3  # a late start may be this many years older than the sensor's first pass
@@ -412,20 +415,34 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         if calm:
             facts["surface_clear"] = _reason(
                 "surface_clear", f"Clear scenes around its dates show {' and '.join(calm)} over the area.", "neutral", sfc)
-    # the vegetation index (the series file's `ndvi` block, NASA HLS): a note on every change with clear photos before
-    # and after; it never moves the label (the confidence is adjusted afterwards by ``ndvi_confidence``)
-    band = ndvi_band(ndvi)
-    if band:
-        kind, before, after = band
+    # the vegetation index (the series file's `ndvi` block, NASA HLS): compared between photos from the same time of
+    # year; a note, it never moves the label (the confidence is adjusted afterwards by ``ndvi_confidence``)
+    cmp_ = ndvi_compare(ndvi)
+    if cmp_ and cmp_["state"] == "few":
+        facts["ndvi_few"] = _reason("ndvi_few", "Not enough comparable clear photos to compare the vegetation index.", "neutral", ndvi)
+    elif cmp_ and cmp_["state"] == "ok":
+        kind, before, after = cmp_["kind"], cmp_["before"], cmp_["after"]
         pair = f"{before:.2f} → {after:.2f}"
+        head = "Between photos from the same time of year, the vegetation index (NDVI)"
+        optical = _optical_saw(change)
         if kind == "fell":
-            text = f"The vegetation index (NDVI) fell from {before:.2f} to {after:.2f}: optical photos show vegetation loss here."
-        elif kind == "flat":
-            text = f"The vegetation index (NDVI) did not fall ({pair}): optical photos do not show vegetation loss here."
-            if ctype in ("structure", "earthworks") and before >= NDVI_GREEN:
-                text += " The ground was green before, so the radar signal may come from a crop or field cycle."
+            text = f"{head} fell from {before:.2f} to {after:.2f}, which fits vegetation loss."
+        elif kind == "bare":
+            what = "a clearing" if ctype == "clearing" else "this change"
+            text = (f"There was little vegetation here before the change (NDVI {before:.2f} in photos from the same time "
+                    f"of year), so the vegetation index cannot show {what}.")
         else:
-            text = f"The vegetation index (NDVI) fell slightly ({pair}): not enough to confirm vegetation loss."
+            if kind == "flat":
+                text = f"{head} did not fall ({pair})."
+            else:
+                text = f"{head} fell slightly ({pair}), not enough on its own to show vegetation loss."
+            if optical:
+                text += (" NDVI often stays high after a thinning, or when ground plants grow back in the first summer, "
+                         "so this does not contradict the optical alert.")
+            elif kind == "flat":
+                text += " This does not confirm vegetation loss."
+            if kind == "flat" and ctype in ("structure", "earthworks") and before >= NDVI_GREEN:
+                text += " The ground was green before, so the radar signal may come from a crop or field cycle."
         facts[f"ndvi_{kind}"] = _reason(f"ndvi_{kind}", text, "neutral", ndvi)
     # a port / airport lookup that failed is reported; an absent one was simply not asked
     if isinstance(sysl, dict) and not _ok(sysl) and not sysl.get("not_applicable"):
@@ -561,42 +578,82 @@ def surface_record(site_dir: Path, props: dict) -> dict | None:
 
 
 def ndvi_record(site_dir: Path, props: dict) -> dict | None:
-    """The change's ``ndvi`` block (median NDVI of the clear HLS dates before and after the change) as a record, or
-    None when the change has no series file or no such block. The dates and values are not needed by the verdict."""
+    """The change's ``ndvi`` block (the clear HLS dates and their mean NDVI) as a record, with the change's first and
+    last date so the verdict can compare photos from the same time of year; None when the change has no series file
+    or no such block."""
     block = _series_block(site_dir, props, "ndvi")
     if not block:
         return None
-    return {"source": NDVI_SOURCE, "url": SURFACE_URL, "before": block.get("before"), "after": block.get("after"),
-            "checked": True}
+    return {"source": NDVI_SOURCE, "url": SURFACE_URL, "dates": block.get("dates"), "values": block.get("values"),
+            "first_date": props.get("first_date"), "last_date": props.get("last_date"), "checked": True}
 
 
-def ndvi_band(ndvi) -> tuple[str, float, float] | None:
-    """``("fell" | "slightly" | "flat", before, after)`` from an ``ndvi`` record, or None without both numbers."""
+def _month_near(month: int, months: set) -> bool:
+    """Is ``month`` within one month (December and January are neighbours) of one of ``months``?"""
+    return any((month - m) % 12 in (0, 1, 11) for m in months)
+
+
+def _median(values: list) -> float:
+    v = sorted(values)
+    n = len(v)
+    return float(v[n // 2]) if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2
+
+
+def ndvi_compare(ndvi) -> dict | None:
+    """Compare NDVI between photos from the same time of year. From an ``ndvi`` record (``dates``, ``values``,
+    ``first_date``, ``last_date``): the clear dates of the year before ``first_date`` and of the year after
+    ``last_date``; then only the dates whose month is within one month of a month present on the other side. Returns
+    None without a usable series, ``{"state": "nodata"}`` when a side has no date at all, ``{"state": "few"}`` when a
+    side keeps fewer than ``NDVI_MIN_DATES`` dates, else ``{"state": "ok", "kind": fell | slightly | flat | bare,
+    "before", "after" (medians), "n_before", "n_after"}``. ``bare``: the before median is under ``NDVI_BARE``."""
     if not _ok(ndvi):
         return None
-    before, after = ndvi.get("before"), ndvi.get("after")
-    if not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in (before, after)):
+    try:
+        first, last = date.fromisoformat(str(ndvi["first_date"])[:10]), date.fromisoformat(str(ndvi["last_date"])[:10])
+        rows = [(date.fromisoformat(str(d)[:10]), float(v)) for d, v in zip(ndvi["dates"], ndvi["values"])
+                if isinstance(v, (int, float)) and not isinstance(v, bool)]
+    except (KeyError, TypeError, ValueError):
         return None
-    drop = round(before - after, 4)  # 0.60 - 0.45 must count as 0.15, not 0.1499999
-    return ("fell" if drop >= NDVI_FELL else "flat" if drop < NDVI_FLAT else "slightly"), float(before), float(after)
+    year = timedelta(days=NDVI_WINDOW_DAYS)
+    before = [(d, v) for d, v in rows if first - year <= d < first]
+    after = [(d, v) for d, v in rows if last < d <= last + year]
+    if not before or not after:
+        return {"state": "nodata"}
+    b_months, a_months = {d.month for d, _ in before}, {d.month for d, _ in after}
+    before = [v for d, v in before if _month_near(d.month, a_months)]
+    after = [v for d, v in after if _month_near(d.month, b_months)]
+    if len(before) < NDVI_MIN_DATES or len(after) < NDVI_MIN_DATES:
+        return {"state": "few"}
+    mb, ma = _median(before), _median(after)
+    drop = round(mb - ma, 4)  # 0.60 - 0.45 must count as 0.15, not 0.1499999
+    kind = "bare" if mb < NDVI_BARE else "fell" if drop >= NDVI_FELL else "flat" if drop < NDVI_FLAT else "slightly"
+    return {"state": "ok", "kind": kind, "before": mb, "after": ma, "n_before": len(before), "n_after": len(after)}
+
+
+def _optical_saw(change: dict) -> bool:
+    """Did an optical source (an alert computed from the same HLS photos) detect this change?"""
+    return any(s.get("kind") == "optical" and s.get("role") in ("detected", "late_start") for s in change.get("sources") or [])
 
 
 def ndvi_confidence(change: dict, ndvi) -> tuple[str, str | None]:
     """The confidence after the NDVI check and the sentence that says why (None when it did not move). Only a
-    clearing moves: not confirmed goes down one step; confirmed, and seen by one radar sensor alone, goes up one step
-    (a second, independent kind of satellite agrees; an optical alert already is that kind, so it is not counted again).
+    clearing seen by radar alone moves, one step: up when the vegetation index fell and exactly one radar sensor saw
+    it (a second, independent kind of satellite agrees; two radars already got their step from the exporter), down
+    when the ground was bare before (nothing green to clear). Never lowered when an optical source saw the change:
+    NDVI and the optical alert come from the same photos, so NDVI is no independent check.
     ``change["confidence"]`` must be the one from the exporter, not an adjusted one."""
     conf = change.get("confidence")
-    band = ndvi_band(ndvi)
-    if conf not in CONFIDENCE_STEPS or not band or change.get("type") != "clearing":
+    cmp_ = ndvi_compare(ndvi)
+    if conf not in CONFIDENCE_STEPS or not cmp_ or cmp_["state"] != "ok" or change.get("type") != "clearing":
+        return conf, None
+    if _optical_saw(change):
         return conf, None
     i = CONFIDENCE_STEPS.index(conf)
-    if band[0] == "flat" and i > 0:
-        return CONFIDENCE_STEPS[i - 1], "optical photos do not show vegetation loss here (the vegetation index did not fall)"
-    if band[0] == "fell" and i < 2:
-        saw = [s for s in change.get("sources") or [] if s.get("role") in ("detected", "late_start")]
-        if len(saw) == 1 and saw[0].get("kind") == "radar":
-            return CONFIDENCE_STEPS[i + 1], "optical photos confirm the vegetation loss (the vegetation index fell)"
+    saw = [s for s in change.get("sources") or [] if s.get("role") in ("detected", "late_start")]
+    if cmp_["kind"] == "bare" and i > 0:
+        return CONFIDENCE_STEPS[i - 1], "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
+    if cmp_["kind"] == "fell" and i < 2 and len(saw) == 1 and saw[0].get("kind") == "radar":
+        return CONFIDENCE_STEPS[i + 1], "photos from the same time of year show the vegetation index falling"
     return conf, None
 
 

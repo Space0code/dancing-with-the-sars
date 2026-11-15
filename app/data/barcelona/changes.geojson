@@ -7735,8 +7735,8 @@
       "effect": "lowers"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.14 → 0.20): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -7927,8 +7927,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.10 → 0.12): optical photos do not show vegetation loss here.",
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.10 in photos from the same time of year), so the vegetation index cannot show this change.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -8111,8 +8111,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.22 → 0.22): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -8319,7 +8319,7 @@
      },
      {
       "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.44 to 0.25: optical photos show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.42 to 0.25, which fits vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -8479,7 +8479,7 @@
      },
      {
       "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.36 to 0.17: optical photos show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.38 to 0.18, which fits vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -8631,7 +8631,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.19 → 0.25): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.21 → 0.23). This does not confirm vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -8774,8 +8774,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.11 → 0.08): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -9022,8 +9022,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.09 → 0.11): optical photos do not show vegetation loss here.",
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.08 in photos from the same time of year), so the vegetation index cannot show a clearing.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -9065,7 +9065,7 @@
      }
     ],
     "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    "confidence_ndvi": "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
    }
   },
   {
@@ -9159,8 +9159,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.16 → 0.15): optical photos do not show vegetation loss here.",
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.15 in photos from the same time of year), so the vegetation index cannot show a clearing.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -9202,7 +9202,7 @@
      }
     ],
     "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    "confidence_ndvi": "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
    }
   },
   {
@@ -9296,8 +9296,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.16 → 0.13): optical photos do not show vegetation loss here.",
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.17 in photos from the same time of year), so the vegetation index cannot show this change.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -9415,8 +9415,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.21 → 0.25): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -9647,8 +9647,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.46 → 0.42): optical photos do not show vegetation loss here. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "code": "ndvi_slightly",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell slightly (0.49 → 0.42), not enough on its own to show vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -9881,8 +9881,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.21 → 0.29): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -9976,7 +9976,7 @@
      "after": -13.4,
      "delta": -8.4
     },
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -10008,8 +10008,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.06 → 0.08): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -10049,9 +10049,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -10105,7 +10103,7 @@
      "after": -11.3,
      "delta": -9.6
     },
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -10137,8 +10135,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.23 → 0.20): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -10178,9 +10176,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -10259,8 +10255,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.29 to 0.11: optical photos show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -10354,7 +10350,7 @@
      "after": -21.1,
      "delta": -7.7
     },
-    "confidence": "high",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -10379,8 +10375,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.54 to 0.39: optical photos show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -10420,9 +10416,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos confirm the vegetation loss (the vegetation index fell)"
+    ]
    }
   },
   {
@@ -10508,8 +10502,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.21 → 0.22): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -10635,8 +10629,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.23 → 0.23): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -10875,7 +10869,7 @@
      "after": -16.3,
      "delta": -7.4
     },
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "review",
     "reasons": [
      {
@@ -10900,8 +10894,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.17 → 0.13): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -10941,9 +10935,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -11022,8 +11014,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.35 → 0.22): not enough to confirm vegetation loss.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -11149,8 +11141,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.11 → 0.13): optical photos do not show vegetation loss here.",
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.11 in photos from the same time of year), so the vegetation index cannot show this change.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -11414,8 +11406,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.14 → 0.16): optical photos do not show vegetation loss here.",
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.14 in photos from the same time of year), so the vegetation index cannot show this change.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -11541,8 +11533,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.17 → 0.16): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -11660,8 +11652,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.11 → 0.16): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -11779,7 +11771,7 @@
      "after": -16.5,
      "delta": -9.9
     },
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "review",
     "reasons": [
      {
@@ -11804,8 +11796,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.22 → 0.18): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -11845,9 +11837,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    ]
    }
   },
   {
@@ -11933,8 +11923,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.51 → 0.43): not enough to confirm vegetation loss.",
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.46 → 0.42). This does not confirm vegetation loss. The ground was green before, so the radar signal may come from a crop or field cycle.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12060,8 +12050,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.30 → 0.35): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12187,8 +12177,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.31 → 0.28): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12307,7 +12297,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.41 → 0.37): optical photos do not show vegetation loss here. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.41 → 0.36). This does not confirm vegetation loss. The ground was green before, so the radar signal may come from a crop or field cycle.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12433,8 +12423,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.31 → 0.25): not enough to confirm vegetation loss.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12552,8 +12542,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.15 → 0.05): not enough to confirm vegetation loss.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12679,8 +12669,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_slightly",
-      "text": "The vegetation index (NDVI) fell slightly (0.23 → 0.18): not enough to confirm vegetation loss.",
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.23 → 0.18). This does not confirm vegetation loss.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12799,8 +12789,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.40 → 0.43): optical photos do not show vegetation loss here. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -12926,8 +12916,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.55 to 0.28: optical photos show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -13079,7 +13069,7 @@
      },
      {
       "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.34 → 0.38): optical photos do not show vegetation loss here.",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.41 → 0.38). This does not confirm vegetation loss. The ground was green before, so the radar signal may come from a crop or field cycle.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -13206,8 +13196,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.14 → 0.19): optical photos do not show vegetation loss here.",
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.14 in photos from the same time of year), so the vegetation index cannot show a clearing.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -13249,7 +13239,7 @@
      }
     ],
     "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    "confidence_ndvi": "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
    }
   },
   {
@@ -13473,8 +13463,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.15 → 0.17): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -13616,8 +13606,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.10 → 0.07): optical photos do not show vegetation loss here.",
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.09 in photos from the same time of year), so the vegetation index cannot show a clearing.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -13659,7 +13649,7 @@
      }
     ],
     "confidence_base": "medium",
-    "confidence_ndvi": "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    "confidence_ndvi": "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
    }
   },
   {
@@ -13768,8 +13758,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.48 → 0.50): optical photos do not show vegetation loss here. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -14180,8 +14170,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.68 to 0.18: optical photos show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -14331,8 +14321,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.08 → 0.08): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -14490,8 +14480,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_fell",
-      "text": "The vegetation index (NDVI) fell from 0.70 to 0.40: optical photos show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -14657,8 +14647,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.64 → 0.72): optical photos do not show vegetation loss here. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -14808,8 +14798,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.56 → 0.64): optical photos do not show vegetation loss here. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
@@ -15080,8 +15070,8 @@
       "effect": "neutral"
      },
      {
-      "code": "ndvi_flat",
-      "text": "The vegetation index (NDVI) did not fall (0.39 → 0.44): optical photos do not show vegetation loss here.",
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
       "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"

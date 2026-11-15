@@ -91,8 +91,8 @@ Two more optional blocks, written by `python -m sarwatch.ndvi <site>` (NASA HLS 
   cloud-free dates; `before` / `after` = median of the dates before `first_date` / after `last_date`, within a year (else null).
   The change card shows it (`app/js/ndvi.js`): a "Greenness" line "NDVI before → after" (one side only when the other is
   null) and a graph of `dates` / `values` (needs at least 2 values inside -1..1); nothing when the block is missing.
-  The verdict reads `before` / `after` (`kb/verdict-rules.md`); when that moves a clearing's `confidence` one step, the change
-  also gets optional `confidence_base` (the exporter's value, restored on every rerun) and `confidence_ndvi` (the reason, shown after the confidence on the card).
+  The verdict reads `dates` / `values`, not `before` / `after`, and compares only dates from the same time of year (`kb/verdict-rules.md`); when that moves a clearing's `confidence` one step, the change
+  also gets the optional `confidence_base` (the exporter's value, restored on every rerun; one of low / medium / high, different from `confidence`) and `confidence_ndvi` (the reason, a non-empty string, shown after the confidence on the card); both or neither, checked by `contract.py`.
 - `surface`: `{"snow_share": 0.0–1.0 | null, "water_share": 0.0–1.0 | null, "dates_checked": ["2026-04-03", …]}`.
   `snow_share` = largest share of the polygon flagged snow / ice on cloud-free dates within 16 days of `first_date`;
   `water_share` = median share flagged water on cloud-free dates within 120 days after `last_date`; null = no usable date.
