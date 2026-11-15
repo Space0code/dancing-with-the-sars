@@ -6,6 +6,7 @@
   "observability": { "enabled": true },
   "ratelimits": [
     { "name": "LIMITER", "namespace_id": "4801", "simple": { "limit": 10, "period": 60 } },
-    { "name": "BURST_LIMITER", "namespace_id": "4802", "simple": { "limit": 4, "period": 10 } }
+    { "name": "BURST_LIMITER", "namespace_id": "4802", "simple": { "limit": 4, "period": 10 } },
+    { "name": "GLOBAL_LIMITER", "namespace_id": "4803", "simple": { "limit": 30, "period": 60 } }
   ]
 }
