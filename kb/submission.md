@@ -5,7 +5,7 @@ Last updated 2026-11-14 (#49; rewritten around Finland per Tian's 17:24 note on 
 (PRs #95, #100, #107) and `evidence-check.md`. Wording rules: `product.md`.
 
 ## 1. What the form requires (read from the official guides, 14 Nov 2026)
-Sources: [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) ·
+Sources: [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) ([PDF copy, 15 Nov](../docs/rules/project-submission-guide-2026-11-13.pdf)) ·
 [Judging & Awards Guide](https://www.spaceappschallenge.org/resources/judging-awards-guide/) (both dated 13 Nov 2026).
 
 **Deadline:** the global form closes **Sun 15 Nov, 23:59** Barcelona time, but **Barcelona wants projects and
@@ -52,7 +52,7 @@ carries most of the score.
 
 ## 0. Must-dos before 16:00 (checked 15 Nov 11:00; tick when done)
 Deck route, so these replace the 30 s video items below. Owner in brackets. **Order matters: 16:00 is the local cut-off, the form stays editable until 23:59.**
-- [ ] **Deck ≤ 7 slides, public link, no login** (Andrea, #9). Slide 1 shows project name, tagline, **team name, all members' names and the challenge** (rule). Sell the idea: problem and user, the Muhos case, the live app, why radar, limits stated, what's next. 1–2 clips ≤ 10 s. English only. No NASA logos; AI images watermarked (none planned). Test the link in a private window (a navigator claims Drive may be refused, forum #2216: **Google Slides "anyone with the link" or a PDF in the repo/Release is safest**).
+- [ ] **Deck ≤ 7 slides, public link, no login** (Andrea, #9). Slide 1 shows project name, tagline, **team name, all members' names and the challenge** (rule). Sell the idea: problem and user, the Muhos case, the live app, why radar, limits stated, what's next. 1–2 clips ≤ 10 s; a PDF copy won't play them, so put each clip in as a GIF or a public link too. The guide also asks the slides to (1) **show an image of the app**, (2) **describe the user's experience** (what the regulator sees and does), (3) **say how NASA and partner-agency (ESA) data make it possible**; readable font, few words per slide. English only. No NASA logos; AI images watermarked (none planned). Test the link in a private window (a navigator claims Drive may be refused, forum #2216: **Google Slides "anyone with the link" or a PDF in the repo/Release is safest**).
 - [ ] **Pages app works with the final data** (Tomi + Tian). #140 merged 15 Nov 11:31, so the Gemini sentence in §5 and all licences in §4 apply.
 - [ ] **Team page** (any human): rename team "4" to **Parallax** and replace "We will win (team 4 is the best)" by the tagline; all members on the **Members** tab and confirmed for Barcelona (`official-rules.md` §2, §3).
 - [ ] **Form filled and "Submit for Judging" pressed** (one human, edit **Lock** on): name, summary (§2), demo link = the deck, final-project link = the Pages app, description, **SI field (§5)**, NASA data (§4), references **with a licence per item** (§4), screenshots, both tick boxes. Then check the banner. Aim: submitted by 15:00, edit afterwards.
