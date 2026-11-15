@@ -78,10 +78,10 @@ def flag(fmask: np.ndarray, bit: int) -> np.ndarray:
 
 
 def ndvi_of(red: np.ndarray, nir: np.ndarray) -> np.ndarray:
-    """NDVI float32 per pixel, NaN where a band has no data or red + nir <= 0."""
+    """NDVI float32 per pixel, NaN where a band has no data or red or nir reflectance is <= 0 (HLS allows negative values)."""
     r = red.astype(np.float32) / hls.SCALE
     n = nir.astype(np.float32) / hls.SCALE
-    ok = (red != hls.NODATA) & (nir != hls.NODATA) & (r + n > 0)
+    ok = (red != hls.NODATA) & (nir != hls.NODATA) & (r > 0) & (n > 0)
     out = np.full(red.shape, np.nan, np.float32)
     out[ok] = (n[ok] - r[ok]) / (n[ok] + r[ok])
     return np.clip(out, -1.0, 1.0)
