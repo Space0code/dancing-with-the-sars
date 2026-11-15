@@ -5,3 +5,5 @@ Optical: 20 Oct 2026, layer `HLS_S30_Nadir_BRDF_Adjusted_Reflectance`, fully cov
 Credit, optical: imagery from NASA Worldview (NASA EOSDIS GIBS), product HLS (NASA; made from Landsat and Sentinel-2).
 Credit, radar: Contains modified Copernicus Sentinel data (ESA, Copernicus), prepared as OPERA RTC-S1 (NASA).
 Fetched with the public NASA Worldview Snapshots API using the radar picture's bounds.
+
+`Radar_comparison.gif`: a screen recording of the app's Compare slider at Muhos, Finland: the radar picture before (Sentinel-1, 2 Jun 2025) against the picture after, for a slide. Credit: Contains modified Copernicus Sentinel data (ESA, Copernicus), prepared as OPERA RTC-S1 (NASA).
