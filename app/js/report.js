@@ -277,11 +277,12 @@ function viewText() {
 /** The map's own credit line (the base map shown), with the dated photos' source first when they are on. */
 function attributionText() {
   // the map's line already carries the Copernicus notice; take it out so the PDF puts it first, once
-  const text = document.querySelector(".maplibregl-ctrl-attrib-inner")?.textContent.replace(COPERNICUS_NOTICE, "")
-    .replace(/\s+/g, " ").replace(/^[\s|·]+|[\s|·]+$/g, "").trim();
+  const text = (document.querySelector(".maplibregl-ctrl-attrib-inner")?.textContent ?? "").replace(/\s+/g, " ")
+    .split(" | ").map((s) => s.trim()).filter((s) => s && s !== COPERNICUS_NOTICE).join(" | ");
   const base = text || "Background map: Esri and contributors";
-  const notice = COPERNICUS_NOTICE;
-  return hasPhotos() ? `Dated photo: NASA HLS (Landsat, Sentinel-2) · ${notice} · ${base}` : `${notice} · ${base}`;
+  return hasPhotos()
+    ? `Dated photo: NASA HLS (Landsat, Sentinel-2) · ${COPERNICUS_NOTICE} · ${base}`
+    : `${COPERNICUS_NOTICE} · ${base}`;
 }
 
 // --- the PDF ---
