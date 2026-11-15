@@ -186,6 +186,7 @@ async function main() {
     if (!current || loading) return;
     const features = filterChanges(current.changes.features);
     renderOverview(current.site, features);
+    timeline.setChanges(features); // the red bars on the timeline stand for the selected changes
     map.setShownIds(isActive() ? new Set(features.map((f) => f.properties.id)) : null);
     map.setAreaOutline(getSelection().area);
     inbox.setPool(features);
