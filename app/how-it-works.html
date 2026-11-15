@@ -113,7 +113,7 @@
       <ul class="labels">
         <li><span class="swatch" style="background:var(--c-expected)"></span><div><b>Expected:</b> a record explains the change, for example a registered building, land planned for development, land set aside for a port or airport, a listed solar plant, or a recorded wildfire.</div></li>
         <li><span class="swatch" style="background:var(--c-review)"></span><div><b>Needs review:</b> no record we could check explains it, or the land is not zoned for building, or an official step is on record.</div></li>
-        <li><span class="swatch" style="background:var(--c-high_concern)"></span><div><b>High concern:</b> the change is inside a protected area, or it is large and on land where building is not allowed with nothing to explain it.</div></li>
+        <li><span class="swatch" style="background:var(--c-high_concern)"></span><div><b>High concern:</b> the change is inside a protected area, or it is large and on land where building is not allowed with nothing to explain it, or an official record shows that a required assessment or permit was not finished when the work happened.</div></li>
         <li><span class="swatch" style="background:var(--c-none)"></span><div><b>Not labelled yet:</b> the change has not been checked against records.</div></li>
       </ul>
       <p>Very small changes with low confidence are not flagged on size alone. Records that could not be reached are listed as such, and the label then rests on size. A label is a prompt for a person to look, not a finding of wrongdoing.</p>
@@ -174,5 +174,12 @@
       </ul>
     </section>
   </main>
+  <script>
+    // "Map" brings the user back to the site, filter and base map they left (saved by the app in main.js).
+    try {
+      const h = sessionStorage.getItem("parallax-hash");
+      if (h && /^#[\w=&.,%:-]*$/.test(h)) for (const a of document.querySelectorAll('a[href="./"]')) a.href = "./" + h;
+    } catch {}
+  </script>
 </body>
 </html>

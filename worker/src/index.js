@@ -99,7 +99,7 @@ function plainLabels(f) {
 function buildPrompt(rawFacts) {
   const facts = plainLabels(rawFacts);
   return [
-    "You write a short summary of land-surface changes detected by radar satellites, for a manager at a public authority who is not a specialist.",
+    "You write a short summary of land-surface changes seen in satellite data, for a manager at a public authority who is not a specialist.",
     "",
     "Rules:",
     "- Write at most 180 words of plain English, as 2 short paragraphs.",
@@ -108,6 +108,7 @@ function buildPrompt(rawFacts) {
     "- Say what was detected, where and when, how much (hectares), and which changes to look at first.",
     "- Use the label names exactly as written in the facts (high concern, needs review, expected, not labelled yet), never codes with underscores.",
     "- A label (expected, needs review, high concern) is a prompt for a person to check. It is never a finding of wrongdoing.",
+    '- Say "satellite data show" (or similar). Never say which kind of satellite or sensor (radar, optical) was used, because the facts do not say.',
     "- Do not guess who did it or why. Do not name companies or people.",
     '- Never use the words "illegal" or "unlawful".',
     "- No headings, no lists, no markdown.",

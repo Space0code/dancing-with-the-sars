@@ -97,6 +97,7 @@ async function main() {
       aoi.toParams(params);
       try {
         history.replaceState(null, "", `${location.pathname}${location.search}#${params.toString().replaceAll("%2C", ",")}`); // commas stay readable in bbox=w,s,e,n
+        sessionStorage.setItem("parallax-hash", location.hash); // the How it works and FAQ pages bring the user back here
       } catch {} // Safari refuses more than ~100 calls in 30 s: the link just stays at its last state
     }, 250);
   }
@@ -245,6 +246,7 @@ async function main() {
     $("site").value = "";
     $("fake-badge").hidden = true;
     history.replaceState(null, "", location.pathname + location.search);
+    try { sessionStorage.removeItem("parallax-hash"); } catch {}
     drawer.close();
     clearSelection();
     timeFrame.setSite(null);
@@ -273,6 +275,7 @@ async function main() {
     $("export-btn").hidden = false;
     drawer.close();
     history.replaceState(null, "", `#site=${site.id}`);
+    try { sessionStorage.setItem("parallax-hash", location.hash); } catch {}
     clearTimeout(hashTimer); // a pending write still describes the old site: drop it, and write nothing while this one loads
     selectedId = null;
     lastDate = null;

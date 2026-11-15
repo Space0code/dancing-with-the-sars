@@ -4,13 +4,13 @@
 // Rules and wording: kb/report.md. jsPDF is loaded from a CDN only when a report is made.
 import { VERDICTS, verdictKey, formatArea, formatDate, safeUrl } from "./format.js";
 import { registerExportFormat, downloadBlob } from "./export.js";
-import { describeSelection } from "./selection.js";
+import { describeSelection, getSelection } from "./selection.js";
 import { whenText } from "./seen.js";
 import { REPORT_API, REPORT_TIMEOUT_MS } from "./config.js";
 
 const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 const AUTOTABLE = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js";
-const FOOTER = "Parallax · radar data: NISAR (NASA/ISRO), Sentinel-1 (ESA), NASA OPERA and HLS products · labels come from rules on public records and are prompts for review, not findings";
+const FOOTER = "Parallax · radar: NISAR (NASA/ISRO), Sentinel-1 (ESA, as NASA's OPERA RTC-S1 product); optical alerts and photos: NASA's OPERA DIST-ALERT and HLS products from Landsat (NASA/USGS) and Sentinel-2 (ESA) · labels come from rules on public records and are prompts for review, not findings";
 const ORDER = ["high_concern", "review", "none", "expected"]; // the priority order of labels
 const BAD_WORDS = /illegal|unlawful/i;
 
@@ -174,12 +174,30 @@ function toJpeg(dataUrl) {
 }
 
 const $ = (id) => document.getElementById(id);
+
+/** " (west, south to east, north: 26.06, 64.80 to 26.15, 64.85)" so the report can be reproduced; "" without an area. */
+function areaBox() {
+  const pts = [];
+  const walk = (c) => (typeof c[0] === "number" ? pts.push(c) : c.forEach(walk));
+  const g = getSelection().area;
+  if (!g?.coordinates) return "";
+  walk(g.coordinates);
+  if (!pts.length) return "";
+  const xs = pts.map((p) => p[0]);
+  const ys = pts.map((p) => p[1]);
+  const f = (n) => n.toFixed(2);
+  return ` (west, south to east, north: ${f(Math.min(...xs))}, ${f(Math.min(...ys))} to ${f(Math.max(...xs))}, ${f(Math.max(...ys))})`;
+}
 const isRadar = () => $("view-radar")?.getAttribute("aria-checked") === "true";
 
-/** What the map shows now: picture type and date, read from the page. */
+/** What the map shows now, read from the page: the picture's own satellite and date (the label under the view switch)
+ *  and the slider date, which is the date up to which changes are shown. */
 function viewText() {
+  const kind = isRadar() ? "Radar" : "Satellite photo";
+  const frame = $("frame-label")?.textContent.replace(/\s*·\s*/g, ", ").trim(); // "Landsat · 3 Sept 2026" -> "Landsat, 3 Sept 2026"
   const date = $("date-label")?.textContent.split("·")[0].trim(); // "26 Oct 2026 · image 68 of 68" -> the date
-  return `${isRadar() ? "Radar" : "Satellite"} picture${date ? `, date shown: ${date}` : ""}`;
+  const picture = !frame || /^No /i.test(frame) ? `${kind}, no picture for this date` : `${kind}, ${frame}`;
+  return `${picture}${date ? ` · changes shown up to ${date}` : ""}`;
 }
 
 function attributionText() {
@@ -217,7 +235,7 @@ export async function buildReport(ctx, aiText, picture) {
   text("Parallax report", M, y + 6); y += 13;
   doc.setFontSize(13); text(ctx.site.name, M, y); y += 6;
   doc.setFont("helvetica", "normal").setFontSize(9.5).setTextColor(...GREY);
-  for (const l of [`Selection: ${describeSelection() || "Whole site, all dates"}`, `View on the map: ${viewText()}`, `Report made: ${formatDate(new Date().toISOString().slice(0, 10))}`]) { text(l, M, y); y += 4.5; }
+  for (const l of [`Selection: ${(describeSelection() || "Whole site, all dates").replace("area", `area${areaBox()}`)}`, `Map picture: ${viewText()}`, `Report made: ${formatDate(new Date().toISOString().slice(0, 10))}`]) { text(l, M, y); y += 4.5; }
   y += 2;
 
   // map picture, legend, attribution
