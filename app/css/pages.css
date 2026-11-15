@@ -64,3 +64,22 @@ body.page { display: block; height: auto; min-height: 100dvh; background: var(--
   .contents ol { columns: 1; }
   .doc { padding-top: var(--s-5); }
 }
+
+/* Phones (QR-code visitors): readable diagram, roomier tap targets, tighter tables */
+@media (max-width: 600px) {
+  .doc .lede { font-size: 17px; }
+  .doc h2 { font-size: 22px; }
+  .contents li { margin: 0; }
+  .contents li a { display: inline-block; padding: 6px 0; }
+  /* The 760-wide flow diagram shrinks to unreadable text at phone width: keep it legible and let it scroll sideways */
+  .doc > * { min-width: 0; }
+  .diagram { padding: var(--s-3); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .diagram svg { min-width: 640px; }
+  .doc table { font-size: 13px; }
+  .doc th, .doc td { padding: var(--s-2) 6px; overflow-wrap: anywhere; hyphens: auto; }
+  /* Whole question row is the tap target, not just the text */
+  .faq details { padding: 0; }
+  .faq summary { padding: var(--s-3) 0; font-size: 18px; }
+  .faq details[open] { padding-bottom: var(--s-3); }
+  .faq summary + p { margin-top: 0; }
+}
