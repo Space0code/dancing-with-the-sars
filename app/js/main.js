@@ -12,6 +12,7 @@ import { createRecords } from "./records.js";
 import { filterChanges, getSelection, isActive, clearSelection, onSelectionChange, describeSelection } from "./selection.js";
 import { createExport } from "./export.js";
 import "./report.js"; // registers the "PDF report" export format
+import "./download.js"; // registers the GeoJSON, Shapefile and GeoTIFF formats
 import { createBasemap } from "./basemap.js";
 
 const $ = (id) => document.getElementById(id);
