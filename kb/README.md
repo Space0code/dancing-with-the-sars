@@ -19,6 +19,7 @@ What we know, written for engineers (CS / math / EE), not geologists. One line p
 | [submission-form.md](submission-form.md) | The paste-ready text for every field of the project form (15 Nov), plus the images to upload and the pre-submit checks |
 | [official-rules.md](official-rules.md) | Organizers' emails, guides and forum checked 15 Nov: **Barcelona deadline Sun 16:00**, eligibility traps, team page, awards, the challenge's own questions, questions for 09:00 |
 | [demo-strategy.md](demo-strategy.md) | What wins: the one-sentence claim, **the 7-slide deck + 2–3 min talk decision (15 Nov, no 30 s video)**, the live pitch, the project page, what we leave out |
+| [past-winners.md](past-winners.md) | What 2025 Global Winners did in their demos (award categories, deck patterns) and what that means for our deck |
 | [evidence-check.md](evidence-check.md) | Sceptical check of every demo claim against our results: support, rival explanations, defensible wording, go / no-go per site, fallbacks, what to measure next |
 | [report-proxy.md](report-proxy.md) | Cloudflare Worker that writes the AI summary for the PDF report: schema, guard rails, rate limit, deploy and key rotation |
 | [report.md](report.md) | The PDF report: contents, the priority rule (also the planned alert trigger), AI vs rule-based summary |
