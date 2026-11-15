@@ -16,8 +16,9 @@ function snapshotsOf(site, features) {
   return [...dates].filter((d) => d >= site.time_range[0] && d <= site.time_range[1]).sort().map((date) => ({ date, sensor: "" }));
 }
 
-/** `onDate(iso)`: the slider moved to a snapshot. `describe(iso)`: the small text after the date (which picture this is), or "". */
-export function createTimeline({ onDate, describe = () => "" }) {
+/** `onDate(iso)`: the slider moved to a snapshot. `describe(iso)`: the small text after the date (which picture this is), or "".
+ * `pictured()`: false when no dated pictures are on the map (the Satellite imagery): a gap is then one in the passes. */
+export function createTimeline({ onDate, describe = () => "", pictured = () => true }) {
   const $ = (id) => document.getElementById(id);
   const slider = $("slider");
   const playBtn = $("play");
@@ -41,11 +42,11 @@ export function createTimeline({ onDate, describe = () => "" }) {
   function emit() {
     const stop = stops[index()];
     const sub = describe(stop.date);
-    $("date-label").replaceChildren(formatDate(stop.date), sub ? h("span", { class: "date-sub" }, ` · ${sub}`) : null);
+    $("date-label").replaceChildren(formatDate(stop.date), ...(sub ? [h("span", { class: "date-sub" }, ` · ${sub}`)] : [])); // no sub: the date alone (null would print "null")
     // Just stepped past a long gap in the snapshots (winter, left out on purpose): say so instead of silently jumping.
     const prev = stops[index() - 1];
     const gap = prev && toDay(stop.date) - toDay(prev.date) > GAP_DAYS;
-    $("gap-note").textContent = gap ? `No pictures between ${formatDate(prev.date)} and ${formatDate(stop.date)}` : "";
+    $("gap-note").textContent = gap ? `No ${pictured() ? "pictures" : "satellite passes"} between ${formatDate(prev.date)} and ${formatDate(stop.date)}` : "";
     onDate(stop.date);
   }
 

@@ -42,21 +42,34 @@
   <main>
     <div class="map-wrap">
       <div id="map" aria-label="Map of detected land changes"></div>
-      <section id="viewbox" class="viewbox" aria-label="Picture on the map" hidden>
-        <div class="view-row">
-          <div class="switch" role="radiogroup" aria-label="Picture">
-            <button id="view-radar" type="button" role="radio" aria-checked="true">Radar</button>
-            <button id="view-photo" type="button" role="radio" aria-checked="false">Satellite</button>
-          </div>
-          <button id="compare-btn" type="button" class="compare" aria-pressed="false">Compare</button>
-          <button id="overlay-btn" type="button" class="toggle" aria-pressed="true" aria-label="Marked areas"><span class="knob" aria-hidden="true"></span>Marked areas</button>
+      <div id="leftpanel" class="leftpanel" data-shown="true">
+        <div id="leftcard" class="leftcard" aria-label="Picture, base map, legend and records">
+          <section id="viewbox" class="group" aria-label="Picture on the map" hidden>
+            <p class="group-label">Picture</p>
+            <div class="view-row">
+              <div id="picture-switch" class="switch" role="radiogroup" aria-label="Picture">
+                <button id="view-radar" type="button" role="radio" aria-checked="true">Radar</button>
+                <button id="view-photo" type="button" role="radio" aria-checked="false">Satellite</button>
+              </div>
+              <button id="compare-btn" type="button" class="compare" aria-pressed="false">Compare</button>
+            </div>
+            <button id="photos-btn" type="button" class="toggle photos-toggle" aria-pressed="false" title="Dated colour photos, 30 m per pixel, instead of the sharp undated imagery" hidden><span class="knob" aria-hidden="true"></span>Dated photos</button>
+            <p id="frame-label" class="frame-label" aria-live="polite"></p>
+          </section>
+          <div id="basemap-box" class="group basemap"></div>
+          <section id="legend-box" class="group" aria-label="Legend">
+            <div class="legend-head">
+              <p class="group-label">Legend</p>
+              <button id="overlay-btn" type="button" class="toggle" aria-pressed="true" aria-label="Marked areas"><span class="knob" aria-hidden="true"></span>Marked areas</button>
+            </div>
+            <ul id="legend"></ul>
+          </section>
+          <section id="records-box" class="group records" aria-label="Record layers" hidden></section>
         </div>
-        <p id="frame-label" class="frame-label" aria-live="polite"></p>
-      </section>
-      <div class="legend" id="legend-box" aria-label="Legend">
-        <ul id="legend"></ul>
-        <section id="records-box" class="records" aria-label="Record layers" hidden></section>
-        <div id="basemap-box" class="basemap"></div>
+        <button id="panel-toggle" class="panel-handle" type="button" aria-expanded="true" aria-controls="leftcard" aria-label="Hide legend">
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="panel-handle-text">Legend</span>
+        </button>
       </div>
       <section id="tour" class="tour" aria-label="Guided tour" aria-live="polite" hidden></section>
       <section id="intro" class="intro" aria-label="Start" hidden></section>

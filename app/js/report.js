@@ -189,20 +189,26 @@ function areaBox() {
   return ` (west, south to east, north: ${f(Math.min(...xs))}, ${f(Math.min(...ys))} to ${f(Math.max(...xs))}, ${f(Math.max(...ys))})`;
 }
 const isRadar = () => $("view-radar")?.getAttribute("aria-checked") === "true";
+const hasPhotos = () => !isRadar() && $("photos-btn")?.getAttribute("aria-pressed") === "true"; // Satellite with Dated photos on
 
 /** What the map shows now, read from the page: the picture's own satellite and date (the label under the view switch)
- *  and the slider date, which is the date up to which changes are shown. */
+ *  and the slider date, which is the date up to which changes are shown. The Satellite view without dated photos shows
+ *  the Imagery base map, which has no date. */
 function viewText() {
+  const date = $("date-label")?.textContent.split("·")[0].trim(); // "26 Oct 2026 · image 68 of 68" -> the date
+  const upTo = date ? ` · changes shown up to ${date}` : "";
+  if (!isRadar() && !hasPhotos()) return `Imagery · undated · may be older${upTo}`;
   const kind = isRadar() ? "Radar" : "Satellite photo";
   const frame = $("frame-label")?.textContent.replace(/\s*·\s*/g, ", ").trim(); // "Landsat · 3 Sept 2026" -> "Landsat, 3 Sept 2026"
-  const date = $("date-label")?.textContent.split("·")[0].trim(); // "26 Oct 2026 · image 68 of 68" -> the date
   const picture = !frame || /^No /i.test(frame) ? `${kind}, no picture for this date` : `${kind}, ${frame}`;
-  return `${picture}${date ? ` · changes shown up to ${date}` : ""}`;
+  return `${picture}${upTo}`;
 }
 
+/** The map's own credit line (the base map shown), with the dated photos' source first when they are on. */
 function attributionText() {
   const text = document.querySelector(".maplibregl-ctrl-attrib-inner")?.textContent.replace(/\s+/g, " ").trim();
-  return text || "Background map: Esri and contributors";
+  const base = text || "Background map: Esri and contributors";
+  return hasPhotos() ? `Dated photo: NASA HLS (Landsat, Sentinel-2) · ${base}` : base;
 }
 
 // --- the PDF ---

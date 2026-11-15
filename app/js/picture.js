@@ -1,18 +1,21 @@
 // Written by Claude. The big picture on the map: the Radar / Satellite switch, the radar frame
 // or colour photo of the slider date (frames.json, latest at or before the date), and the before/after swipe.
+// Satellite shows the sharp, undated Imagery base map (no frame) unless "Dated photos" is on: then the 30 m photo of the date.
 // Frames are drawn on one canvas that the map shows over the site; neighbouring frames are preloaded so play doesn't flicker.
 import { formatDate } from "./format.js";
 import { createSwipe } from "./swipe.js";
 
 const PRELOAD_AHEAD = 5;
 const NO_LABEL = { radar: "No radar picture", photo: "No photo" };
+const IMAGERY_LABEL = "Imagery · undated · may be older";
 
-/** `map`: from map.js. `mapWrap`: the element around the map (the swipe line goes there). */
+/** `map`: from map.js. `mapWrap`: the element around the map (the swipe line goes there). `onView`: the view or Dated photos changed. */
 export function createPicture(map, mapWrap, { onView } = {}) {
   const $ = (id) => document.getElementById(id);
   const box = $("viewbox");
   const buttons = { radar: $("view-radar"), photo: $("view-photo") };
   const compareBtn = $("compare-btn");
+  const photosBtn = $("photos-btn");
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   const images = new Map(); // full url -> Promise<HTMLImageElement | null>
@@ -21,6 +24,7 @@ export function createPicture(map, mapWrap, { onView } = {}) {
   let coordinates = null;
   let sets = {}; // "radar" / "photo" -> {caption, frames}
   let view = "radar";
+  let photos = false; // Satellite view: dated photos instead of the background imagery
   let date = null;
   let comparing = false;
   let token = 0; // newest render request; older ones that finish late are dropped
@@ -41,6 +45,9 @@ export function createPicture(map, mapWrap, { onView } = {}) {
     }
     return images.get(full);
   }
+
+  /** The set of dated pictures on the map now: radar, the photos (Satellite with Dated photos on), or none (the imagery). */
+  const active = () => (view === "radar" ? sets.radar : photos ? sets.photo : null);
 
   /** Index of the latest frame on or before `iso`, or -1. */
   function frameIndex(set, iso) {
@@ -95,7 +102,7 @@ export function createPicture(map, mapWrap, { onView } = {}) {
   /** Show the frame(s) for the current view, date and compare state, once their pictures have loaded. */
   async function render() {
     const my = ++token;
-    const set = sets[view];
+    const set = active();
     const i = date ? frameIndex(set, date) : -1;
     const after = i >= 0 ? set.frames[i] : null;
     const before = comparing && set ? set.frames[0] : null;
@@ -107,15 +114,18 @@ export function createPicture(map, mapWrap, { onView } = {}) {
     if (my !== token) return;
     shown = { before: b, after: a };
     draw();
-    $("frame-label").textContent = set ? labelFor(after) : "";
+    $("frame-label").textContent = set ? labelFor(after) : view === "photo" ? IMAGERY_LABEL : "";
     swipe.setLabels(before ? sideLabel("Before", before) : "", after ? sideLabel("After", after) : "After: no picture");
   }
 
   function update() {
     for (const [key, btn] of Object.entries(buttons)) btn.setAttribute("aria-checked", String(key === view));
     buttons.radar.disabled = !sets.radar;
-    if (!sets[view]) comparing = false;
-    compareBtn.disabled = !sets[view];
+    if (!active()) comparing = false;
+    photosBtn.hidden = view !== "photo" || !sets.photo;
+    photosBtn.setAttribute("aria-pressed", String(photos));
+    compareBtn.disabled = !(view === "radar" ? sets.radar : sets.photo); // in Satellite, Compare turns Dated photos on first
+    compareBtn.title = view === "photo" && !photos && sets.photo ? "Compare uses the dated photos: this turns them on" : "";
     compareBtn.setAttribute("aria-pressed", String(comparing));
     swipe.show(comparing);
     render();
@@ -124,8 +134,10 @@ export function createPicture(map, mapWrap, { onView } = {}) {
   for (const [key, btn] of Object.entries(buttons)) btn.addEventListener("click", () => key !== view && api.setView(key));
   compareBtn.addEventListener("click", () => {
     comparing = !comparing;
+    if (comparing && !active()) return api.setPhotos(true); // the imagery has no date: compare the dated photos
     update();
   });
+  photosBtn.addEventListener("click", () => api.setPhotos(!photos));
 
   const api = {
     /** A loaded site ({base, frames}), or null for the intro screen (no picture, no switch). */
@@ -136,6 +148,7 @@ export function createPicture(map, mapWrap, { onView } = {}) {
       coordinates = site?.frames?.coordinates ?? null;
       sets = Object.fromEntries((site?.frames?.sets ?? []).filter((s) => s.frames?.length).map((s) => [s.id, s]));
       view = sets.radar ? "radar" : "photo";
+      photos = false;
       date = null;
       comparing = false;
       shown = { before: null, after: null };
@@ -150,21 +163,34 @@ export function createPicture(map, mapWrap, { onView } = {}) {
       update();
       onView?.(view);
     },
-    /** The open view's pictures as timeline stops [{date, sensor}], or null when the site has no pictures in that view. */
+    /** Satellite view: show the dated photos (true) or the background imagery (false). Ignored without a photo set. */
+    setPhotos(on) {
+      const next = Boolean(on) && Boolean(sets.photo);
+      if (box.hidden || next === photos) return;
+      photos = next;
+      update();
+      onView?.(view);
+    },
+    /** The dated pictures on the map as timeline stops [{date, sensor}], or null when none are shown (Satellite imagery). */
     stops() {
-      return sets[view]?.frames.map(({ date, sensor }) => ({ date, sensor })) ?? null;
+      return active()?.frames.map(({ date, sensor }) => ({ date, sensor })) ?? null;
     },
     get view() {
       return view;
     },
+    /** Dated photos on (only ever true when the site has a photo set). */
+    get photos() {
+      return photos;
+    },
     /**
      * Which picture the open view shows at `iso`, for the timeline: "picture 12 of 63" on a date that has its own picture,
      * "no new picture" on a date between two pictures (it keeps showing the last one; the label under the switch names it),
-     * "no picture yet" before the first, and "" when the view has no pictures at all. The slider steps through every pass
+     * "no picture yet" before the first, and "" when no dated pictures are shown (the Satellite imagery has no date, so the
+     * slider's stops are the site's passes, not pictures). The slider steps through every pass
      * of the site, so its step number is not the picture number.
      */
     position(iso) {
-      const set = sets[view];
+      const set = active();
       if (!set) return "";
       const i = frameIndex(set, iso);
       if (i < 0) return "no picture yet";
