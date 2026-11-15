@@ -9,7 +9,9 @@ import { createInbox, kindName } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
 import { createRecords } from "./records.js";
-import { filterChanges, getSelection, isActive, clearSelection, onSelectionChange, describeSelection } from "./selection.js";
+import { filterChanges, getSelection, isActive, clearSelection, setArea, onSelectionChange, describeSelection } from "./selection.js";
+import { createTimeFrame } from "./timeframe.js";
+import { createAoi } from "./aoi.js";
 import { createExport } from "./export.js";
 import { createBasemap } from "./basemap.js";
 
@@ -89,8 +91,10 @@ async function main() {
       if (picture.view !== "radar" && picture.stops()) params.set("view", "satellite"); // a site without photos stays in Radar
       if (selectedId) params.set("change", selectedId);
       if (basemap.value !== "satellite") params.set("base", basemap.value);
+      timeFrame.toParams(params);
+      aoi.toParams(params);
       try {
-        history.replaceState(null, "", `${location.pathname}${location.search}#${params}`);
+        history.replaceState(null, "", `${location.pathname}${location.search}#${params.toString().replaceAll("%2C", ",")}`); // commas stay readable in bbox=w,s,e,n
       } catch {} // Safari refuses more than ~100 calls in 30 s: the link just stays at its last state
     }, 250);
   }
@@ -134,6 +138,16 @@ async function main() {
   const records = createRecords(map.maplibre, $("records-box"));
   const basemap = createBasemap(map, $("basemap-box"), { onChange: () => writeHash() });
 
+  // Filter block (time frame and area) in the site drawer; the draw tool moves the drawer out of the way.
+  const timeFrame = createTimeFrame($("tools-filter"));
+  const aoi = createAoi($("tools-filter"), {
+    map,
+    getSite: () => current?.site,
+    hideDrawer: () => drawer.close(),
+    showDrawer: () => showSiteDrawer(),
+    room: () => Math.min(480, $("map").clientWidth * 0.4),
+  });
+
   // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
   const syncStops = () => {
     timeline.setStops(picture.view === "radar" ? null : picture.stops());
@@ -176,6 +190,7 @@ async function main() {
     if (selectedId && !features.some((f) => f.properties.id === selectedId)) select(null);
   }
   onSelectionChange(applySelection);
+  onSelectionChange(() => writeHash()); // the link carries the time frame and the box
   $("filter-clear").addEventListener("click", clearSelection);
   const timeline = createTimeline({
     onDate(iso) {
@@ -224,6 +239,8 @@ async function main() {
     history.replaceState(null, "", location.pathname + location.search);
     drawer.close();
     clearSelection();
+    timeFrame.setSite(null);
+    aoi.setSite();
     $("changes-btn").hidden = true;
     $("export-btn").hidden = true;
     renderIntro(sites, { onPick: (id) => openSite(id).catch((err) => showError(err.message)), onTour: () => tour.start() });
@@ -255,6 +272,8 @@ async function main() {
     try {
       clearSelection(); // a selection belongs to one site
       current = await loadSite(site);
+      timeFrame.setSite(site);
+      aoi.setSite();
       renderOverview(site, current.changes.features);
       inbox.setSite(current.changes.features);
       map.setExtraFilter(null);
@@ -285,6 +304,10 @@ async function main() {
       tour.end();
       await openSite(id);
     }
+    const wantsChange = current.changes.features.some((f) => f.properties.id === params.get("change"));
+    timeFrame.fromParams(params); // unknown or bad values are ignored
+    if (params.get("bbox")) aoi.fromParams(params, { zoom: !wantsChange });
+    else if (getSelection().area) setArea(null);
     basemap.set(params.get("base")); // anything but "light" is the default satellite map
     const view = params.get("view");
     if (view === "radar" || view === "satellite") picture.setView(view === "satellite" ? "photo" : "radar"); // anything else is ignored; before the date, so the slider has the view's stops
