@@ -2,6 +2,8 @@
 
     python explore/barcelona/figures.py                       # overview.jpg
     python explore/barcelona/figures.py 0010 0060 0057        # + zoom-<id>.jpg per change: before | after
+    python explore/barcelona/figures.py --recent 2024         # overview-recent.jpg: older changes thin grey,
+                                                              # changes first seen from that year on in colour
 
 Reads app/data/barcelona/ only (no radar cache): the Sentinel-1 "after" site picture with every change outlined and
 filled in the colour of its first year, and the card pictures (evidence/) side by side with one line of facts.
@@ -31,7 +33,7 @@ def changes() -> list:
     return json.loads((SITE / "changes.geojson").read_text(encoding="utf-8"))["features"]
 
 
-def overview(path: Path, width: int = 1400) -> None:
+def overview(path: Path, width: int = 1400, recent: int | None = None) -> None:
     layer = next(x for x in json.loads((SITE / "layers.json").read_text(encoding="utf-8"))["layers"]
                  if x["id"] == "sentinel_1_c_band_after")
     img = Image.open(SITE / layer["url"]).convert("RGB")
@@ -44,18 +46,23 @@ def overview(path: Path, width: int = 1400) -> None:
     draw = ImageDraw.Draw(fill)
     for f in changes():
         p = f["properties"]
-        colour = YEAR_COLOURS[int(p["first_date"][:4])]
+        year = int(p["first_date"][:4])
+        colour = YEAR_COLOURS[year]
+        older = recent is not None and year < recent
         geom = shape(f["geometry"])
         for poly in getattr(geom, "geoms", [geom]):
             xs, ys = to_utm.transform(*np.asarray(poly.exterior.coords).T)
             pts = list(zip((np.asarray(xs) - x0) * sx, (np.asarray(ys) - y0) * sy))
+            if older:  # background: a thin grey outline, no fill, no ring
+                draw.polygon(pts, outline=(200, 200, 200, 255))
+                continue
             draw.polygon(pts, fill=colour + (200,), outline=colour + (255,))
             cx, cy = np.mean(pts, axis=0)
             r = 9  # a ring around every change, so small ones show at this scale
             draw.ellipse((cx - r, cy - r, cx + r, cy + r), outline=colour + (255,), width=2)
     out = Image.alpha_composite(base.convert("RGBA"), fill).convert("RGB")
     legend = ImageDraw.Draw(out)
-    for i, (year, colour) in enumerate(YEAR_COLOURS.items()):
+    for i, (year, colour) in enumerate(y for y in YEAR_COLOURS.items() if recent is None or y[0] >= recent):
         y = 12 + 22 * i
         legend.rectangle((12, y, 30, y + 16), fill=colour)
         legend.text((36, y + 2), f"first seen {year}", fill=(255, 255, 255))
@@ -81,6 +88,10 @@ def zoom(cid: str, path: Path) -> None:
 
 
 if __name__ == "__main__":
-    overview(OUT / "overview.jpg")
-    for cid in sys.argv[1:]:
-        zoom(cid, OUT / f"zoom-{cid}.jpg")
+    args = sys.argv[1:]
+    if args[:1] == ["--recent"]:
+        overview(OUT / "overview-recent.jpg", recent=int(args[1]))
+    else:
+        overview(OUT / "overview.jpg")
+        for cid in args:
+            zoom(cid, OUT / f"zoom-{cid}.jpg")

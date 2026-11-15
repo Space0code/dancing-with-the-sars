@@ -595,6 +595,53 @@ def test_top_changes_keeps_the_largest_and_counts_low_confidence_at_half():
     assert pipeline.top_changes(changes, 10) is changes
 
 
+def _merged(side_deg, day, confidence="medium", role="detected"):
+    from sarwatch.export import Merged
+
+    ring = [[2.0, 41.0], [2.0 + side_deg, 41.0], [2.0 + side_deg, 41.0 + side_deg], [2.0, 41.0 + side_deg],
+            [2.0, 41.0]]
+    return Merged(geometry={"type": "Polygon", "coordinates": [ring]}, type="structure", first_date=day,
+                  last_date=day, not_before=None, confidence=confidence, sensor="x", explain="",
+                  sources=[{"role": role}], run=0)
+
+
+def test_top_changes_recent_first_then_the_largest_older():
+    recent_from = date(2024, 1, 1)
+    old_big = _merged(0.010, date(2018, 6, 1))
+    old_mid = _merged(0.006, date(2020, 6, 1))
+    old_small = _merged(0.003, date(2019, 6, 1))
+    new_small = _merged(0.002, date(2025, 6, 1))
+    new_tiny = _merged(0.0015, date(2026, 6, 1))
+    changes = [old_big, old_mid, old_small, new_small, new_tiny]
+    # the recent ones always stay, older ones fill the rest by size
+    assert pipeline.top_changes(changes, 3, recent_from) == [old_big, new_small, new_tiny]
+    assert pipeline.top_changes(changes, 4, recent_from) == [old_big, old_mid, new_small, new_tiny]
+    # the cap on recent ones keeps the largest of them, the rest of the places go to older ones
+    assert pipeline.top_changes(changes, 3, recent_from, max_recent=1) == [old_big, old_mid, new_small]
+    # even with room for everything, the filter below still applies (no early return)
+    assert pipeline.top_changes(changes, 10, recent_from) == changes
+
+
+def test_top_changes_recent_filters_and_late_starts():
+    recent_from = date(2024, 1, 1)
+    weak = _merged(0.0015, date(2025, 6, 1), confidence="low")      # ~2.8 ha counts 1.4: below 2 ha, low confidence
+    strong = _merged(0.0015, date(2025, 6, 1))
+    big_low = _merged(0.003, date(2025, 6, 1), confidence="low")    # ~11 ha: kept
+    late = _merged(0.004, date(2026, 6, 23), role="late_start")     # NISAR's first pass: not dated, so not recent
+    old = _merged(0.002, date(2019, 6, 1))
+    kept = pipeline.top_changes([weak, strong, big_low, late, old], 3, recent_from, recent_low_conf_ha=4.0)
+    assert weak not in kept and strong in kept and big_low in kept
+    assert late in kept and old not in kept  # the late start competes with the older ones, by size
+    assert pipeline.is_recent(strong, recent_from) and not pipeline.is_recent(late, recent_from)
+
+
+def test_top_changes_defaults_are_unchanged_without_recent_from():
+    changes = [_merged(0.003, date(2025, 6, 1)), _merged(0.010, date(2018, 6, 1)), _merged(0.006, date(2020, 6, 1))]
+    assert pipeline.top_changes(changes, 2) == [changes[1], changes[2]]
+    assert pipeline.top_changes(changes, 5) is changes
+    assert all(site.recent_from is None for sid, site in pipeline.SITES.items() if sid != "barcelona")
+
+
 # ---- several sources: the optical alerts carry the clearing's parts, the radar is attached (Muhos)
 
 def _s1_run(change_pass=5):
