@@ -6,7 +6,7 @@ import { h, formatArea, safeUrl } from "./format.js";
 const QUESTIONS = [
   { key: "protected", q: "Protected natural area?", codes: ["protected_area", "protected_buffer"], none: "Not inside a protected area.", regional: true },
   { key: "zoning", q: "What does the zoning say?", codes: ["zoning_non_buildable", "zoning_urban", "planned_sector", "system_land"], none: "Nothing in the zoning changes the label.", regional: true },
-  { key: "cadastre", q: "On the land registry?", codes: ["cadastre_building_found", "no_record_found"], none: "No new building on record.", regional: true },
+  { key: "cadastre", q: "Registered buildings?", codes: ["cadastre_building_found", "no_record_found"], none: "No new building on record.", regional: true },
   { key: "solar", q: "A listed solar plant?", codes: ["solar_plant_listed", "solar_plant_other"], none: "No listed solar plant explains this change.", regional: true },
   { key: "fire", q: "A recorded wildfire?", codes: ["fire_recorded"], none: "No wildfire in the records we have." },
   { key: "official", q: "Any official record (assessment, orders)?", codes: ["assessment_missing", "official_stop_order", "official_investigation", "official_action"], none: "None in the records we have (official records are entered by hand)." },

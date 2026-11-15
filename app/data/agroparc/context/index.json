@@ -22,11 +22,11 @@
   },
   {
    "id": "buildings",
-   "title": "Buildings on the land registry",
+   "title": "Registered buildings",
    "kind": "buildings",
-   "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
+   "source": "Derived from Dirección General del Catastro data",
    "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx",
-   "note": "6537 buildings on the land registry; 150 built in 2016 or later, newest 2026. Construction year only, no exact date.",
+   "note": "6537 registered buildings, merged; 150 built in 2016 or later, newest 2026. Construction year only, no exact date.",
    "file": "buildings.geojson",
    "checked": "2026-11-14"
   }

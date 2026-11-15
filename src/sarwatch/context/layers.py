@@ -226,10 +226,10 @@ def buildings_layer(site_box, tol: float, focus=None):
                  + (f", built {year}" if year else ", year unknown"))
         feats.append((unary_union([shapely.make_valid(g) for g in gs]), {"label": label, "year": year}))
     recent = sum(1 for y in years if y >= 2016)
-    note = (f"{sum(len(gs) for gs in groups.values())} buildings on the land registry; {recent} built in 2016 or later"
+    note = (f"{sum(len(gs) for gs in groups.values())} registered buildings, merged; {recent} built in 2016 or later"
             + (f", newest {max(years)}" if years else "") + ". Construction year only, no exact date."
             + (f" Only within {FOCUS_M} m of a marked change." if focus is not None else ""))
-    return feats, {"id": "buildings", "title": "Buildings on the land registry", "kind": "buildings",
+    return feats, {"id": "buildings", "title": "Registered buildings", "kind": "buildings",
                    "source": cadastre.SOURCE, "url": cadastre.VIEWER, "note": note}
 
 

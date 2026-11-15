@@ -277,7 +277,8 @@ function viewText() {
 function attributionText() {
   const text = document.querySelector(".maplibregl-ctrl-attrib-inner")?.textContent.replace(/\s+/g, " ").trim();
   const base = text || "Background map: Esri and contributors";
-  return hasPhotos() ? `Dated photo: NASA HLS (Landsat, Sentinel-2) · ${base}` : base;
+  const notice = "Contains modified Copernicus Sentinel data (2016–2026)";
+  return hasPhotos() ? `Dated photo: NASA HLS (Landsat, Sentinel-2) · ${notice} · ${base}` : `${notice} · ${base}`;
 }
 
 // --- the PDF ---
@@ -349,7 +350,7 @@ export async function buildReport(ctx, aiSections, picture) {
     const add = (s, o = {}) => rows.push({ s, x: 0, bullet: "", font: "normal", size: 10, color: 30, gap: 0, keep: false, ...o });
     doc.setFont("helvetica", "normal").setFontSize(10);
     const wrap = (s, indent) => lines(s, W - 8 - indent);
-    if (aiSections) add("AI-written summary", { font: "bold", color: 0, keep: true });
+    if (aiSections) add("AI-written summary (Google Gemini)", { font: "bold", color: 0, keep: true });
     if (!t.n) wrap(emptySummary(ctx), 0).forEach((l) => add(l));
     else {
       const block = (title, items, bullets) => {
