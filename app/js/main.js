@@ -142,7 +142,11 @@ async function main() {
     drawer.close();
     e.preventDefault();
   });
-  const room = () => ({ bottom: tourRoom(), right: Math.min(480, $("map").clientWidth * 0.4) }); // the drawer covers the right side: keep the change clear of it
+  const phone = () => matchMedia("(max-width: 640px)").matches; // same breakpoint as css/style.css
+  // the drawer covers the right side (on a phone: the bottom two thirds, or all of the map during the tour): keep the change clear of it
+  const room = () => (phone()
+    ? { bottom: tour.active ? tourRoom() : Math.round($("map").clientHeight * 0.67), right: 0 }
+    : { bottom: tourRoom(), right: Math.min(480, $("map").clientWidth * 0.4) });
   $("changes-btn").addEventListener("click", () => (drawer.mode && drawer.mode !== "card" ? drawer.close() : (select(null), showSiteDrawer())));
   await map.ready;
   const records = createRecords(map.maplibre, $("records-box"));
@@ -263,13 +267,18 @@ async function main() {
         map.focus(feature, room());
       } else {
         select(null);
-        if (step.show === "filter") showSiteDrawer("inbox"); // the Filter block lives above the list of changes
+        if (step.show === "filter") { showSiteDrawer("inbox"); setFilterOpen(true); } // the Filter block lives above the list of changes, folded by default
         else drawer.close();
         map.view(current.site, tourRoom());
       }
       if (step.focus === "#basemap-box" && picture.view === "photo" && !picture.photos) picture.setView("radar"); // the base map can only be switched outside the Satellite imagery
-      if (step.focus && document.querySelector(step.focus)?.closest("#leftpanel")) { leftPanel.set(true); writeHash(); } // a step about the left card opens it first
-      if (step.focus) document.querySelector(step.focus)?.classList.add("tour-focus"); // outline the control the step talks about
+      const inCard = Boolean(step.focus && document.querySelector(step.focus)?.closest("#leftpanel"));
+      if (inCard || phone()) { leftPanel.set(inCard); writeHash(); } // a step about the left card opens it first; on a phone, the others fold it away
+      const target = step.focus && document.querySelector(step.focus);
+      if (target) {
+        target.classList.add("tour-focus"); // outline the control the step talks about
+        requestAnimationFrame(() => target.scrollIntoView({ block: "nearest", inline: "nearest" })); // inside a scrolled card on small screens
+      }
     },
   });
   $("tour-btn").addEventListener("click", () => tour.start());

@@ -241,7 +241,8 @@ export function createChangeMap(container, { onSelect, bounds }) {
       const pts = g.coordinates.flat(g.type === "MultiPolygon" ? 2 : 1);
       const lons = pts.map((p) => p[0]);
       const lats = pts.map((p) => p[1]);
-      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: { top: 60, right: 60 + right, left: 60, bottom: 60 + bottom }, maxZoom: 15, essential: true });
+      const m = container.clientWidth < 640 ? 20 : 60; // a phone map has no room for wide margins
+      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: { top: m, right: m + right, left: m, bottom: m + bottom }, maxZoom: 15, essential: true });
     },
     select(feature) {
       selectedId = feature ? feature.properties.id : "";
