@@ -216,7 +216,7 @@
      {
       "code": "cadastre_building_found",
       "text": "2 building(s) registered here date from 2013 or later (this change was already under way when the sensor began watching).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.340992&longitud=2.141505&zoom=18",
       "effect": "lowers"
      },
@@ -402,7 +402,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2013 or later (this change was already under way when the sensor began watching).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.314019&longitud=2.075794&zoom=18",
       "effect": "lowers"
      },
@@ -604,7 +604,7 @@
      {
       "code": "cadastre_building_found",
       "text": "2 building(s) registered here date from 2013 or later (this change was already under way when the sensor began watching).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.496484&longitud=1.917221&zoom=18",
       "effect": "lowers"
      },
@@ -782,7 +782,7 @@
      {
       "code": "cadastre_building_found",
       "text": "6 building(s) registered here date from 2013 or later (this change was already under way when the sensor began watching).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.554654&longitud=2.165879&zoom=18",
       "effect": "lowers"
      },
@@ -920,7 +920,7 @@
      {
       "code": "cadastre_building_found",
       "text": "4 building(s) registered here date from 2013 or later (this change was already under way when the sensor began watching).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.325127&longitud=2.131564&zoom=18",
       "effect": "lowers"
      },
@@ -1112,7 +1112,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2013 or later (this change was already under way when the sensor began watching).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.467807&longitud=1.953137&zoom=18",
       "effect": "lowers"
      },
@@ -1274,7 +1274,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered here is from the years the change could have started in, and no planned development area matches it. The record cannot date this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.562990&longitud=2.035698&zoom=18",
       "effect": "raises"
      },
@@ -1420,7 +1420,7 @@
      {
       "code": "cadastre_building_found",
       "text": "3 building(s) registered here date from 2013 or later (this change was already under way when the sensor began watching).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.356743&longitud=2.138450&zoom=18",
       "effect": "lowers"
      },
@@ -1574,7 +1574,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2013 or later (this change was already under way when the sensor began watching).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.532281&longitud=2.227918&zoom=18",
       "effect": "lowers"
      },
@@ -1864,7 +1864,7 @@
      {
       "code": "cadastre_building_found",
       "text": "4 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.466520&longitud=1.877780&zoom=18",
       "effect": "lowers"
      },
@@ -2160,7 +2160,7 @@
      {
       "code": "cadastre_building_found",
       "text": "21 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.438775&longitud=2.236943&zoom=18",
       "effect": "lowers"
      },
@@ -2346,7 +2346,7 @@
      {
       "code": "cadastre_building_found",
       "text": "13 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.549903&longitud=2.166977&zoom=18",
       "effect": "lowers"
      },
@@ -2548,7 +2548,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.331029&longitud=2.118377&zoom=18",
       "effect": "lowers"
      },
@@ -2726,7 +2726,7 @@
      {
       "code": "cadastre_building_found",
       "text": "23 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.386457&longitud=2.060665&zoom=18",
       "effect": "lowers"
      },
@@ -3092,7 +3092,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.330998&longitud=2.140699&zoom=18",
       "effect": "raises"
      },
@@ -3230,7 +3230,7 @@
      {
       "code": "cadastre_building_found",
       "text": "2 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.377355&longitud=2.098590&zoom=18",
       "effect": "lowers"
      },
@@ -3402,7 +3402,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.495210&longitud=2.062945&zoom=18",
       "effect": "raises"
      },
@@ -3556,7 +3556,7 @@
      {
       "code": "cadastre_building_found",
       "text": "8 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.351750&longitud=2.143241&zoom=18",
       "effect": "lowers"
      },
@@ -3734,7 +3734,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.551702&longitud=2.229983&zoom=18",
       "effect": "lowers"
      },
@@ -3880,7 +3880,7 @@
      {
       "code": "cadastre_building_found",
       "text": "2 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.489848&longitud=2.110602&zoom=18",
       "effect": "lowers"
      },
@@ -4050,7 +4050,7 @@
      {
       "code": "cadastre_building_found",
       "text": "4 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.374511&longitud=2.049099&zoom=18",
       "effect": "lowers"
      },
@@ -4172,7 +4172,7 @@
      {
       "code": "cadastre_building_found",
       "text": "4 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.584297&longitud=2.028559&zoom=18",
       "effect": "lowers"
      },
@@ -4372,7 +4372,7 @@
      {
       "code": "cadastre_building_found",
       "text": "6 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.383639&longitud=2.096596&zoom=18",
       "effect": "lowers"
      },
@@ -4517,7 +4517,7 @@
      {
       "code": "cadastre_building_found",
       "text": "10 building(s) registered here date from 2017 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.487400&longitud=2.328896&zoom=18",
       "effect": "lowers"
      },
@@ -4717,7 +4717,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2018 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.572215&longitud=2.270274&zoom=18",
       "effect": "lowers"
      }
@@ -4856,7 +4856,7 @@
      {
       "code": "cadastre_building_found",
       "text": "7 building(s) registered here date from 2018 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.497365&longitud=1.884796&zoom=18",
       "effect": "lowers"
      },
@@ -5010,7 +5010,7 @@
      {
       "code": "cadastre_building_found",
       "text": "2 building(s) registered here date from 2018 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.320914&longitud=2.120723&zoom=18",
       "effect": "lowers"
      },
@@ -5196,7 +5196,7 @@
      {
       "code": "cadastre_building_found",
       "text": "3 building(s) registered here date from 2018 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.303185&longitud=2.020051&zoom=18",
       "effect": "lowers"
      },
@@ -5349,7 +5349,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.580469&longitud=2.100225&zoom=18",
       "effect": "raises"
      }
@@ -5520,7 +5520,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2018 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.532167&longitud=2.131283&zoom=18",
       "effect": "lowers"
      },
@@ -5917,7 +5917,7 @@
      {
       "code": "cadastre_building_found",
       "text": "3 building(s) registered here date from 2018 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.336224&longitud=2.134875&zoom=18",
       "effect": "lowers"
      },
@@ -6305,7 +6305,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.493853&longitud=1.895467&zoom=18",
       "effect": "raises"
      },
@@ -6622,7 +6622,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.409095&longitud=2.005898&zoom=18",
       "effect": "raises"
      },
@@ -6816,7 +6816,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2020 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.423358&longitud=2.015207&zoom=18",
       "effect": "lowers"
      },
@@ -6985,7 +6985,7 @@
      {
       "code": "cadastre_building_found",
       "text": "7 building(s) registered here date from 2020 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.408262&longitud=2.197687&zoom=18",
       "effect": "lowers"
      },
@@ -7123,7 +7123,7 @@
      {
       "code": "cadastre_building_found",
       "text": "9 building(s) registered here date from 2021 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.479893&longitud=1.910333&zoom=18",
       "effect": "lowers"
      },
@@ -7293,7 +7293,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2021 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.498366&longitud=2.131881&zoom=18",
       "effect": "lowers"
      },
@@ -7423,7 +7423,7 @@
      {
       "code": "cadastre_building_found",
       "text": "2 building(s) registered here date from 2022 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.468098&longitud=2.002114&zoom=18",
       "effect": "lowers"
      },
@@ -7723,7 +7723,7 @@
      {
       "code": "cadastre_building_found",
       "text": "8 building(s) registered here date from 2023 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.323493&longitud=2.022954&zoom=18",
       "effect": "lowers"
      },
@@ -7908,7 +7908,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2023 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.481011&longitud=1.900163&zoom=18",
       "effect": "lowers"
      },
@@ -8099,7 +8099,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.518251&longitud=2.415616&zoom=18",
       "effect": "raises"
      },
@@ -8306,7 +8306,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.314115&longitud=2.059311&zoom=18",
       "effect": "raises"
      },
@@ -8459,7 +8459,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.562554&longitud=2.397676&zoom=18",
       "effect": "lowers"
      },
@@ -8611,7 +8611,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.384508&longitud=2.015625&zoom=18",
       "effect": "lowers"
      },
@@ -8883,7 +8883,7 @@
      {
       "code": "cadastre_building_found",
       "text": "6 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.591515&longitud=2.166122&zoom=18",
       "effect": "lowers"
      },
@@ -9010,7 +9010,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.335414&longitud=2.049318&zoom=18",
       "effect": "raises"
      },
@@ -9145,7 +9145,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.434336&longitud=2.197521&zoom=18",
       "effect": "raises"
      },
@@ -9266,7 +9266,7 @@
      {
       "code": "cadastre_building_found",
       "text": "2 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.416048&longitud=1.999685&zoom=18",
       "effect": "lowers"
      },
@@ -9399,7 +9399,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.414248&longitud=2.129266&zoom=18",
       "effect": "raises"
      },
@@ -9504,7 +9504,7 @@
      {
       "code": "cadastre_building_found",
       "text": "2 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.318039&longitud=2.128039&zoom=18",
       "effect": "lowers"
      },
@@ -9752,7 +9752,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.589799&longitud=2.273323&zoom=18",
       "effect": "lowers"
      },
@@ -9992,7 +9992,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.535151&longitud=2.236284&zoom=18",
       "effect": "raises"
      },
@@ -10119,7 +10119,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.466612&longitud=1.956521&zoom=18",
       "effect": "raises"
      },
@@ -10472,7 +10472,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.516288&longitud=1.899565&zoom=18",
       "effect": "lowers"
      },
@@ -10613,7 +10613,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.406926&longitud=2.129400&zoom=18",
       "effect": "raises"
      },
@@ -10748,7 +10748,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.588592&longitud=2.251822&zoom=18",
       "effect": "raises"
      }
@@ -10871,7 +10871,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.527221&longitud=2.107336&zoom=18",
       "effect": "raises"
      },
@@ -11125,7 +11125,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.536374&longitud=2.089113&zoom=18",
       "effect": "raises"
      },
@@ -11260,7 +11260,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.573424&longitud=2.246240&zoom=18",
       "effect": "raises"
      }
@@ -11383,7 +11383,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.491558&longitud=1.908632&zoom=18",
       "effect": "raises"
      },
@@ -11517,7 +11517,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.314858&longitud=2.028919&zoom=18",
       "effect": "raises"
      },
@@ -11622,7 +11622,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2025 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.368513&longitud=2.085755&zoom=18",
       "effect": "lowers"
      },
@@ -11773,7 +11773,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.428406&longitud=2.226151&zoom=18",
       "effect": "raises"
      },
@@ -11907,7 +11907,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.568110&longitud=2.307866&zoom=18",
       "effect": "raises"
      },
@@ -12034,7 +12034,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.423426&longitud=2.206296&zoom=18",
       "effect": "raises"
      },
@@ -12161,7 +12161,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.404431&longitud=2.086364&zoom=18",
       "effect": "raises"
      },
@@ -12273,7 +12273,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.400046&longitud=1.979442&zoom=18",
       "effect": "raises"
      },
@@ -12407,7 +12407,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.435218&longitud=2.211962&zoom=18",
       "effect": "raises"
      },
@@ -12526,7 +12526,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.547473&longitud=2.185392&zoom=18",
       "effect": "raises"
      },
@@ -12646,7 +12646,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.541669&longitud=1.972483&zoom=18",
       "effect": "raises"
      },
@@ -12886,7 +12886,7 @@
      {
       "code": "cadastre_building_found",
       "text": "1 building(s) registered here date from 2025 or later, the year the change was first seen (the registry gives construction years only).",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.270043&longitud=2.036234&zoom=18",
       "effect": "lowers"
      },
@@ -13052,7 +13052,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.363992&longitud=2.040705&zoom=18",
       "effect": "raises"
      },
@@ -13173,7 +13173,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.526725&longitud=2.112766&zoom=18",
       "effect": "raises"
      },
@@ -13324,7 +13324,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.581260&longitud=2.280098&zoom=18",
       "effect": "raises"
      }
@@ -13445,7 +13445,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.446668&longitud=2.006150&zoom=18",
       "effect": "raises"
      },
@@ -13581,7 +13581,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.364909&longitud=1.919329&zoom=18",
       "effect": "raises"
      },
@@ -13738,7 +13738,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.406848&longitud=1.917018&zoom=18",
       "effect": "raises"
      },
@@ -13874,7 +13874,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.586522&longitud=2.001457&zoom=18",
       "effect": "raises"
      },
@@ -14035,7 +14035,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.587590&longitud=2.205300&zoom=18",
       "effect": "raises"
      }
@@ -14460,7 +14460,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.449091&longitud=2.166911&zoom=18",
       "effect": "raises"
      },
@@ -14627,7 +14627,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.307420&longitud=2.118238&zoom=18",
       "effect": "raises"
      },
@@ -14778,7 +14778,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.309548&longitud=2.116950&zoom=18",
       "effect": "raises"
      },
@@ -14930,7 +14930,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.569909&longitud=2.304709&zoom=18",
       "effect": "raises"
      },
@@ -15043,7 +15043,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.314084&longitud=1.967147&zoom=18",
       "effect": "raises"
      },
@@ -15162,7 +15162,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.588191&longitud=2.259386&zoom=18",
       "effect": "raises"
      },
@@ -15274,7 +15274,7 @@
      {
       "code": "no_record_found",
       "text": "No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
-      "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+      "source": "Derived from Dirección General del Catastro data",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.550523&longitud=2.093507&zoom=18",
       "effect": "raises"
      }

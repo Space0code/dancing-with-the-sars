@@ -24,7 +24,7 @@
    "id": "buildings",
    "title": "Registered buildings",
    "kind": "buildings",
-   "source": "Derived from Dirección General del Catastro data (buildings, INSPIRE)",
+   "source": "Derived from Dirección General del Catastro data",
    "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx",
    "note": "7090 registered buildings, merged; 368 built in 2016 or later, newest 2026. Construction year only, no exact date. Only within 200 m of a marked change.",
    "file": "buildings.geojson",
