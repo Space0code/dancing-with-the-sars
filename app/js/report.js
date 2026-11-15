@@ -70,20 +70,40 @@ function topForSummary(sorted) {
   return pick.sort(byPriority);
 }
 
-/** Per label, the most common main reasons (what the card shows first) among the selected changes: up to 4 of {reason, n}. */
+/** A reason without what belongs to one change (a size, a percentage, a year, a count, names in brackets), so it is true
+ *  for every change whose reason has the same wording. Texts that keep a number after this are not made generic. */
+export function genericReason(text) {
+  return text
+    .replace(/^\d+ building\(s\) registered here date from \d{4} or later.*$/, "Buildings registered here date from the year the change was first seen or later.")
+    .replace(/^About \d+(?:[.,]\d+)? ?% of the place is /, "Part of the place is ")
+    .replace(/^(The change is small) \([^)]*\)/, "$1")
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s+([,.;])/g, "$1")
+    .trim();
+}
+
+/** Per label, the most common main reasons (what the card shows first) among the selected changes: up to 4 of {reason, n}.
+ *  Reasons that differ only in their numbers or names count as one and are worded generically, so the text holds for all n. */
 export function reasonsByLabel(changes) {
   const out = {};
   for (const k of ORDER) {
-    const groups = new Map(); // reasons that differ only in their numbers (a size, a percentage) count as one
+    const groups = new Map();
     for (const f of changes) {
       if (labelOf(f) !== k) continue;
-      const text = reasonOf(f).trim().slice(0, 240);
-      const key = text.replace(/\d+([.,]\d+)?/g, "#");
-      const g = groups.get(key) ?? { reason: text, n: 0 };
+      const text = reasonOf(f).trim();
+      const generic = genericReason(text);
+      const g = groups.get(generic.toLowerCase()) ?? { generic, texts: new Set(), n: 0 };
+      g.texts.add(text);
       g.n += 1;
-      groups.set(key, g);
+      groups.set(generic.toLowerCase(), g);
     }
-    if (groups.size) out[k] = [...groups.values()].sort((a, b) => b.n - a.n || a.reason.localeCompare(b.reason)).slice(0, 4);
+    if (groups.size) {
+      out[k] = [...groups.values()].map((g) => {
+        const [first] = g.texts;
+        const reason = g.texts.size === 1 ? first : /\d/.test(g.generic) ? `for example: ${first}` : g.generic;
+        return { reason: reason.slice(0, 240), n: g.n };
+      }).sort((a, b) => b.n - a.n || a.reason.localeCompare(b.reason)).slice(0, 4);
+    }
   }
   return out;
 }
@@ -116,7 +136,7 @@ export function buildRequest({ site, changes, selection, kindName }) {
     },
     reasons_by_label: reasonsByLabel(changes),
     top: topForSummary([...changes].sort(byPriority)).map((f) => ({
-      kind: cap(kindName(f.properties.type), 120), area_ha: round(f.properties.area_ha),
+      kind: cap(kindName(f.properties.type), 120), area_ha: Number(formatArea(f.properties.area_ha).replace(/[^\d.]/g, "")) || round(f.properties.area_ha),
       when: cap(whenText(f.properties), 120), label: labelOf(f), reason: cap(reasonOf(f), 240),
     })),
   };
@@ -316,8 +336,8 @@ export async function buildReport(ctx, aiSections, picture) {
   });
 
   // summary: sub-headings and bullets in a grey box; it follows the key numbers and may continue on the next page
+  const sections = aiSections ?? ruleSections(ctx);
   {
-    const sections = aiSections ?? ruleSections(ctx);
     const LH = 4.4;
     const rows = []; // one printed line each: {s, x, bullet, font, size, color, gap, keep}
     const add = (s, o = {}) => rows.push({ s, x: 0, bullet: "", font: "normal", size: 10, color: 30, gap: 0, keep: false, ...o });
@@ -330,7 +350,10 @@ export async function buildReport(ctx, aiSections, picture) {
         add(title, { font: "bold", size: 9.5, color: 0, gap: rows.length ? 2 : 0, keep: true });
         for (const item of items) wrap(item, bullets ? 5 : 0).forEach((l, i) => add(l, bullets ? { x: 5, bullet: i === 0 ? "-" : "" } : {}));
       };
-      if (t.by.high_concern.n && sections.high_concern.length) block("High concern", sections.high_concern, true);
+      if (t.by.high_concern.n && sections.high_concern.length) {
+        const more = t.by.high_concern.n - sections.high_concern.length;
+        block("High concern", more > 0 ? [...sections.high_concern, `${more} more ${more === 1 ? "is" : "are"} in the list below.`] : sections.high_concern, true);
+      }
       if (t.by.review.n && sections.review.length) block("Needs review", sections.review, true);
       if (t.by.expected.n && sections.expected) block("Expected", [sections.expected], false);
       if (t.by.none.n && sections.not_labelled) block("Not labelled yet", [sections.not_labelled], false);
@@ -370,10 +393,14 @@ export async function buildReport(ctx, aiSections, picture) {
   };
   const kind = (f) => ctx.kindName(f.properties.type);
   const label = (f) => VERDICTS[labelOf(f)].label;
-  heading("Look at these first");
+  // the first five are left out when the summary's high-concern bullets already list all of them (the full table follows)
+  const listed = Math.min(sections.high_concern.length, LIMITS.high_concern);
+  const firstFive = sorted.slice(0, 5);
+  const repeats = firstFive.length > 0 && firstFive.every((f, i) => labelOf(f) === "high_concern" && i < listed);
+  if (!repeats) heading("Look at these first");
   if (!sorted.length) body("No changes in this selection.");
   else {
-    table({
+    if (!repeats) table({
       theme: "grid", styles: { fontSize: 8.5, cellPadding: 1.6, textColor: 30, overflow: "linebreak" }, head: [["#", "Kind", { content: "Size", styles: { halign: "right" } }, "When", "Label", "Main reason"]],
       body: sorted.slice(0, 5).map((f, i) => [i + 1, kind(f), formatArea(f.properties.area_ha), whenText(f.properties, { short: true }), label(f), clip(reasonOf(f), 150)].map((c) => latin1(c))),
       columnStyles: { 0: { cellWidth: 7 }, 1: { cellWidth: 26 }, 2: { cellWidth: 16, halign: "right" }, 3: { cellWidth: 34 }, 4: { cellWidth: 24 } },

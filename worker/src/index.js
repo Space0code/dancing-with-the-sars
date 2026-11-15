@@ -1,10 +1,10 @@
 // Parallax report proxy: validates facts from the app, writes the prompt itself, calls Gemini.
 // JSON output (responseMimeType + responseJsonSchema), validated strictly. Model order and timeouts: kb/report-proxy.md.
 const MODELS = [
-  { name: "gemini-flash-lite-latest", ms: 5000 },
-  { name: "gemini-flash-latest", ms: 8000 },
+  { name: "gemini-flash-lite-latest", ms: 7500 },
+  { name: "gemini-flash-latest", ms: 8500 },
 ];
-const TOTAL_MS = 8000;
+const TOTAL_MS = 8500;
 const upstream = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const MAX_BODY = 12 * 1024; // top (10) plus reasons_by_label (up to 16 reasons of 240 characters) can reach about 8 KB
 const LABELS = ["high_concern", "review", "expected", "none"];
@@ -256,7 +256,7 @@ export default {
     let failure = "upstream_error";
     for (const m of MODELS) {
       const left = Math.min(m.ms, TOTAL_MS - (Date.now() - t0));
-      if (left < 500) break;
+      if (left < 1500) break; // a model that gets less than this cannot answer: fail fast
       const ctl = new AbortController();
       const timer = setTimeout(() => ctl.abort(), left);
       try {
