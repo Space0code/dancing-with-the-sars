@@ -160,3 +160,6 @@ export function buildAreaChart(features, range) {
   const { svg, lines, setCursor } = draw(series, {}, { zero: true, axis: "Cumulative area (ha)" });
   return { node: h("figure", { class: "area-chart" }, svg, legendFor(lines, (s) => s.name)), setDate: setCursor };
 }
+
+// The NDVI graph on the change card (ndvi.js) draws with the same plot and legend.
+export { draw as drawChart, legendFor };

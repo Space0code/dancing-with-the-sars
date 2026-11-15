@@ -16,6 +16,12 @@ def test_ndvi_of_uses_both_bands_and_marks_no_data():
     assert np.isclose(out[0], 4000 / 6000) and out[1] == 0 and np.isnan(out[2])
 
 
+def test_ndvi_of_ignores_non_positive_reflectance():
+    red = np.array([-50, 0, 1000, 500], np.int16)
+    nir = np.array([800, 800, -20, 0], np.int16)
+    assert np.isnan(ndvi.ndvi_of(red, nir)).all()
+
+
 def test_measure_excludes_cloud_and_snow_from_ndvi():
     mask = np.ones((2, 5), bool)
     fm = np.array([[CLEAR] * 5, [CLEAR, CLEAR, CLOUD, SNOW, SNOW]], np.uint8)

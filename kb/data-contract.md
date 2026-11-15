@@ -89,6 +89,8 @@ Two more optional blocks, written by `python -m sarwatch.ndvi <site>` (NASA HLS 
 - `ndvi`: `{"sensor": "HLS (Landsat, Sentinel-2)", "dates": ["2025-06-12", …], "values": [0.71, …], "before": 0.71, "after": 0.28}`.
   Mean NDVI (vegetation index, -1..1, about 0.8 dense green, below 0.2 bare ground) inside the change's polygon on
   cloud-free dates; `before` / `after` = median of the dates before `first_date` / after `last_date`, within a year (else null).
+  The change card shows it (`app/js/ndvi.js`): a "Greenness" line "NDVI before → after" (one side only when the other is
+  null) and a graph of `dates` / `values` (needs at least 2 values inside -1..1); nothing when the block is missing.
 - `surface`: `{"snow_share": 0.0–1.0 | null, "water_share": 0.0–1.0 | null, "dates_checked": ["2026-04-03", …]}`.
   `snow_share` = largest share of the polygon flagged snow / ice on cloud-free dates within 16 days of `first_date`;
   `water_share` = median share flagged water on cloud-free dates within 120 days after `last_date`; null = no usable date.

@@ -157,6 +157,19 @@ export function createPicture(map, mapWrap, { onView } = {}) {
     get view() {
       return view;
     },
+    /**
+     * Which picture the open view shows at `iso`, for the timeline: "picture 12 of 63" on a date that has its own picture,
+     * "no new picture" on a date between two pictures (it keeps showing the last one; the label under the switch names it),
+     * "no picture yet" before the first, and "" when the view has no pictures at all. The slider steps through every pass
+     * of the site, so its step number is not the picture number.
+     */
+    position(iso) {
+      const set = sets[view];
+      if (!set) return "";
+      const i = frameIndex(set, iso);
+      if (i < 0) return "no picture yet";
+      return set.frames[i].date === iso ? `picture ${i + 1} of ${set.frames.length}` : "no new picture";
+    },
     setDate(iso) {
       date = iso;
       render();
