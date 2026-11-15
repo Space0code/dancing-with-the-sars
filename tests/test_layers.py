@@ -118,3 +118,26 @@ def test_an_invalid_building_outline_does_not_sink_the_buildings_layer(monkeypat
     assert any("2 registered buildings (home), built 2019" in label for label in labels), labels
     assert all(g.is_valid for g, _ in feats)
 
+
+def test_snapping_to_the_grid_falls_back_when_geos_refuses(monkeypatch):
+    import shapely
+    from shapely.geometry import box
+
+    real = shapely.set_precision
+    modes = []
+
+    def refuse(geom, grid, mode="valid_output"):
+        modes.append(mode)
+        if mode == "valid_output":
+            raise shapely.errors.GEOSException("TopologyException: side location conflict")
+        return real(geom, grid, mode=mode)
+
+    monkeypatch.setattr(layers.shapely, "set_precision", refuse)
+    g = layers._to_utm(2.0, 41.5)  # a point in UTM metres, to build a small box around it
+    area = box(g[0], g[1], g[0] + 50, g[1] + 50)
+    feature = layers._feature(area, {"label": "x"})
+    assert feature["geometry"]["type"] == "Polygon" and modes[0] == "valid_output" and "pointwise" in modes
+    # and when even that fails the shape is skipped, not the layer
+    monkeypatch.setattr(layers.shapely, "set_precision", lambda *a, **k: (_ for _ in ()).throw(shapely.errors.GEOSException("boom")))
+    assert layers._safe_feature(area, {"label": "x"}) is None
+

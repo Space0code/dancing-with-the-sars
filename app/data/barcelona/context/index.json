@@ -19,6 +19,16 @@
    "note": "Share of the box: non-buildable land 40 %, land planned for development 5 %, urban land 22 %",
    "file": "zoning.geojson",
    "checked": "2026-11-15"
+  },
+  {
+   "id": "buildings",
+   "title": "Buildings on the land registry",
+   "kind": "buildings",
+   "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
+   "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx",
+   "note": "7090 buildings on the land registry; 368 built in 2016 or later, newest 2026. Construction year only, no exact date. Only within 200 m of a marked change.",
+   "file": "buildings.geojson",
+   "checked": "2026-11-15"
   }
  ],
  "notes": [
