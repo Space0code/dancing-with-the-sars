@@ -13609,6 +13609,13 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the vegetation echo drop by 10 dB between 14 Sep 2022 and 5 Jun 2023, the pattern left when trees are removed. The land is port system land in the urban plan (MUC), where works like this are part of its use. The land is zoned as urban.",
@@ -14225,6 +14232,13 @@
       "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
       "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
       "effect": "neutral"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 14 dB between 29 Jun and 23 Jul 2023, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2023 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
@@ -14355,6 +14369,13 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 11 dB between 29 Jun and 23 Jul 2023, the pattern of new walls, roofs or metal structures. The land is port system land in the urban plan (MUC), where works like this are part of its use. The land is zoned as urban.",
@@ -14525,6 +14546,13 @@
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.518251&longitud=2.415616&zoom=18",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 9 dB between 23 Jul and 16 Aug 2023, the pattern of new walls, roofs or metal structures. About 70 % of the place is zoned as non-buildable. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
@@ -14718,6 +14746,13 @@
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.314115&longitud=2.059311&zoom=18",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 6 dB between 16 Aug and 9 Sep 2023, the pattern of new walls, roofs or metal structures. The place lies inside a protected area (Delta del Llobregat). The land is zoned as non-buildable.",
@@ -14994,6 +15029,13 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 10 dB between 9 Sep 2023 and 11 Jun 2024, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only). The land is zoned as urban.",
@@ -15124,6 +15166,13 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the vegetation echo drop by 7 dB between 22 Aug and 15 Sep 2024, the pattern left when trees are removed. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
@@ -15261,6 +15310,13 @@
       "source": "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)",
       "url": "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?latitud=41.491558&longitud=1.908632&zoom=18",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 16 dB between 15 Sep 2024 and 6 Jun 2025, the pattern of new walls, roofs or metal structures. An application for a solar plant in this municipality (the list gives no exact location) is being processed; it is not authorised yet. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
@@ -15407,6 +15463,13 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "This change was already under way when NISAR began watching on 23 Jun 2026, so this record cannot say when it started. The land is port system land in the urban plan (MUC), where works like this are part of its use. The land is zoned as urban.",
@@ -15544,6 +15607,13 @@
       "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
       "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "This change was already under way when NISAR began watching on 23 Jun 2026, so this record cannot say when it started. The place lies inside a protected area (Delta del Llobregat, Aiguamolls del Delta del Llobregat). About 64 % of the place is zoned as non-buildable.",

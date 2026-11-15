@@ -3527,6 +3527,13 @@
       "source": "Yle News",
       "url": "https://yle.fi/a/74-20254086",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026; Sentinel-1 radar saw its vegetation echo drop by 16 Apr 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -3681,6 +3688,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.24 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -4045,6 +4059,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -4313,6 +4334,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.88 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -4541,6 +4569,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.7 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -4777,6 +4812,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.61 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -4939,6 +4981,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.43 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -5143,6 +5192,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.34 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -8104,6 +8160,13 @@
       "source": "Yle News",
       "url": "https://yle.fi/a/74-20254086",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 29 Apr and 31 May 2026; Sentinel-1 radar also saw its vegetation echo drop, by 22 Jun 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -12539,6 +12602,13 @@
       "source": "Yle News",
       "url": "https://yle.fi/a/74-20254086",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 31 May and 30 Jun 2026; Sentinel-1 radar saw its vegetation echo drop by 22 Jun 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -12717,6 +12787,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 31 May and 30 Jun 2026. The change is small (2.07 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -17622,6 +17699,13 @@
       "source": "Yle News",
       "url": "https://yle.fi/a/74-20254086",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Vegetation loss here happened between 22 May and 31 Jul 2026: an optical alert confirmed it by 31 Jul 2026; Sentinel-1 radar saw its vegetation echo drop earlier, by 22 Jun 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -17946,6 +18030,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 30 Jun and 31 Jul 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
@@ -18116,6 +18207,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "lowers"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 30 Jun and 31 Jul 2026. The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -20541,6 +20639,13 @@
       "source": "Yle News",
       "url": "https://yle.fi/a/74-20254086",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 31 Jul and 31 Aug 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -24903,6 +25008,13 @@
       "source": "Yle News",
       "url": "https://yle.fi/a/74-20254086",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 31 Aug and 30 Sep 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -25139,6 +25251,13 @@
       "source": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)",
       "url": null,
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow and no standing water over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 31 Aug and 30 Sep 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
@@ -26022,6 +26141,13 @@
       "source": "Yle News",
       "url": "https://yle.fi/a/74-20254086",
       "effect": "raises"
+     },
+     {
+      "code": "surface_clear",
+      "text": "Clear scenes around its dates show no snow over the area.",
+      "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 30 Sep and 23 Oct 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",

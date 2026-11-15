@@ -28,7 +28,11 @@ SOLAR_AUTHORISED = ("autoritzat", "en servei", "aprovat")  # plant statuses that
 SOLAR_PENDING = ("en tramitaci",)  # "En tramitació": an application still being processed is not an authorisation
 RECORD_TYPES = ("clearing", "earthworks", "structure")  # change types a solar-plant listing can explain
 FIRE_TYPES = ("fire", "clearing", "other")  # change types a recorded wildfire can explain
-KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system")
+KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system", "surface")
+SNOW_CAUTION = 0.25   # share of the change under snow or ice around its first date that makes snow a plausible cause
+WATER_CAUTION = 0.25  # share of the change under water after it (median of the clear scenes) that is worth saying
+SURFACE_SOURCE = "NASA HLS quality mask (Landsat and Sentinel-2)"
+SURFACE_URL = "https://lpdaac.usgs.gov/products/hlss30v002/"
 SYSTEM_SHARE = 0.8  # a change counts as on port or airport land when at least this much of it lies on it (the rest of
                     # it would otherwise skip the zoning rules)
 
@@ -184,7 +188,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not area > 0:  # also catches NaN
         raise ValueError(f"change {change.get('id')!r}: area_ha must be a positive number")
     ctype = change.get("type")
-    prot, cad, zon, sol, fire, off, sysl = (records.get(k) for k in KEYS)
+    prot, cad, zon, sol, fire, off, sysl, sfc = (records.get(k) for k in KEYS)
 
     # ---- facts
     areas = list(prot.get("areas") or []) if _ok(prot) else []
@@ -379,6 +383,29 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         for key in LABELS
         if not _ok(records.get(key)) and not (records.get(key) or {}).get("not_applicable")
     ]
+    # snow and water around the change (the series file's `surface` block): notes only, they never move the label
+    if _ok(sfc):
+        snow, water = sfc.get("snow_share"), sfc.get("water_share")
+        snow = snow if isinstance(snow, (int, float)) else None
+        water = water if isinstance(water, (int, float)) else None
+        calm = []
+        if snow is not None and snow >= SNOW_CAUTION:
+            facts["snow_caution"] = _reason(
+                "snow_caution",
+                f"Snow or ice covered {round(100 * snow)} % of the area around the date it was first seen, so snow can "
+                "explain this signal.", "neutral", sfc)
+        elif snow is not None:
+            calm.append("no snow")
+        if water is not None and water >= WATER_CAUTION:
+            facts["water_after"] = _reason(
+                "water_after",
+                f"{round(100 * water)} % of the area is under water after the change (possible flood or new water body).",
+                "neutral", sfc)
+        elif water is not None:
+            calm.append("no standing water")
+        if calm:
+            facts["surface_clear"] = _reason(
+                "surface_clear", f"Clear scenes around its dates show {' and '.join(calm)} over the area.", "neutral", sfc)
     # a port / airport lookup that failed is reported; an absent one was simply not asked
     if isinstance(sysl, dict) and not _ok(sysl) and not sysl.get("not_applicable"):
         unavailable.append(_reason(
@@ -496,6 +523,19 @@ def _site_country(path: Path):
     return None
 
 
+def surface_record(site_dir: Path, props: dict) -> dict | None:
+    """The change's ``surface`` block (snow and water shares from the NASA HLS quality mask, written next to its
+    series) as a record, or None when the change has no series file or no such block."""
+    rel = (props.get("evidence") or {}).get("series") or f"series/{props.get('id')}.json"
+    try:
+        block = json.loads((Path(site_dir) / rel).read_text(encoding="utf-8")).get("surface")
+    except (OSError, ValueError):
+        return None
+    if not isinstance(block, dict):
+        return None
+    return {"source": SURFACE_SOURCE, "url": SURFACE_URL, **block, "checked": True}
+
+
 def apply_file(
     path, records_path=None, dry_run=False, lookup=run_lookups, allow_unchecked=False
 ) -> tuple[Counter, Counter, Counter]:
@@ -527,6 +567,9 @@ def apply_file(
                 asked += 1
                 if not _ok(rec):
                     failed[key] += 1
+        surface = surface_record(path.parent, props)  # read after the lookups were counted: it is not a service
+        if surface:
+            records["surface"] = surface
         props["verdict"], props["reasons"], props["explain"] = judge(props, records)
         after[props["verdict"]] += 1
     if asked and sum(failed.values()) == asked and not allow_unchecked:

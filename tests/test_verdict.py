@@ -822,3 +822,80 @@ def test_a_protected_area_is_named_once_and_a_missing_share_does_not_crash():
     assert judge(change(area=8), {**records(), **twin})[1][0]["text"].count("Delta del Llobregat") == 1
     nones = {"system": ok(system="port", shares={"port": None})}
     assert judge(change(area=8), {**records(zone="urban"), **nones})[0] == "review"
+
+
+# ---- snow and flood caution (the series file's `surface` block, NASA HLS quality mask) ----
+
+
+def surface(snow=0.0, water=0.0):
+    return {"surface": ok(snow_share=snow, water_share=water, dates_checked=["2026-04-03"])}
+
+
+def test_snow_over_the_threshold_adds_a_caution_and_never_moves_the_label():
+    base = judge(change(area=8), records(zone="urban"))
+    cautious = judge(change(area=8), {**records(zone="urban"), **surface(snow=0.4)})
+    assert cautious[0] == base[0]  # same label
+    caution = next(r for r in cautious[1] if r["code"] == "snow_caution")
+    assert caution["effect"] == "neutral" and "40 %" in caution["text"] and "snow can explain this signal" in caution["text"]
+    assert caution["source"] == "Test source"  # the record's own source is shown
+    assert codes(cautious[1])[0] == codes(base[1])[0]  # and it is never the deciding reason
+    clear = next(r for r in cautious[1] if r["code"] == "surface_clear")  # water is 0, so only that part is called clear
+    assert "no standing water" in clear["text"] and "no snow" not in clear["text"]
+
+
+def test_water_after_the_change_is_reported_as_a_possible_flood_not_a_label():
+    verdict, reasons, explain = judge(change(area=8), {**records(zone="urban"), **surface(water=0.6)})
+    water = next(r for r in reasons if r["code"] == "water_after")
+    assert "60 %" in water["text"] and "possible flood or new water body" in water["text"] and water["effect"] == "neutral"
+    assert verdict == judge(change(area=8), records(zone="urban"))[0]
+    assert "flood" not in explain  # the sentence on the card follows the label, not the caution
+
+
+def test_below_the_thresholds_there_is_a_short_clear_note_and_unknowns_stay_silent():
+    clear = judge(change(area=8), {**records(zone="urban"), **surface(snow=0.08, water=0.11)})[1]
+    note = next(r for r in clear if r["code"] == "surface_clear")
+    assert note["text"] == "Clear scenes around its dates show no snow and no standing water over the area."
+    assert not {"snow_caution", "water_after"} & set(codes(clear))
+    only_water = judge(change(area=8), {**records(zone="urban"), "surface": ok(snow_share=None, water_share=0.0)})[1]
+    assert next(r for r in only_water if r["code"] == "surface_clear")["text"].endswith("show no standing water over the area.")
+    nothing = judge(change(area=8), {**records(zone="urban"), "surface": ok(snow_share=None, water_share=None)})[1]
+    assert not {"snow_caution", "water_after", "surface_clear"} & set(codes(nothing))
+    assert not {"snow_caution", "surface_clear"} & set(codes(judge(change(area=8), records(zone="urban"))[1]))  # no block
+
+
+def test_thresholds_are_inclusive_and_both_cautions_can_show_together():
+    at = judge(change(area=8), {**records(zone="urban"), **surface(snow=0.25, water=0.25)})[1]
+    assert {"snow_caution", "water_after"} <= set(codes(at))
+    below = judge(change(area=8), {**records(zone="urban"), **surface(snow=0.249, water=0.249)})[1]
+    assert not {"snow_caution", "water_after"} & set(codes(below)) and "surface_clear" in codes(below)
+
+
+def test_the_series_files_surface_block_becomes_a_record(tmp_path):
+    from sarwatch.verdict import surface_record
+
+    (tmp_path / "series").mkdir()
+    (tmp_path / "series" / "a-0001.json").write_text(json.dumps(
+        {"series": [], "surface": {"snow_share": 0.3, "water_share": None, "dates_checked": ["2026-04-03"]}}))
+    (tmp_path / "series" / "a-0002.json").write_text(json.dumps({"series": []}))
+    rec = surface_record(tmp_path, {"id": "a-0001", "evidence": {"series": "series/a-0001.json"}})
+    assert rec["checked"] is True and rec["snow_share"] == 0.3 and rec["water_share"] is None
+    assert "HLS" in rec["source"] and rec["url"].startswith("https://")
+    assert surface_record(tmp_path, {"id": "a-0001"})["snow_share"] == 0.3  # path from the id when evidence has none
+    assert surface_record(tmp_path, {"id": "a-0002"}) is None and surface_record(tmp_path, {"id": "missing"}) is None
+
+
+def test_apply_file_gives_each_change_its_own_surface_block(tmp_path):
+    site = tmp_path / "site"
+    (site / "series").mkdir(parents=True)
+    feature = {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [0, 0]]]},
+               "properties": {"id": "s-0001", "type": "clearing", "area_ha": 8.0, "first_date": "2026-03-01", "last_date": "2026-03-01",
+                              "explain": "Radar saw it.", "confidence": "high"}}
+    (site / "changes.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": [feature]}))
+    (site / "series" / "s-0001.json").write_text(json.dumps({"surface": {"snow_share": 0.5, "water_share": 0.0}}))
+    (site / "records.json").write_text(json.dumps({"version": 1, "default": {}}))
+    apply_file(site / "changes.geojson")
+    props = json.loads((site / "changes.geojson").read_text())["features"][0]["properties"]
+    assert "snow_caution" in codes(props["reasons"]) and "50 %" in next(r for r in props["reasons"] if r["code"] == "snow_caution")["text"]
+    first = (site / "changes.geojson").read_text()
+    apply_file(site / "changes.geojson")
+    assert (site / "changes.geojson").read_text() == first  # a second run is identical

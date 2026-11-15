@@ -35,6 +35,17 @@ The app flags places for a human to look at. It never says "illegal" and never n
 
 A wildfire on record does not explain a new `structure` or `ground_motion`: it is listed as a neutral `fire_recorded` reason and the normal rows apply. In a protected area, a fire that explains the change stays "expected" and `protected_area` is neutral. A protected-area overlap **below 10 %** only borders the area: neutral reason `protected_edge` ("The place borders a protected area"), no effect on the label.
 
+**Snow and flood notes** (any site whose change has a `series/<id>.json` with a `surface` block; sites without it get none). The block is `{"snow_share", "water_share", "dates_checked"}` from NASA's HLS quality mask: `snow_share` is the largest snow or ice share of the change within 16 days of its first date, `water_share` the median water share within 120 days after its last date, each 0 to 1 or null when no scene was clear. Like the wildfire note, these are **notes only: they never move the label and are never the deciding reason** (`effect: neutral`):
+
+| Condition | Reason | Text |
+|---|---|---|
+| `snow_share` ≥ **0.25** | `snow_caution` | "Snow or ice covered 40 % of the area around the date it was first seen, so snow can explain this signal." |
+| `water_share` ≥ **0.25** | `water_after` | "60 % of the area is under water after the change (possible flood or new water body)." |
+| a share known and below its threshold | `surface_clear` | "Clear scenes around its dates show no snow and no standing water over the area." (only the parts that were checked) |
+| null | nothing | no scene was clear, so nothing is claimed |
+
+Thresholds are first guesses `(unverified)`: on today's data the largest shares are 0.08 (snow) and 0.11 (water), so none fires yet; tune them when a changes list has snowy first dates. The card shows the notes in the "Snow or flood?" row of "Why this label?". Lowering the change's `confidence` for a snow caution belongs to the exporter that computes it (`merge.py`, risky months), not to this step, which is rerun on files it does not own: ask there.
+
 **Late starts** (a source with role `late_start` and none that detected it: the change was already under way when the sensor began watching, so its true date is unknown): the registry is asked for buildings from **one year before the sensor's first pass**, and buildings with no construction year also count (`cadastre_building_found`: "… date from 2015 or later or have no year (this change was already under way …)"). An older building cannot explain it. With none, the text is "No building registered here is from the years the change could have started in, …" instead of the "since the change" text.
 
 All other reasons that apply are listed after the deciding one: `zoning_urban`, `planned_sector`, `cadastre_building_found`, `solar_plant_listed` / `solar_plant_other` / `solar_application_pending`, `no_record_found` (only if the land registry answered), `small_area` / `small_uncertain` (below 2 ha, unless high concern), `protected_buffer` / `protected_edge` (when not decisive), `assessment_missing` (any size, when the official record says one is required and not finished), and one reason per official action (`official_stop_order`, `official_investigation`, `official_action`, all raises, text starts with the date; two actions of the same kind and date both show).
