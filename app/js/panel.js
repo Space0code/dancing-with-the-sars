@@ -1,6 +1,7 @@
 // Written by Claude. What goes in the drawer and the start box: the intro, the site overview (computed from the changes, the
 // same for every site) and the change card (the "why this label" checklist, signal chart).
 import { buildChart, buildAreaChart } from "./chart.js";
+import { renderNdvi } from "./ndvi.js";
 import { loadJson } from "./data.js";
 import { buildChecklist } from "./checklist.js";
 import { h, VERDICTS, verdictKey, changeLabel, sensorLabel, formatArea, safeUrl } from "./format.js";
@@ -108,9 +109,15 @@ export function showCard(feature, site) {
 
   const chartSlot = h("div", { class: "chart-slot", id: "signal-chart" },
     h("p", { class: "note" }, evidence.series ? "Loading…" : "No signal history yet."));
+  // NDVI (ndvi.js): hidden until the series file arrives and has an `ndvi` block
+  const ndviParts = { dt: h("dt", { hidden: true }, "Greenness"), dd: h("dd", { hidden: true }), slot: h("div", { class: "chart-slot", id: "ndvi-chart", hidden: true }) };
   if (evidence.series) {
     loadJson(base + evidence.series)
-      .then((data) => token === cardToken && chartSlot.replaceChildren(buildChart(data, p)))
+      .then((data) => {
+        if (token !== cardToken) return;
+        chartSlot.replaceChildren(buildChart(data, p));
+        renderNdvi(data, p, ndviParts);
+      })
       .catch(() => token === cardToken && chartSlot.replaceChildren(h("p", { class: "note" }, "The chart could not be loaded.")));
   }
 
@@ -121,7 +128,8 @@ export function showCard(feature, site) {
         h("dt", {}, "When"), h("dd", {}, whenText(p)),
         h("dt", {}, "Size"), h("dd", {}, sizeText(p)),
         seen ? null : h("dt", {}, "Seen by"), seen ? null : h("dd", {}, sensorLabel(p.sensor)), // one sensor: as before
-        h("dt", {}, "Confidence"), h("dd", {}, confidenceText(p, site.site?.sources))
+        h("dt", {}, "Confidence"), h("dd", {}, confidenceText(p, site.site?.sources)),
+        ndviParts.dt, ndviParts.dd
       ),
       seen ? h("h3", {}, "Seen by") : null,
       seen,
@@ -129,7 +137,8 @@ export function showCard(feature, site) {
       ...buildChecklist(p, site.site?.country),
       p.verdict ? h("p", { class: "note" }, "A label is a prompt to check, not a finding.") : null,
       h("h3", {}, "Signal over time"),
-      chartSlot
+      chartSlot,
+      ndviParts.slot
     )
   );
   $("card-view").scrollTop = 0;
