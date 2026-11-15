@@ -61,6 +61,33 @@ export function totals(changes) {
 
 const reasonOf = (f) => f.properties.reasons?.[0]?.text ?? "No record found for this change.";
 
+/** The changes sent to the summary: up to 6 high concern, up to 4 needs review, then the rest in priority order, 10 in all. */
+function topForSummary(sorted) {
+  const pick = [];
+  const count = (k) => pick.filter((g) => labelOf(g) === k).length;
+  for (const [k, max] of [["high_concern", 6], ["review", 4]]) for (const f of sorted) if (labelOf(f) === k && count(k) < max) pick.push(f);
+  for (const f of sorted) if (pick.length < 10 && !pick.includes(f)) pick.push(f);
+  return pick.sort(byPriority);
+}
+
+/** Per label, the most common main reasons (what the card shows first) among the selected changes: up to 4 of {reason, n}. */
+export function reasonsByLabel(changes) {
+  const out = {};
+  for (const k of ORDER) {
+    const groups = new Map(); // reasons that differ only in their numbers (a size, a percentage) count as one
+    for (const f of changes) {
+      if (labelOf(f) !== k) continue;
+      const text = reasonOf(f).trim().slice(0, 240);
+      const key = text.replace(/\d+([.,]\d+)?/g, "#");
+      const g = groups.get(key) ?? { reason: text, n: 0 };
+      g.n += 1;
+      groups.set(key, g);
+    }
+    if (groups.size) out[k] = [...groups.values()].sort((a, b) => b.n - a.n || a.reason.localeCompare(b.reason)).slice(0, 4);
+  }
+  return out;
+}
+
 function bboxOf(geometry) {
   const box = [Infinity, Infinity, -Infinity, -Infinity];
   const walk = (c) => {
@@ -87,14 +114,32 @@ export function buildRequest({ site, changes, selection, kindName }) {
       changes: t.n, area_ha: round(t.ha),
       by_label: Object.fromEntries(ORDER.map((k) => [k, { n: t.by[k].n, ha: round(t.by[k].ha) }])),
     },
-    top: [...changes].sort(byPriority).slice(0, 10).map((f) => ({
+    reasons_by_label: reasonsByLabel(changes),
+    top: topForSummary([...changes].sort(byPriority)).map((f) => ({
       kind: cap(kindName(f.properties.type), 120), area_ha: round(f.properties.area_ha),
       when: cap(whenText(f.properties), 120), label: labelOf(f), reason: cap(reasonOf(f), 240),
     })),
   };
 }
 
-/** The AI summary text, or null for any failure (no address, error, timeout, answer failing our check). */
+/** The summary is four sections: {high_concern: [..], review: [..], expected: "..", not_labelled: ".."} (kb/report-proxy.md). */
+const LIMITS = { high_concern: 6, review: 4, bullet: 200, expected: 300, not_labelled: 200 };
+const SECTION_KEYS = ["high_concern", "review", "expected", "not_labelled"];
+
+/** Shape and length check of an answer (the Worker checks too); null when anything is off. */
+export function checkSections(s) {
+  if (!s || typeof s !== "object" || Array.isArray(s)) return null;
+  if (Object.keys(s).length !== 4 || !SECTION_KEYS.every((k) => k in s)) return null;
+  const ok = (v, max) => typeof v === "string" && v.length <= max && !BAD_WORDS.test(v);
+  for (const k of ["high_concern", "review"]) {
+    if (!Array.isArray(s[k]) || s[k].length > LIMITS[k] || !s[k].every((v) => ok(v, LIMITS.bullet) && v.trim())) return null;
+  }
+  if (!ok(s.expected, LIMITS.expected) || !ok(s.not_labelled, LIMITS.not_labelled)) return null;
+  const out = { high_concern: s.high_concern.map((v) => v.trim()), review: s.review.map((v) => v.trim()), expected: s.expected.trim(), not_labelled: s.not_labelled.trim() };
+  return out.high_concern.length + out.review.length + out.expected.length + out.not_labelled.length ? out : null;
+}
+
+/** The AI sections, or null for any failure (no address, error, timeout, answer failing our check). */
 export async function fetchAiSummary(body) {
   if (!REPORT_API) return null;
   const control = new AbortController();
@@ -104,8 +149,7 @@ export async function fetchAiSummary(body) {
     const answer = fetch(REPORT_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: control.signal })
       .then((r) => (r.ok ? r.json() : null));
     const data = await Promise.race([answer, timeout]);
-    const text = typeof data?.summary === "string" ? data.summary.trim() : "";
-    return text && text.length <= 1500 && !BAD_WORDS.test(text) ? text : null;
+    return checkSections(data?.sections);
   } catch {
     return null;
   } finally {
@@ -113,31 +157,36 @@ export async function fetchAiSummary(body) {
   }
 }
 
-// --- rule-based summary: templates filled with the same numbers ---
+// --- rule-based summary: the same four sections from templates ---
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const dotless = (t) => t.replace(/[.\s]+$/, "");
+const lowerFirst = (t) => (/^[A-Z][a-z]/.test(t) ? t[0].toLowerCase() + t.slice(1) : t);
 
-export function ruleSummary({ site, changes, selection }) {
-  const t = totals(changes);
-  const place = selection.area ? `${site.name}, inside the selected area` : site.name;
-  if (!t.n) return `No land changes were found at ${place} for the selection in this report. Radar and optical satellite data were checked.`;
-  let when;
-  if (selection.from && selection.to) when = `between ${formatDate(selection.from)} and ${formatDate(selection.to)}`;
-  else if (selection.from) when = `from ${formatDate(selection.from)}`;
-  else if (selection.to) when = `until ${formatDate(selection.to)}`;
-  else {
-    const firsts = changes.map((f) => f.properties.first_date).sort();
-    when = firsts[0] === firsts.at(-1) ? `on ${formatDate(firsts[0])}` : `between ${formatDate(firsts[0])} and ${formatDate(firsts.at(-1))}`;
-  }
-  const first = `Satellite data show ${plural(t.n, "land change", "land changes")} at ${place}, covering about ${formatArea(t.ha)} and first seen ${when}.`;
-  const parts = [
-    ["high_concern", (n) => `${n} marked high concern`], ["review", (n) => `${n} marked needs review`],
-    ["none", (n) => `${n} not labelled yet`], ["expected", (n) => `${n} marked expected`],
-  ].filter(([k]) => t.by[k].n).map(([k, say]) => `${say(t.by[k].n)} (${formatArea(t.by[k].ha)})`);
-  const second = `Of these, ${parts.join(", ")}.`;
-  const look = Math.min(5, t.n);
-  const third = `${look === 1 ? "The change" : `The ${look} changes`} listed under "Look at these first" ${look === 1 ? "is" : "are"} the best place to start; a label is a prompt for a person to check the records, not a finding about anyone.`;
-  return `${first} ${second} ${third}`;
+/** One short line for a change: "Land clearing, 109 ha: <reason>; <when>". */
+function bulletFor(kindName, f) {
+  const p = f.properties;
+  return clip(`${kindName(p.type)}, ${formatArea(p.area_ha)}: ${dotless(reasonOf(f))}; ${whenText(p, { short: true })}`, LIMITS.bullet);
 }
+
+/** Sections for a selection, from the changes' main reasons; the same shape as the AI sections. */
+export function ruleSections({ changes, kindName }) {
+  const sorted = [...changes].sort(byPriority);
+  const of = (k) => sorted.filter((f) => labelOf(f) === k);
+  const reasons = reasonsByLabel(changes);
+  const review = of("review");
+  const group = reasons.review?.slice(0, 3).map(({ reason, n }) => clip(`${plural(n, "change", "changes")}: ${dotless(reason)}`, LIMITS.bullet));
+  // the first sentence of each of the two most common reasons, with how many changes each covers
+  const why = (reasons.expected ?? []).slice(0, 2).map(({ reason, n }) => `${lowerFirst(dotless(reason.split(/\.\s/)[0]))} (${plural(n, "change", "changes")})`);
+  return {
+    high_concern: of("high_concern").slice(0, LIMITS.high_concern).map((f) => bulletFor(kindName, f)),
+    review: review.length <= LIMITS.review ? review.map((f) => bulletFor(kindName, f)) : group,
+    expected: why.length ? `Expected because the records show: ${why.join("; ")}.` : "",
+    not_labelled: of("none").length ? "No record has been matched to these yet, so they carry no label." : "",
+  };
+}
+
+const emptySummary = ({ site, selection }) =>
+  `No land changes were found at ${selection.area ? `${site.name}, inside the selected area` : site.name} for the selection in this report. Radar and optical satellite data were checked.`;
 
 // --- libraries and picture ---
 const scripts = new Map();
@@ -210,7 +259,7 @@ const M = 14; // page margin, mm
 const W = 210 - 2 * M;
 const GREY = [90, 90, 90];
 
-export async function buildReport(ctx, aiText, picture) {
+export async function buildReport(ctx, aiSections, picture) {
   const JsPdf = await loadPdf();
   const doc = new JsPdf({ unit: "mm", format: "a4", orientation: "portrait" });
   doc.setProperties({ title: latin1(`Parallax report: ${ctx.site.name}`) });
@@ -266,31 +315,47 @@ export async function buildReport(ctx, aiText, picture) {
     columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } },
   });
 
-  // summary: it follows the key numbers on page 1 and continues on the next page only when it must
-  if (aiText) {
-    heading("Summary");
-    const rows = [
-      { s: "AI-written summary", font: "bold", size: 10, color: 0 },
-      ...lines(aiText, W - 8).map((s) => ({ s, font: "normal", size: 10, color: 30 })),
-      { s: "Written by an AI model from the numbers in this report. Check the list below before acting.", font: "normal", size: 8, color: GREY },
-    ];
-    for (let i = 0; i < rows.length;) {
-      let fit = Math.floor((277 - y - 6) / 4.6);
-      if (fit < Math.min(3, rows.length - i)) { doc.addPage(); y = M; fit = Math.floor((277 - y - 6) / 4.6); }
-      const part = rows.slice(i, i + fit);
-      const bh = part.length * 4.6 + 6;
-      doc.setFillColor(244, 244, 244).setDrawColor(190).rect(M, y, W, bh, "FD");
-      part.forEach((r, k) => {
-        doc.setFont("helvetica", r.font).setFontSize(r.size).setTextColor(...[].concat(r.color));
-        text(r.s, M + 4, y + 6 + k * 4.6);
-      });
-      y += bh + 2;
-      i += part.length;
+  // summary: sub-headings and bullets in a grey box; it follows the key numbers and may continue on the next page
+  {
+    const sections = aiSections ?? ruleSections(ctx);
+    const LH = 4.4;
+    const rows = []; // one printed line each: {s, x, bullet, font, size, color, gap, keep}
+    const add = (s, o = {}) => rows.push({ s, x: 0, bullet: "", font: "normal", size: 10, color: 30, gap: 0, keep: false, ...o });
+    doc.setFont("helvetica", "normal").setFontSize(10);
+    const wrap = (s, indent) => lines(s, W - 8 - indent);
+    if (aiSections) add("AI-written summary", { font: "bold", color: 0, keep: true });
+    if (!t.n) wrap(emptySummary(ctx), 0).forEach((l) => add(l));
+    else {
+      const block = (title, items, bullets) => {
+        add(title, { font: "bold", size: 9.5, color: 0, gap: rows.length ? 2 : 0, keep: true });
+        for (const item of items) wrap(item, bullets ? 5 : 0).forEach((l, i) => add(l, bullets ? { x: 5, bullet: i === 0 ? "-" : "" } : {}));
+      };
+      if (t.by.high_concern.n && sections.high_concern.length) block("High concern", sections.high_concern, true);
+      if (t.by.review.n && sections.review.length) block("Needs review", sections.review, true);
+      if (t.by.expected.n && sections.expected) block("Expected", [sections.expected], false);
+      if (t.by.none.n && sections.not_labelled) block("Not labelled yet", [sections.not_labelled], false);
     }
-  } else {
-    const rule = ruleSummary(ctx);
-    heading("Summary", lines(rule, W).length * 4.6 + 12);
-    body(rule);
+    if (aiSections) add("Written by an AI model from the facts in this report. Check the list below before acting.", { size: 8, color: GREY, gap: 2 });
+    const total = rows.reduce((h, r) => h + LH + r.gap, 0) + 5;
+    heading("Summary", Math.min(total + 8, 240)); // a box that fits on one page starts on a fresh page rather than being split
+    for (let i = 0; i < rows.length;) {
+      const fit = () => { let h = 0, n = 0; for (let k = i; k < rows.length && h + LH + rows[k].gap <= 277 - y - 8; k++) { h += LH + rows[k].gap; n++; } while (n > 1 && rows[i + n - 1].keep) n--; return n; };
+      let n = fit();
+      if (n < Math.min(3, rows.length - i)) { doc.addPage(); y = M; n = fit(); }
+      const part = rows.slice(i, i + n);
+      const bh = part.reduce((h, r) => h + LH + r.gap, 0) + 5;
+      doc.setFillColor(244, 244, 244).setDrawColor(190).rect(M, y, W, bh, "FD");
+      let ty = y + 6;
+      for (const r of part) {
+        ty += r.gap;
+        doc.setFont("helvetica", r.font).setFontSize(r.size).setTextColor(...[].concat(r.color));
+        if (r.bullet) text(r.bullet, M + 4, ty);
+        text(r.s, M + 4 + r.x, ty);
+        ty += LH;
+      }
+      y += bh + 2;
+      i += n;
+    }
   }
 
   // top five and the full list
