@@ -1,6 +1,6 @@
 # Mentor feedback: what we did with it
 
-Our geospatial mentor looked at the live app and gave eleven points. This page lists each one, what we did and where, and what we chose not to build and why. Last updated 15 Nov 2026, about 00:30; the overnight work sits on the branch `overnight` and reaches `main` only after Tian has looked (plan and rules: issue #119).
+Our geospatial mentor looked at the live app and gave eleven points. This page lists each one, what we did and where, and what we chose not to build and why. Last updated 15 Nov 2026, about 00:30; the overnight work sits on the branch `overnight` and reaches `main` only after the team has looked at it in the morning (plan and rules: issue #119).
 
 **Numbering.** Issue #119 numbers eight of the points (1, 2, 3, 4, 5, 7, 9, 10). The other three (numbers 6, 8 and 11) are the "How it works / FAQ" pages and the two things we did not build; which number is which is not recorded in the repo `(unverified)`, so those rows carry no number.
 
@@ -24,7 +24,7 @@ Our geospatial mentor looked at the live app and gave eleven points. This page l
 
 - **The left panel with layer checkboxes.** Team decision: the app is a full-width map with details only when something is clicked (no permanent panel, few simple options). The layer switches that exist live in the legend box: base map, and "What the records say" for sites that have record layers.
 - **The alert service by urgency.** Future work: written down under "Further work" in `app/how-it-works.html` ("Alerts sorted by urgency, sent to the people responsible for a place"), not built. The report's ordering rule is its planned trigger: label first (high concern, needs review, not labelled, expected), then size (largest first), then recency (newest first).
-- **Polish of the report.** Planned for the morning, after Tian has looked; the report itself works end to end (point 10).
+- **Polish of the report.** Planned for the morning, after the first look; the report itself works end to end (point 10).
 
 ## Rules the work followed
 
