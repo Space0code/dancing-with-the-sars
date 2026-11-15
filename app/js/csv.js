@@ -6,7 +6,7 @@ import { VERDICTS, verdictKey, safeUrl } from "./format.js";
 const COLUMNS = ["id", "site", "kind", "size_ha", "first_seen", "label", "main_reason", "source_link", "centre_lon", "centre_lat"];
 
 /** Centre of the bounding box of a Polygon / MultiPolygon geometry, as [lon, lat] (or [null, null]). */
-function centre(geometry) {
+export function centre(geometry) {
   const points = [];
   const walk = (c) => (typeof c?.[0] === "number" ? points.push(c) : c?.forEach(walk));
   walk(geometry?.coordinates);
