@@ -17,7 +17,7 @@ import requests
 from pyproj import Transformer
 from shapely.geometry import Polygon, box
 
-from ._common import UTM, OfflineMiss, fetch, safe, to_utm
+from ._common import UTM, OfflineMiss, ServiceError, fetch, safe, store, to_utm
 
 SOURCE = "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)"
 SERVICE = "https://ovc.catastro.meh.es/INSPIRE/wfsBU.aspx"
@@ -56,6 +56,7 @@ def _parse(body: bytes) -> list[dict]:
     return out
 
 
+EMPTY_GML = b'<?xml version="1.0"?><gml:FeatureCollection xmlns:gml="http://www.opengis.net/gml/3.2"/>'
 MIN_SPLIT_M = 120      # don't split a slow tile below this side length
 
 
@@ -68,15 +69,21 @@ def _tile(x0: float, y0: float, x1: float, y1: float) -> list[dict]:
     """Buildings in one box. A dense town tile (~4 MB of GML) can take minutes, so a big tile that times out is
     split in four instead of retried; a full tile (5,000 buildings, possibly truncated) is split too."""
     splittable = min(x1 - x0, y1 - y0) / 2 >= MIN_SPLIT_M
+    params = {
+        "service": "WFS", "version": "2.0.0", "request": "GetFeature", "typeNames": "BU:Building",
+        "srsName": "EPSG::25831", "bbox": f"{x0:.0f},{y0:.0f},{x1:.0f},{y1:.0f}",
+    }
     try:
-        body = fetch("cadastre", SERVICE, {
-            "service": "WFS", "version": "2.0.0", "request": "GetFeature", "typeNames": "BU:Building",
-            "srsName": "EPSG::25831", "bbox": f"{x0:.0f},{y0:.0f},{x1:.0f},{y1:.0f}",
-        }, timeout=60, retries=0 if splittable else None)
+        body = fetch("cadastre", SERVICE, params, timeout=60, retries=0 if splittable else None)
     except (requests.Timeout, OfflineMiss):  # a tile that timed out while recording was never cached: its quarters were
         if not splittable:
             raise
         return [f for q in _quarters(x0, y0, x1, y1) for f in _tile(*q)]
+    except ServiceError as e:
+        if "No records" in str(e):  # the registry's answer for a box with no building in it (sea, empty land)
+            store("cadastre", SERVICE, params, EMPTY_GML)  # remember it: asking again takes retries and minutes
+            return []
+        raise
     feats = _parse(body)
     if len(feats) >= MAX_FEATURES:
         return [f for q in _quarters(x0, y0, x1, y1) for f in _tile(*q)]

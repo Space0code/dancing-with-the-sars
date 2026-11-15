@@ -311,3 +311,27 @@ def test_cadastre_ignores_malformed_dates():
     assert cadastre._date("1975-01-01T00:00:00") == "1975-01-01"
     assert cadastre._date("0-01-01T00:00:00") is None
     assert cadastre._date(None) is None and cadastre._date("") is None
+
+
+def test_a_tile_without_buildings_is_an_empty_list_not_an_error(monkeypatch, tmp_path):
+    monkeypatch.setattr(_common, "CACHE_DIR", tmp_path)  # the remembered answer goes here, not into the fixtures
+    monkeypatch.setattr(_common, "OFFLINE", False)
+    calls = []
+
+    def nothing_there(*a, **k):
+        calls.append(1)
+        raise _common.ServiceError("<ExceptionText>No records founded for BBOX and SRS provided</ExceptionText>")
+
+    monkeypatch.setattr(_common.requests, "request", lambda *a, **k: nothing_there())
+    assert cadastre._tile(400_000, 4_580_000, 400_990, 4_580_990) == []
+    n = len(calls)
+    assert n >= 1 and list(tmp_path.glob("cadastre-*.bin"))  # remembered
+    assert cadastre._tile(400_000, 4_580_000, 400_990, 4_580_990) == [] and len(calls) == n  # not asked again
+
+    def broken(*a, **k):
+        raise _common.ServiceError("<ExceptionText>Internal error</ExceptionText>")
+
+    monkeypatch.setattr(cadastre, "fetch", broken)
+    with pytest.raises(_common.ServiceError):  # any other service error still counts as a failure
+        cadastre._tile(400_000, 4_580_000, 400_990, 4_580_990)
+

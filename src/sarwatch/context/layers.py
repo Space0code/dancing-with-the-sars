@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / "app" / "data"
 MAX_FILE = 1_000_000          # bytes per GeoJSON
 BIG_BOX_M2 = 400e6            # a site box over 400 km2: the buildings layer covers only the land near the changes
-FOCUS_M = 400                 # ... within this many metres of a marked change
+FOCUS_M = 200                 # ... within this many metres of a marked change (400 m gave a 2 MB file at Barcelona)
 TILE_WORKERS = 3              # cadastre tiles asked in parallel (the service is slow on dense towns)
 _to_wgs = Transformer.from_crs(UTM, 4326, always_xy=True).transform
 _to_utm = Transformer.from_crs(4326, UTM, always_xy=True).transform
@@ -67,9 +67,30 @@ def _wgs(g):
     return shapely.transform(g, lambda xy: np.column_stack(_to_wgs(xy[:, 0], xy[:, 1])))
 
 
+def _snap(geom, grid: float):
+    """Round the coordinates to ``grid`` degrees. Snapping can make a thin or nearly degenerate polygon invalid (GEOS
+    "side location conflict"): repair it first, and if the grid still cannot hold it, round the points as they are."""
+    try:
+        return shapely.set_precision(geom, grid)
+    except shapely.errors.GEOSException:
+        try:
+            return shapely.set_precision(shapely.make_valid(geom), grid)
+        except shapely.errors.GEOSException:
+            return shapely.set_precision(geom, grid, mode="pointwise")
+
+
 def _feature(g, props: dict, grid: float = 1e-6) -> dict:
-    geom = mapping(shapely.set_precision(_wgs(g), grid))
+    geom = mapping(_snap(_wgs(g), grid))
     return {"type": "Feature", "geometry": geom, "properties": {k: v for k, v in props.items() if v is not None}}
+
+
+def _safe_feature(g, props: dict, grid: float = 1e-6) -> dict | None:
+    """``_feature``, or None (said on stderr) for a shape that cannot be written: one bad outline must not lose a layer."""
+    try:
+        return _feature(g, props, grid)
+    except shapely.errors.GEOSException as e:
+        print(f"  skipped one shape ({props.get('label', '?')[:50]}): {e}", file=sys.stderr)
+        return None
 
 
 def _write(path: Path, feats: list[dict]) -> int:
@@ -263,8 +284,8 @@ def build(site: str, out_dir: Path | None = None, today: str | None = None, bbox
             shapes, meta = fn(site_box, tol, focus=focus) if lid == "buildings" else fn(site_box, tol)
             path = out / f"{lid}.geojson"
             for factor, grid in SHRINK:
-                feats = [_feature(g.simplify(tol * factor) if factor > 1 else g, props, grid) for g, props in shapes]
-                feats = [f for f in feats if f["geometry"]["coordinates"]]
+                feats = [_safe_feature(g.simplify(tol * factor) if factor > 1 else g, props, grid) for g, props in shapes]
+                feats = [f for f in feats if f and f["geometry"]["coordinates"]]
                 size = _write(path, feats)
                 if size <= MAX_FILE:
                     break
