@@ -239,7 +239,7 @@ export async function buildReport(ctx, aiText, picture) {
   y += 2;
 
   // map picture, legend, attribution
-  const mh = Math.min(115, (W * picture.h) / picture.w);
+  const mh = Math.min(105, (W * picture.h) / picture.w);
   doc.addImage(picture.url, "JPEG", M, y, W, mh);
   doc.setDrawColor(180).setLineWidth(0.2).rect(M, y, W, mh);
   y += mh + 4;
@@ -266,18 +266,27 @@ export async function buildReport(ctx, aiText, picture) {
     columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } },
   });
 
-  // summary (the heading stays with its text: both move to the next page together)
+  // summary: it follows the key numbers on page 1 and continues on the next page only when it must
   if (aiText) {
-    const ls = lines(aiText, W - 8);
-    const bh = ls.length * 4.6 + 15;
-    heading("Summary", bh + 12);
-    doc.setFillColor(244, 244, 244).setDrawColor(190).rect(M, y, W, bh, "FD");
-    doc.setFont("helvetica", "bold").setFontSize(10).setTextColor(0); text("AI-written summary", M + 4, y + 6);
-    doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(30);
-    ls.forEach((l, i) => text(l, M + 4, y + 11.5 + i * 4.6));
-    doc.setFontSize(8).setTextColor(...GREY);
-    text("Written by an AI model from the numbers in this report. Check the list below before acting.", M + 4, y + bh - 2.5);
-    y += bh + 2;
+    heading("Summary");
+    const rows = [
+      { s: "AI-written summary", font: "bold", size: 10, color: 0 },
+      ...lines(aiText, W - 8).map((s) => ({ s, font: "normal", size: 10, color: 30 })),
+      { s: "Written by an AI model from the numbers in this report. Check the list below before acting.", font: "normal", size: 8, color: GREY },
+    ];
+    for (let i = 0; i < rows.length;) {
+      let fit = Math.floor((277 - y - 6) / 4.6);
+      if (fit < Math.min(3, rows.length - i)) { doc.addPage(); y = M; fit = Math.floor((277 - y - 6) / 4.6); }
+      const part = rows.slice(i, i + fit);
+      const bh = part.length * 4.6 + 6;
+      doc.setFillColor(244, 244, 244).setDrawColor(190).rect(M, y, W, bh, "FD");
+      part.forEach((r, k) => {
+        doc.setFont("helvetica", r.font).setFontSize(r.size).setTextColor(...[].concat(r.color));
+        text(r.s, M + 4, y + 6 + k * 4.6);
+      });
+      y += bh + 2;
+      i += part.length;
+    }
   } else {
     const rule = ruleSummary(ctx);
     heading("Summary", lines(rule, W).length * 4.6 + 12);
@@ -325,24 +334,44 @@ export async function buildReport(ctx, aiText, picture) {
   // numbered sources (the "Src" column points here)
   if (sources.length) {
     heading("Sources");
-    doc.setFont("helvetica", "normal").setFontSize(8);
-    sources.forEach((s, i) => {
-      need(9);
-      doc.setTextColor(30);
-      text(`[${i + 1}] ${clip(s.name, 90)}`, M, y); y += 3.6;
-      doc.setTextColor(0, 70, 160);
-      let rest = latin1(s.url);
-      while (rest) { // a URL has no spaces: cut it by width
+    const many = sources.length > 25; // a long list is printed small, in two columns, so it does not add pages of links
+    const size = many ? 6.5 : 8;
+    const line = many ? 2.9 : 3.4;
+    const colW = many ? (W - 6) / 2 : W;
+    doc.setFont("helvetica", "normal").setFontSize(size);
+    const cut = (url) => { // a URL has no spaces: cut it by width
+      const parts = [];
+      let rest = latin1(url);
+      while (rest) {
         let n = rest.length;
-        while (n > 1 && doc.getTextWidth(rest.slice(0, n)) > W - 4) n--;
-        need(4);
-        text(rest.slice(0, n), M + 4, y);
-        doc.link(M + 4, y - 3, W - 4, 3.6, { url: s.url });
-        rest = rest.slice(n); y += 3.4;
+        while (n > 1 && doc.getTextWidth(rest.slice(0, n)) > colW - 4) n--;
+        parts.push(rest.slice(0, n));
+        rest = rest.slice(n);
+      }
+      return parts;
+    };
+    let col = 0;
+    let top = y;
+    sources.forEach((s, i) => {
+      const parts = cut(s.url);
+      const height = (parts.length + 1) * line + 1.2;
+      if (y + height > 277) {
+        if (many && col === 0) { col = 1; y = top; }
+        else { doc.addPage(); y = M; top = M; col = 0; }
+      }
+      const x = M + col * (colW + 6);
+      doc.setFont("helvetica", "normal").setFontSize(size).setTextColor(30);
+      text(`[${i + 1}] ${clip(s.name, many ? 50 : 90)}`, x, y); y += line;
+      doc.setTextColor(0, 70, 160);
+      for (const part of parts) {
+        text(part, x + 4, y);
+        doc.link(x + 4, y - 3, colW - 4, 3.6, { url: s.url });
+        y += line;
       }
       y += 1.2;
     });
   }
+  if (doc.getNumberOfPages() > 1 && y <= M + 0.1) doc.deletePage(doc.getNumberOfPages()); // never end on an empty page
 
   // footer on every page
   const pages = doc.getNumberOfPages();
