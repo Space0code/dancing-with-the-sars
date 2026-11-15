@@ -61,7 +61,7 @@ export function createTimeline({ onDate, describe = () => "", pictured = () => t
   function watchingText(iso) {
     const active = sources.filter((s) => s.start <= iso && (!s.end || s.end >= iso)).map((s) => shortName(s.sensor));
     const later = sources.filter((s) => s.start > iso);
-    const parts = [active.length ? `Watching on ${formatDate(iso)}: ${active.join(" and ")}.` : `No satellite record before ${later[0] ? whenStarts(later[0].start) : "now"}.`];
+    const parts = [active.length ? `Watching on ${formatDate(iso)}: ${active.length > 1 ? `${active.slice(0, -1).join(", ")} and ${active.at(-1)}` : active[0]}.` : `No satellite record before ${later[0] ? whenStarts(later[0].start) : "now"}.`];
     if (later.length) {
       const [first, ...rest] = later.map((s) => [shortName(s.sensor), whenStarts(s.start)]);
       const verb = /alerts$/.test(first[0]) ? "start" : "starts";
