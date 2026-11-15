@@ -44,5 +44,6 @@ One line each: `date · decision · why · issue`. Newest at the bottom.
 - 2026-11-14 · Barcelona site (50 × 39 km): Sentinel-1 reads the three IW2 bursts of track 132 as one mosaic per date (one 30 m lattice, no resampling) instead of tiles; NISAR 130 / 22 covers it whole · one stack = one detection, no seams; same track as Agroparc · #44, PR #110
 - 2026-11-14 · The product name is Parallax (was the working title SARwatch) · decided by Tian; the Python package, folders and commands keep `sarwatch` · #112
 - 2026-11-14 · The tool is place-agnostic and carries no hand-written site history: `story.json` and `story_series.json` leave the data format, real-world `events` lists are not required, and `sites.json` gets optional neutral `notes` (≤ 4 × 140 characters) · Tian; the real-world story is told in the video · #112
+- 2026-11-15 · Demo = a deck of ≤ 7 slides (submit before 16:00) with a 2–3 min talk and 1–2 clips of ≤ 10 s inside; no 30 s video, because it would replace the pitch · the app keeps being polished until midnight · mentor talk, team agreed · `demo-strategy.md`
 
 <sub>Written by Claude</sub>

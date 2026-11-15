@@ -26,6 +26,8 @@ Form fields (all required ones must be filled, all in **English**):
 - [ ] Images on the page: JPG / PNG / GIF up to 10 MB each (screenshots go here)
 - [ ] Tick "Terms and Conditions" and "Confirm All Work is Original", then **Submit for Judging**; check the banner
 
+**Our choice (15 Nov, mentor talk, team agreed): the slide deck route, with 1–2 clips of ≤ 10 s in it; no 30 s video (see `demo-strategy.md`). The § 3 shot list is clip material now.**
+
 **Demo (hard limit, else no Global Judging):** a **video of 30 seconds or less**, or a **slide deck of at most 7
 slides** (title and intro slides included). English; a video in another language needs English subtitles. Slides must
 show the team name, the members' names and the challenge. The demo counts mostly toward Presentation; the project page

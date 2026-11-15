@@ -2,6 +2,13 @@
 
 The claim, the 30-second video, the 3-minute live pitch, the project page and what we leave out. Last updated 2026-11-14 (#49). Rules and form fields: `submission.md` §1. Numbers marked `[check]` come from PR #55 and must be re-read from the final data before recording.
 
+> **Mentor decision, 15 Nov (team agreed): the demo is a slide deck, not the 30 s video.** The 30 s video would replace the pitch, and we want the pitch.
+> - **Deck:** 7 slides at most (title and intro count), submitted before **16:00**. It must give the jury context (who is affected, why it matters, why radar) and **sell the idea**: pitch it, don't just describe it.
+> - **Talk:** 2–3 minutes, on those slides. Section 4 below is the script base; trim it to fit.
+> - **Clips:** 1 or 2 videos of at most 10 s each inside the slides (best candidates: the Muhos timeline replay, the card opening). Section 3 is now the source for these clips, not a 30 s video.
+> - **App:** keep polishing the live app until midnight (edits after 16:00 are allowed until 23:59, see `official-rules.md` §1); the deck links to it.
+> - Slides must show team name, members' names and the challenge (`official-rules.md`). Other limits in `submission.md` §1 still apply (English, AI imagery watermarked, nobody under 18).
+
 **Wording check:** `evidence-check.md` decides what may be asserted; this page was brought in line with the final Muhos data (PR #95) on 14 Nov. Finland is the one worked example; Catalonia and Agroparc are "next step" (sections 4–7 mention them only as that).
 
 ## 1. What decides the score
@@ -25,7 +32,7 @@ The claim, the 30-second video, the 3-minute live pitch, the project page and wh
 
 **We do not claim:** a NISAR hectare figure for "already cleared" (the three sources give 176, 200 and 308 ha for the end of June) · that half was cut from July on (optical first sightings lag) · a radar date in March (radar first sees it in early April) · that the app would have prevented anything · "daily", "real time", "through snow" · any accuracy figure we did not measure · anything about who is at fault.
 
-## 3. The 30-second video (Muhos only, about 65 spoken words, on the new main view)
+## 3. The 30-second video: dropped, reuse as clip material (Muhos only, about 65 spoken words, on the new main view)
 | Time | On screen | Narration |
 |---|---|---|
 | 0–4 s | "Satellite photo" view, the photo of 23 Jul 2025: forest intact, badge "Before · summer 2025". Corner label throughout: "Parallax · <team> · NASA Space Apps 2026" | "Northern Finland. In 2026 a forest was cleared here for a data centre." |
