@@ -2,6 +2,7 @@
 // drawn by picture.js), verdict-colored change polygons with a date filter, selection, and a switch that hides them all.
 // A site with stages.geojson draws its grouped changes as ONE area with one bold outline that grows with the date.
 import { VERDICTS } from "./format.js";
+import { seenCount } from "./seen.js";
 
 // The changes and radar pictures come from Sentinel-1 (report.js reuses this line for the PDF).
 export const COPERNICUS_NOTICE = "Contains modified Copernicus Sentinel data (2016–2026)";
@@ -96,7 +97,9 @@ export function createChangeMap(container, { onSelect, bounds }) {
       });
       map.on("mousemove", "changes-fill", (e) => hover(e.features?.[0]?.properties.grouped ? e.features[0].properties.id : ""));
       map.on("click", (e) => {
-        const hit = map.queryRenderedFeatures(e.point, { layers: ["changes-fill"] })[0];
+        // Nested changes (a small radar one inside a big optical one): pick the smallest polygon under the cursor.
+        const area = (hit) => features.get(hit.properties.id)?.properties.area_ha ?? Infinity;
+        const hit = map.queryRenderedFeatures(e.point, { layers: ["changes-fill"] }).reduce((best, f) => (!best || area(f) < area(best) ? f : best), null);
         // A click on a record layer (records.js) opens that record's popup: it must not count as "empty map" and close the drawer.
         const records = map.getStyle().layers.filter((l) => l.id.startsWith("rec-") && l.id.endsWith("-fill")).map((l) => l.id);
         if (!hit && records.length && map.queryRenderedFeatures(e.point, { layers: records }).length) return;
@@ -156,7 +159,13 @@ export function createChangeMap(container, { onSelect, bounds }) {
       stages = (stageCollection?.features ?? []).slice().sort((a, b) => a.properties.date.localeCompare(b.properties.date));
       const grouped = new Set(stages.flatMap((f) => f.properties.members));
       // the map's copy knows which changes belong to a group; the originals (card, list) stay untouched
-      const drawn = { ...collection, features: collection.features.map((f) => ({ ...f, properties: { ...f.properties, grouped: grouped.has(f.properties.id) } })) };
+      // drawn largest first, so a small change inside a big one is on top; `seen_by` lets the inbox's "two or more sources" chip filter on the map
+      const drawn = {
+        ...collection,
+        features: collection.features
+          .map((f) => ({ ...f, properties: { ...f.properties, grouped: grouped.has(f.properties.id), seen_by: seenCount(f.properties) } }))
+          .sort((a, b) => b.properties.area_ha - a.properties.area_ha),
+      };
       map.getSource("changes").setData(drawn);
       this.select(null);
       applyDateFilter();
