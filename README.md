@@ -79,12 +79,18 @@ is in `.devcontainer/`.
 | Sentinel-1 / Sentinel-2 | [Copernicus](https://www.copernicus.eu) programme (ESA / European Commission) | free, full and open |
 | Landsat 8 / 9 | NASA and USGS | open data |
 | OPERA DIST-ALERT-HLS (optical alerts) and HLS colour photos | NASA, made from Landsat (NASA / USGS) and Sentinel-2 (ESA), via NASA LP DAAC | open NASA data |
-| Year photos in Catalonia | [ICGC](https://www.icgc.cat) aerial orthophotos (WMS) | attribution shown in the map; see ICGC's terms |
-| Year photos elsewhere | [EOX](https://cloudless.eox.at) Sentinel-2 cloudless, "Contains modified Copernicus Sentinel data" | CC BY 4.0 (2017), CC BY-NC-SA 4.0 (2018 on) |
-| Background maps | Esri World Imagery; © OpenStreetMap contributors | see each provider's terms |
-| Records for the verdict | Catalan protected areas (PEIN / Natura 2000), MUC zoning (Generalitat), Spanish cadastre (INSPIRE), the Catalan solar-plant list, the official records cited per change | public registers; sources listed in [kb/data-sources.md](kb/data-sources.md) |
+| Satellite background | Esri World Imagery: "© Esri, Maxar, Earthstar Geographics and the GIS User Community" | Esri terms of use (free, no key; not an open licence) |
+| Grey background | Esri World Light Gray Canvas: "© Esri, HERE, Garmin, © OpenStreetMap contributors and the GIS User Community" | Esri terms of use; OSM data ODbL 1.0 |
+| Protected areas | PEIN / Natura 2000, Generalitat de Catalunya (via Diputació de Barcelona) | CC BY 4.0 |
+| Zoning · solar plants | MUC (sig.gencat.cat) · solar-plant register (Generalitat open data) | Llicència oberta d'ús d'informació – Catalunya |
+| Buildings layer | derived from Dirección General del Catastro data (INSPIRE WFS); footprints merged and summarised, not cadastral information | Catastro INSPIRE licence (transformed data only) |
+| Wildfire check | EFFIS burnt areas (European Commission JRC), queried for each Catalan change; no burnt area matched, so none is shown | CC BY 4.0 |
+| Official records per change | press releases and news cited and linked on each card | © each publisher; cited, not redistributed |
+| Web libraries (loaded at run time from unpkg, jsDelivr, cdnjs) | MapLibre GL JS 4.7.1 · Turf 7.2.0, shpjs, geotiff, jsPDF, jspdf-autotable · togeojson, shp-write | BSD-3-Clause · MIT · BSD-2/BSD-3-Clause |
+| Fonts | Funnel Display / Funnel Sans (`app/fonts/OFL.txt`) | SIL OFL 1.1 |
+| Optional AI report summary | Google Gemini (`gemini-flash-lite-latest`, then `gemini-flash-latest`; Generative Language API) via our Cloudflare Worker | provider terms; labelled "AI-written" |
 
-The EOX layers from 2018 on are non-commercial (CC BY-NC-SA): fine for this challenge, check before any commercial use.
+Every item with its licence, for the submission form: [kb/submission.md](kb/submission.md) §4.
 
 ## Licence
 
