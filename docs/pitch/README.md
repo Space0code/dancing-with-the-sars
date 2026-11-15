@@ -7,3 +7,5 @@ Credit, radar: Contains modified Copernicus Sentinel data (ESA, Copernicus), pre
 Fetched with the public NASA Worldview Snapshots API using the radar picture's bounds.
 
 `Radar_comparison.gif`: a screen recording of the app's Compare slider at Muhos, Finland: the radar picture before (Sentinel-1, 2 Jun 2025) against the picture after, for a slide. Credit: Contains modified Copernicus Sentinel data (ESA, Copernicus), prepared as OPERA RTC-S1 (NASA).
+
+`barcelona-demo.gif` (10 s, 960x540) and `barcelona-demo-still.png` (last frame): screen recording of the live app (Barcelona, Radar view) on 15 Nov 2026. The timeline runs from 5 Jun 2016 to 2 Nov 2026 and changes appear; then a click on barcelona-0073, a new building labelled Expected, and the "Why this label?" card scrolls through its reasons (registered buildings, derived from Dirección General del Catastro data; zoning, Mapa urbanístic de Catalunya) and their sources. Credit: Contains modified Copernicus Sentinel data (ESA, Copernicus), prepared as OPERA RTC-S1 (NASA); NISAR (NASA/ISRO). Background imagery © Esri and its providers.
