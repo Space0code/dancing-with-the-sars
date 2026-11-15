@@ -1,7 +1,7 @@
 # Site: Barcelona and its region
 
 Which radar data the Barcelona site reads, what it costs, and how a window larger than one Sentinel-1 burst becomes
-one stack. Last updated 2026-11-14 (live ASF searches and timed reads; issue #44). Terms: [glossary.md](glossary.md).
+one stack. Last updated 2026-11-15 (live ASF searches and timed reads; recent-first selection; issue #44). Terms: [glossary.md](glossary.md).
 
 ## Window
 **lon 1.85 to 2.45, lat 41.25 to 41.60** (about 50 × 39 km, 1,950 km²): the city, the Llobregat delta (airport, port),
@@ -61,16 +61,46 @@ found by looking at quick-looks (`explore/barcelona/look.py`):
   October, and on the Llobregat delta and Maresme fields the "other" class was whole fields whose HV rose 5–7 dB (crops
   growing). 137 of 203 regions. `structure_db=6` turns weaker HH rises into "other" first. A year-to-year "churn" mask
   from the Sentinel-1 decade was tried and rejected: construction sites churn as much as fields (both ~1–1.5 dB).
-- **100 changes** (`max_changes`, after `exclude_points`): the largest merged changes, a low-confidence one counted at half its area.
-  Site pictures above 2 MB get a 256-colour palette (`layer_bytes`): the folder is 6.6 MB.
+- **100 changes, recent first, filtered** (`max_changes=100`, `recent_from=2024-01-01`, `max_recent=120`,
+  `recent_low_conf_ha=2.0`, `recent_min_ha=1.2`, `recent_min_step_db=7.0`, `recent_drop_types=("other",)`; generic
+  `Site` settings, all off by default, `pipeline.top_changes`). After `exclude_points`: (1) a change first seen from
+  2024 on, dated by the sensor that watched it start (not a late start), is "recent"; (2) a recent change is dropped
+  if it is low-confidence under 2 ha, under 1.2 ha, of type `other`, or has a signal step under 7 dB (no step value:
+  kept); (3) the largest recent ones are kept, up to 120 (never binds now); (4) the places left up to 100 go to the
+  largest older changes. Why: an Opus reviewer judged 40 recent changes by eye; only 12 of the 28 callable ones
+  looked real (43 %), the others were crop or field cycles. Real ones are mostly at least 8 dB and compact; crops
+  are mostly 5-8 dB; all sampled `other` were crops; 1.0-1.1 ha was mostly crops or unclear. With this filter the
+  sample keeps 11 of 12 real and 4 of 16 crops: **in a sample judged by eye, about three quarters of the recent
+  changes kept look real; the thresholds were tuned on that same sample, so the true share is probably lower.**
+  A NISAR change "already under way" on 23 Jun 2026 is dated to that pass, says the record cannot date it, and is
+  **not** recent (it competes with the older ones by size). Without `recent_from` (Muhos, Agroparc, fixture) nothing
+  changes. Site pictures above 2 MB get a 256-colour palette (`layer_bytes`).
 
-## First result (14 Nov 2026)
-700 Sentinel-1 + 66 NISAR regions → 762 merged changes → the 100 largest: structure 75 = 515 ha, earthworks 14 =
-90 ha, clearing 9 = 47 ha, other 2 = 14 ha (666 ha). 97 from Sentinel-1, 3 from NISAR (2026). 10 Sentinel-1 and 2 NISAR
-changes are late starts (already under way when the sensor began watching): their date is that sensor's first pass and
-the card says the record cannot date them. One change, a moored ship at a port berth that NISAR read as earthworks, is
-left out by `exclude_points`. Zoning (MUC) counts from the first run (68 urban, 23 developable, 9 non-buildable) are
-not redone. Pictures and the list of
-what is still wrong: PR #110.
+## Measured before the cut (15 Nov 2026, offline, no `max_changes`)
+761 merged changes (696 Sentinel-1 + 65 NISAR regions). First year: 2016 19, 2017 150, 2018 105, 2019 74, 2020 77,
+2021 62, 2022 54, 2023 49, 2024 61, 2025 34, 2026 76. **171 from 2024 on** (8 of them NISAR late starts, not recent),
+163 recent: 1-2 ha 144 (Sentinel-1 97, NISAR 47), 2-5 ha 27 (Sentinel-1 9, NISAR 18), over 5 ha none. The old
+"100 largest" kept only 7 of them (2024: 3, 2025: 1, 2026: 3).
+**Real or not?** Judged by eye from the card pictures (24 random recent ones, no ground truth, no optical check): about
+half show a compact new bright spot or dark patch that fits a building, a clearing or earthworks; the rest sit in
+speckled field mosaics (Vallès, Maresme, Llobregat delta) and look like crops or machinery. The smallest (1.0-1.1 ha,
+72 of 163) are the least convincing. Treat the recent list as "places to look at", not as confirmed works.
+
+## Result (15 Nov 2026, 762 merged changes before the cut)
+**100 changes, 541 ha: 53 recent (from 2024 on), 47 older** (Sentinel-1 83, NISAR 17). First year: 2016 9, 2017 16,
+2018 8, 2019 2, 2020 4, 2021 2, 2022 1, 2023 5, 2024 23, 2025 13, 2026 17. Type, all 100: structure 73, clearing 17,
+earthworks 8, other 2; from 2024 on (53): structure 36, clearing 13, earthworks 4 (Sentinel-1 36, NISAR 17).
+Labels, all 100: expected 70, needs review 22, high concern 8; from 2024 on: expected 32, review 15, high concern 6
+(verdict rules of #46 and #132; none left without a label). Picture: `explore/barcelona/overview-recent.jpg`.
+The "Real or not?" sample above was made on the previous 120 recent changes.
+
+## Still wrong
+- Even after the filter about a quarter of the recent changes are probably fields or unclear (see the honest share
+  above). The 4 sampled crops that remain are 1.4-2 ha, in field mosaics. A land-cover or optical check is the
+  next step.
+- 1-2 ha is about 12-22 Sentinel-1 pixels: outlines are blocky and the area is +-30 %.
+- Ships and port yards: one berth is excluded by hand (`exclude_points`); others may remain in the port and the airport.
+- The place name (municipality) is not in the data; cards show coordinates only.
+- The filter removes real small changes too (the sample lost 1 of 12 real ones, a 1.1 ha NISAR change at 6 dB).
 
 <sub>Written by Claude</sub>
