@@ -11,6 +11,7 @@ import { createTour } from "./tour.js";
 import { createRecords } from "./records.js";
 import { filterChanges, getSelection, isActive, clearSelection, onSelectionChange, describeSelection } from "./selection.js";
 import { createExport } from "./export.js";
+import "./download.js"; // registers the GeoJSON, Shapefile and GeoTIFF formats
 import { createBasemap } from "./basemap.js";
 
 const $ = (id) => document.getElementById(id);
