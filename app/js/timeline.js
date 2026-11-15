@@ -147,6 +147,12 @@ export function createTimeline({ onDate, describe = () => "" }) {
   });
 
   return {
+    /** The changes the red bars stand for (the Filter's selection; all of them when none is set). Snapshots and slider stay as they are. */
+    setChanges(features) {
+      if (!own) return;
+      own.features = features;
+      drawTicks(features);
+    },
     /** Open a site: its snapshots, its changes (for the red bars) . The slider starts at the end. */
     setRange(site, features = []) {
       stop();

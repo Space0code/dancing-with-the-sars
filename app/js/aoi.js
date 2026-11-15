@@ -174,16 +174,21 @@ export function createAoi(mount, { map, getSite, hideDrawer, showDrawer, room })
   function choose(geometry, text, { zoom = true, note = null, file = false } = {}) {
     label = text;
     fromFile = file;
+    if (file) bboxInput.value = ""; // an uploaded shape is not a typed box: no stale numbers in the field
     setArea(geometry);
     showStatus();
     const box = geometryBox(geometry);
+    if (box) bboxInput.value = box.map((n) => Number(n.toFixed(5))).join(", "); // the open form shows the area now chosen
     const outside = outsideNote(box);
     say(outside ?? note, outside ? "error" : "info");
     if (zoom) zoomTo(box);
   }
 
   const boxLabel = (b) => `Box ${fmt(b[0])}, ${fmt(b[1])} – ${fmt(b[2])}, ${fmt(b[3])}`;
-  const setBox = (b, opts) => choose(boxPolygon(b), boxLabel(b), opts);
+  const setBox = (b, opts) => {
+    bboxInput.value = b.map(fmt).join(", "); // the field shows the box that is applied (also after drawing), not an older entry
+    choose(boxPolygon(b), boxLabel(b), opts);
+  };
 
   // --- Enter bbox ---
   typeBtn.addEventListener("click", () => {
