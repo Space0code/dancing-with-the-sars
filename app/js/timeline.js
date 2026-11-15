@@ -16,8 +16,9 @@ function snapshotsOf(site, features) {
   return [...dates].filter((d) => d >= site.time_range[0] && d <= site.time_range[1]).sort().map((date) => ({ date, sensor: "" }));
 }
 
-/** `onDate(iso)`: the slider moved to a snapshot. */
-export function createTimeline({ onDate }) {
+/** `onDate(iso)`: the slider moved to a snapshot. `describe(iso)`: the small text after the date (which picture this is), or "".
+ * `pictured()`: false when no dated pictures are on the map (the Satellite imagery): a gap is then one in the passes. */
+export function createTimeline({ onDate, describe = () => "", pictured = () => true }) {
   const $ = (id) => document.getElementById(id);
   const slider = $("slider");
   const playBtn = $("play");
@@ -40,11 +41,12 @@ export function createTimeline({ onDate }) {
 
   function emit() {
     const stop = stops[index()];
-    $("date-label").replaceChildren(formatDate(stop.date), h("span", { class: "date-sub" }, ` · image ${index() + 1} of ${stops.length}`));
+    const sub = describe(stop.date);
+    $("date-label").replaceChildren(formatDate(stop.date), ...(sub ? [h("span", { class: "date-sub" }, ` · ${sub}`)] : [])); // no sub: the date alone (null would print "null")
     // Just stepped past a long gap in the snapshots (winter, left out on purpose): say so instead of silently jumping.
     const prev = stops[index() - 1];
     const gap = prev && toDay(stop.date) - toDay(prev.date) > GAP_DAYS;
-    $("gap-note").textContent = gap ? `No pictures between ${formatDate(prev.date)} and ${formatDate(stop.date)}` : "";
+    $("gap-note").textContent = gap ? `No ${pictured() ? "pictures" : "satellite passes"} between ${formatDate(prev.date)} and ${formatDate(stop.date)}` : "";
     onDate(stop.date);
   }
 
@@ -146,6 +148,12 @@ export function createTimeline({ onDate }) {
   });
 
   return {
+    /** The changes the red bars stand for (the Filter's selection; all of them when none is set). Snapshots and slider stay as they are. */
+    setChanges(features) {
+      if (!own) return;
+      own.features = features;
+      drawTicks(features);
+    },
     /** Open a site: its snapshots, its changes (for the red bars) . The slider starts at the end. */
     setRange(site, features = []) {
       stop();

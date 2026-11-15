@@ -62,8 +62,7 @@ def granule_from_umm(item: dict) -> distalert.Granule:
     return distalert.Granule(
         name=name, tile=parts[2][1:] if len(parts) > 2 else "",
         start=datetime.fromisoformat(t.replace("Z", "+00:00")), sensor=parts[1] if len(parts) > 1 else "",
-        urls=urls, footprint=distalert._footprint(umm),
-        extra={"produced": "", "cloud": _cloud(umm)})
+        urls=urls, footprint=distalert._footprint(umm), extra={"produced": "", "cloud": _cloud(umm)})
 
 
 def search(bbox, start, end, products=PRODUCTS, timeout: float = 120) -> list:
@@ -109,14 +108,17 @@ def clear_fraction(fmask: np.ndarray) -> float:
     return float(clear_mask(fmask).mean()) if fmask.size else 0.0
 
 
-def read_band(granule, band: str, bbox, token=None) -> tuple:
-    """(array, grid dict) of the window around bbox in one band of one granule. Grid: epsg, a, e, x0, y0, rows, cols."""
+def read_band(granule, band: str, bbox, token=None, stats: dict | None = None) -> tuple:
+    """(array, grid dict) of the window around bbox in one band of one granule. Grid: epsg, a, e, x0, y0, rows, cols.
+    stats (optional dict): the estimated bytes read are added to stats["bytes"]."""
     if band not in granule.urls:
         raise ValueError(f"{granule.name} has no {band} band (has {sorted(granule.urls)})")
     url = granule.urls[band]
     if s1._remote(url):
         token = distalert._token(token)
-    arr, grid, _ = distalert._read_layer(url, bbox, token)
+    arr, grid, nbytes = distalert._read_layer(url, bbox, token)
+    if stats is not None:
+        stats["bytes"] = stats.get("bytes", 0) + nbytes
     return arr, grid
 
 

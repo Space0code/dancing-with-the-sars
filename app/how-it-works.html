@@ -1,0 +1,187 @@
+<!doctype html>
+<!-- Written by Claude -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How it works · Parallax</title>
+  <meta name="description" content="How Parallax finds land changes in radar and satellite data, labels them from public records, and what can fool it.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230a0a0a' fill-rule='evenodd' d='M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z'/%3E%3C/svg%3E">
+  <link rel="preload" href="fonts/funnel-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="brand">
+      <a class="brand-name" href="./" aria-label="Parallax, back to the map">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z"/></svg>
+        <h1 id="app-name">Parallax</h1>
+      </a>
+    </div>
+    <nav class="site-links" aria-label="Pages">
+      <a href="./">Map</a>
+      <a href="how-it-works.html" aria-current="page">How it works</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <h1>How it works</h1>
+    <p class="lede">Parallax watches land with satellites, finds places where the ground changed, and says in plain words which changes look expected and which deserve a person's look, with the reason and its source for each.</p>
+
+    <nav class="contents" aria-label="On this page">
+      <p>On this page</p>
+      <ol>
+        <li><a href="#what">What the tool does</a></li>
+        <li><a href="#data">The satellites and data</a></li>
+        <li><a href="#finding">How a change is found</a></li>
+        <li><a href="#labels">How a label is given</a></li>
+        <li><a href="#sure">How sure we are</a></li>
+        <li><a href="#fooled">What can fool it</a></li>
+        <li><a href="#limits">Limits</a></li>
+        <li><a href="#new-place">Adding a new place</a></li>
+        <li><a href="#next">Further work</a></li>
+      </ol>
+    </nav>
+
+    <section id="what">
+      <h2>What the tool does</h2>
+      <p>It compares satellite records of the same place over time and marks every area where something lasting changed: trees cut, a building or a road put up, earth moved. For each marked area it says when the change first showed, how big it is and what kind it looks like.</p>
+      <p>It then checks public records for that place, such as zoning, protected areas and registered buildings, and gives the change one of three labels. Every label comes with the reasons behind it and a link to each source, so a person can check it.</p>
+      <p>The tool does not decide who is right or wrong. A label is a prompt for a person to look, never a finding of wrongdoing.</p>
+    </section>
+
+    <section id="data">
+      <h2>The satellites and data</h2>
+      <p>Radar satellites send their own signal and measure the echo, so they see through cloud and in the dark. Optical satellites take pictures like a camera and need daylight and a clear sky. Using both lets each cover for the other.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Source</th><th>What it gives</th><th>Provided by</th></tr></thead>
+          <tbody>
+            <tr><td><a href="https://nisar.jpl.nasa.gov/">NISAR</a> (L-band radar)</td><td>Radar pictures every few days since mid-2026</td><td>NASA and ISRO</td></tr>
+            <tr><td><a href="https://sentiwiki.copernicus.eu/web/s1-mission">Sentinel-1</a> (C-band radar)</td><td>Radar pictures every few days, many years back</td><td>ESA (Copernicus)</td></tr>
+            <tr><td><a href="https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/">OPERA RTC-S1</a></td><td>Sentinel-1 radar prepared so that dates can be compared</td><td>NASA (made from ESA's Sentinel-1)</td></tr>
+            <tr><td><a href="https://lpdaac.usgs.gov/products/opera_l3_dist-alert-hls_v1v001/">OPERA DIST-ALERT-HLS</a></td><td>Optical alerts: where vegetation was lost</td><td>NASA (made from Landsat and Sentinel-2)</td></tr>
+            <tr><td><a href="https://lpdaac.usgs.gov/products/hlss30v002/">HLS</a> colour pictures</td><td>Dated cloud-free colour photos (30 m per pixel), mostly every few days: the Satellite view's Dated photos</td><td>NASA (made from <a href="https://landsat.gsfc.nasa.gov/">Landsat</a> by NASA and USGS, and <a href="https://sentiwiki.copernicus.eu/web/s2-mission">Sentinel-2</a> by ESA)</td></tr>
+            <tr><td>Esri World Imagery</td><td>Sharp Imagery base map (well under 1 m per pixel), undated, so it can be older than a change: the Satellite view's picture</td><td>Esri, Maxar, Earthstar Geographics and the GIS user community</td></tr>
+            <tr><td>Public records</td><td>Zoning, protected areas, registered buildings, solar plant lists, burnt areas</td><td>Each country's or region's own services; each reason links its source</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A satellite passes a place every few days, not every day. Where a country has no public record source connected yet, the tool says so on the card and the label rests on size alone.</p>
+    </section>
+
+    <section id="finding">
+      <h2>How a change is found</h2>
+      <figure class="diagram">
+        <svg viewBox="0 0 760 112" role="img" aria-labelledby="flow-title flow-desc">
+          <title id="flow-title">From two views of a place to a labelled change</title>
+          <desc id="flow-desc">Five steps in a row: compare before and after, keep what lasts, group into areas, date it and name its kind, then label it from public records.</desc>
+          <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10z" fill="#6a6a6a"/></marker></defs>
+          <g fill="#f8f8f8" stroke="#b4b4b4">
+            <rect x="2" y="14" width="132" height="84" rx="8"/><rect x="156" y="14" width="132" height="84" rx="8"/>
+            <rect x="310" y="14" width="132" height="84" rx="8"/><rect x="464" y="14" width="132" height="84" rx="8"/>
+            <rect x="618" y="14" width="140" height="84" rx="8" fill="#ffffff" stroke="#0a0a0a" stroke-width="1.5"/>
+          </g>
+          <g stroke="#6a6a6a" stroke-width="1.5" marker-end="url(#arrow)">
+            <path d="M136 56h18"/><path d="M290 56h18"/><path d="M444 56h18"/><path d="M598 56h18"/>
+          </g>
+          <g font-size="13" text-anchor="middle">
+            <text x="68" y="46" font-weight="600">1. Compare</text><text x="68" y="64">before and after</text><text x="68" y="80">the same place</text>
+            <text x="222" y="46" font-weight="600">2. Keep what lasts</text><text x="222" y="64">drop one-off</text><text x="222" y="80">noise and weather</text>
+            <text x="376" y="46" font-weight="600">3. Group</text><text x="376" y="64">neighbouring pixels</text><text x="376" y="80">into areas</text>
+            <text x="530" y="46" font-weight="600">4. Date and name</text><text x="530" y="64">first seen, size,</text><text x="530" y="80">and kind of change</text>
+            <text x="688" y="46" font-weight="600">5. Label</text><text x="688" y="64">from public records,</text><text x="688" y="80">with sources</text>
+          </g>
+        </svg>
+        <figcaption>The five steps from satellite records to a labelled change.</figcaption>
+      </figure>
+      <ol>
+        <li><b>Compare before and after.</b> For radar, the echo of each pixel (about 20 to 30 metres wide) in a quiet baseline period is compared with the same pixel later. Trees, bare ground, buildings and water echo differently, so a lasting change in the echo means a change on the ground.</li>
+        <li><b>Keep what lasts.</b> A change counts only if it stays through the later passes. This removes rain, wind on water, and one-off noise.</li>
+        <li><b>Group into areas.</b> Neighbouring pixels that changed together become one area, and areas seen by different satellites at about the same place and time are merged into one change.</li>
+        <li><b>Date it and name its kind.</b> The date is the first pass that showed the change, so it is "between two passes", never an exact day. The kind (clearing, new building or structure, earth moved, other) follows how the echo changed.</li>
+        <li><b>Label it.</b> See the next section.</li>
+      </ol>
+      <p>There is no trained detection model: the steps above are fixed rules, so the same data always gives the same result.</p>
+    </section>
+
+    <section id="labels">
+      <h2>How a label is given</h2>
+      <p>Each change is checked against public records for its place. The rules are written down and applied the same way to every change, and each reason that applies is shown on the card with its source.</p>
+      <ul class="labels">
+        <li><span class="swatch" style="background:var(--c-expected)"></span><div><b>Expected:</b> a record explains the change, for example a registered building, land planned for development, land set aside for a port or airport, a listed solar plant, or a recorded wildfire.</div></li>
+        <li><span class="swatch" style="background:var(--c-review)"></span><div><b>Needs review:</b> no record we could check explains it, or the land is not zoned for building, or an official step is on record.</div></li>
+        <li><span class="swatch" style="background:var(--c-high_concern)"></span><div><b>High concern:</b> the change is inside a protected area, or it is large and on land where building is not allowed with nothing to explain it, or an official record shows that a required assessment or permit was not finished when the work happened.</div></li>
+        <li><span class="swatch" style="background:var(--c-none)"></span><div><b>Not labelled yet:</b> the change has not been checked against records.</div></li>
+      </ul>
+      <p>Very small changes with low confidence are not flagged on size alone. Records that could not be reached are listed as such, and the label then rests on size. A label is a prompt for a person to look, not a finding of wrongdoing.</p>
+    </section>
+
+    <section id="sure">
+      <h2>How sure we are</h2>
+      <p>Every change has a confidence of low, medium or high, shown on its card.</p>
+      <ul>
+        <li>Two <em>kinds</em> of satellite agreeing (an optical alert and a radar, for example) raise it, because they fail for unrelated reasons.</li>
+        <li>Seen by one kind only, in a season when that kind is easily fooled (snow and frost for radar), lowers it.</li>
+        <li>A satellite that was watching and did not flag the change does not lower it: clouds, or a change of a kind that satellite cannot see, explain that innocently.</li>
+        <li>For a clearing, optical photos from before and after, taken at the same time of year, are compared with the vegetation index (NDVI). If it fell and only one radar saw the clearing, confidence goes up one step; on ground that was bare before the index shows nothing, so confidence stays. An optical alert is never second-guessed by it. The label itself never changes because of it.</li>
+      </ul>
+      <p>The card lists each satellite's role: which saw it first, which saw it later, which was not flying yet.</p>
+    </section>
+
+    <section id="fooled">
+      <h2>What can fool it, and what we do</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Can look like change</th><th>What we do</th></tr></thead>
+          <tbody>
+            <tr><td>Water and the sea; wind on the water</td><td>Water is masked out before changes are looked for.</td></tr>
+            <tr><td>Snow and frost (radar), wet ground</td><td>Confidence goes down for changes seen only by radar in that season.</td></tr>
+            <tr><td>Farm fields (crop cycles)</td><td>The same season of different years is compared, so the yearly cycle cancels out.</td></tr>
+            <tr><td>Ships and port machinery</td><td>Port and airport land is recognised from the planning record, so yards and terminals are not flagged just for being non-buildable. A ship that is clearly moored can be removed by hand.</td></tr>
+            <tr><td>Clouds (colour photos)</td><td>Only cloud-free pictures are shown; radar does not need them.</td></tr>
+            <tr><td>Wildfire burn scars</td><td>Burnt areas on record explain a clearing, so it is labelled expected with the fire as the reason.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="limits">
+      <h2>Limits</h2>
+      <ul>
+        <li>Pixels are 20 to 30 metres wide, so very small changes are not found.</li>
+        <li>Dates are only as fine as the satellite passes: a change is dated to between two passes.</li>
+        <li>Rules, not a trained model: a change the rules do not describe will be missed or called "other".</li>
+        <li>Public records can be out of date. Land registries often record new buildings months late, so "no building on record" is a prompt, not proof.</li>
+        <li>Some changes were already under way when a satellite began watching; for those the start date is not known and the card says so.</li>
+        <li>Only records a computer can read are checked; permits kept as documents are not.</li>
+      </ul>
+    </section>
+
+    <section id="new-place">
+      <h2>Adding a new place</h2>
+      <p>A place is a map box and a time range. Adding one takes three things: the satellite records for the box, a run of the change-finding steps over them, and the record services of that country for the labels. The result is a folder of plain data files in a documented format that the app reads, so the app itself does not change. Where no record service is connected, the place still works, with labels based on size and a note saying why.</p>
+    </section>
+
+    <section id="next">
+      <h2>Further work</h2>
+      <ul>
+        <li>Alerts sorted by urgency, sent to the people responsible for a place.</li>
+        <li>Areas chosen on demand instead of fixed in advance.</li>
+        <li>More record sources, for more countries.</li>
+        <li>Slow ground movement (sinking and rising), which radar can measure.</li>
+      </ul>
+    </section>
+  </main>
+  <script>
+    // "Map" brings the user back to the site, filter and base map they left (saved by the app in main.js).
+    try {
+      const h = sessionStorage.getItem("parallax-hash");
+      if (h && /^#[\w=&.,%:-]*$/.test(h)) for (const a of document.querySelectorAll('a[href="./"]')) a.href = "./" + h;
+    } catch {}
+  </script>
+</body>
+</html>

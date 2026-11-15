@@ -15,3 +15,7 @@ __pycache__/
 .claude/settings.local.json
 .claude/worktrees/
 .env
+*.egg-info/
+.dev.vars
+.wrangler/
+node_modules/

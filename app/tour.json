@@ -1,10 +1,11 @@
 {
- "about": "Guided tour, the same for every site (no site names here). Each step: title, text, optional date and play_to (a YYYY-MM-DD date, or \"start\" / \"end\" for the site's first and last day), note (shown on the timeline), and change_verdict (opens the largest change with that label; without one, the largest change).",
+ "about": "Guided tour, the same for every site (no site names here). Each step: title, text (one sentence), optional date and play_to (a YYYY-MM-DD date, or \"start\" / \"end\" for the site's first and last day), note (shown on the timeline), change_verdict (opens the largest change with that label; without one, the largest change), show (\"filter\": open the site drawer on the list of changes, where the Filter block is) and focus (a CSS selector of the control to outline).",
  "steps": [
   {
    "title": "Marked areas",
    "text": "Each shape is a place where the land changed.",
-   "date": "end"
+   "date": "end",
+   "focus": "#overlay-btn"
   },
   {
    "title": "Watch it happen",
@@ -14,13 +15,33 @@
   },
   {
    "title": "Radar and Satellite",
-   "text": "Switch the picture, or drag Compare to see before and after.",
-   "date": "end"
+   "text": "Switch the picture; in Satellite, Dated photos shows the ground on each date and Compare shows before and after.",
+   "date": "end",
+   "focus": "#viewbox"
   },
   {
    "title": "Why a label",
    "text": "Open a change to see its label, reasons and sources.",
    "change_verdict": "high_concern"
+  },
+  {
+   "title": "Filter",
+   "text": "Pick a time frame and draw, type or upload an area to see only the changes inside it.",
+   "date": "end",
+   "show": "filter",
+   "focus": "#tools-filter"
+  },
+  {
+   "title": "Export",
+   "text": "Download the changes you see as data files, or make a PDF report with the map picture.",
+   "date": "end",
+   "focus": "#export-btn"
+  },
+  {
+   "title": "Base map",
+   "text": "Switch the map behind the picture between Imagery and Light.",
+   "date": "end",
+   "focus": "#basemap-box"
   }
  ]
 }

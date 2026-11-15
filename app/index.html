@@ -11,6 +11,7 @@
   <link rel="preload" href="fonts/funnel-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
 </head>
 <body>
   <header class="topbar">
@@ -26,8 +27,14 @@
       <select id="site"></select>
       <span id="fake-badge" class="fake-badge" hidden>Fake data</span>
     </div>
+    <nav class="site-links" aria-label="Pages">
+      <a href="./" aria-current="page">Map</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
     <div class="actions">
       <button id="changes-btn" type="button" hidden>Changes</button>
+      <button id="export-btn" type="button" hidden>Export</button>
       <button id="tour-btn" type="button" class="primary">Tour</button>
     </div>
   </header>
@@ -35,20 +42,34 @@
   <main>
     <div class="map-wrap">
       <div id="map" aria-label="Map of detected land changes"></div>
-      <section id="viewbox" class="viewbox" aria-label="Picture on the map" hidden>
-        <div class="view-row">
-          <div class="switch" role="radiogroup" aria-label="Picture">
-            <button id="view-radar" type="button" role="radio" aria-checked="true">Radar</button>
-            <button id="view-photo" type="button" role="radio" aria-checked="false">Satellite</button>
-          </div>
-          <button id="compare-btn" type="button" class="compare" aria-pressed="false">Compare</button>
-          <button id="overlay-btn" type="button" class="toggle" aria-pressed="true" aria-label="Marked areas"><span class="knob" aria-hidden="true"></span>Marked areas</button>
+      <div id="leftpanel" class="leftpanel" data-shown="true">
+        <div id="leftcard" class="leftcard" aria-label="Picture, base map, legend and records">
+          <section id="viewbox" class="group" aria-label="Picture on the map" hidden>
+            <p class="group-label">Picture</p>
+            <div class="view-row">
+              <div id="picture-switch" class="switch" role="radiogroup" aria-label="Picture">
+                <button id="view-radar" type="button" role="radio" aria-checked="true">Radar</button>
+                <button id="view-photo" type="button" role="radio" aria-checked="false">Satellite</button>
+              </div>
+              <button id="compare-btn" type="button" class="compare" aria-pressed="false">Compare</button>
+            </div>
+            <button id="photos-btn" type="button" class="toggle photos-toggle" aria-pressed="false" title="Dated colour photos, 30 m per pixel, instead of the sharp undated imagery" hidden><span class="knob" aria-hidden="true"></span>Dated photos</button>
+            <p id="frame-label" class="frame-label" aria-live="polite"></p>
+          </section>
+          <div id="basemap-box" class="group basemap"></div>
+          <section id="legend-box" class="group" aria-label="Legend">
+            <div class="legend-head">
+              <p class="group-label">Legend</p>
+              <button id="overlay-btn" type="button" class="toggle" aria-pressed="true" aria-label="Marked areas"><span class="knob" aria-hidden="true"></span>Marked areas</button>
+            </div>
+            <ul id="legend"></ul>
+          </section>
+          <section id="records-box" class="group records" aria-label="Record layers" hidden></section>
         </div>
-        <p id="frame-label" class="frame-label" aria-live="polite"></p>
-      </section>
-      <div class="legend" id="legend-box" aria-label="Legend">
-        <ul id="legend"></ul>
-        <section id="records-box" class="records" aria-label="Record layers" hidden></section>
+        <button id="panel-toggle" class="panel-handle" type="button" aria-expanded="true" aria-controls="leftcard" aria-label="Hide legend">
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="panel-handle-text">Legend</span>
+        </button>
       </div>
       <section id="tour" class="tour" aria-label="Guided tour" aria-live="polite" hidden></section>
       <section id="intro" class="intro" aria-label="Start" hidden></section>
@@ -64,9 +85,16 @@
           <button id="tab-overview" type="button" role="tab" aria-selected="false" aria-controls="overview-view">Overview</button>
           <button id="tab-inbox" type="button" role="tab" aria-selected="true" aria-controls="inbox">Changes <span id="inbox-count" class="n"></span></button>
         </div>
+        <div id="filter" class="filter">
+          <div class="filter-row">
+            <button id="filter-toggle" type="button" class="filter-toggle" aria-expanded="false" aria-controls="tools-filter"><span class="filter-name">Filter</span><span id="filter-summary" class="filter-summary"></span></button>
+            <button id="filter-clear" type="button" class="link-btn" hidden>Clear</button>
+          </div>
+          <div id="tools-filter" hidden></div>
+        </div>
         <div id="overview-view" class="view" role="tabpanel" hidden><div id="overview" class="overview"></div></div>
         <section id="inbox" class="view inbox" role="tabpanel" aria-label="Changes at this site"></section>
-        <div id="card-view" class="view" hidden><div id="card" aria-live="polite"></div></div>
+        <div id="card-view" class="view" hidden><p id="card-note" class="card-note" hidden>Outside the active filter. <button id="card-note-clear" type="button" class="link-btn">Clear filter</button></p><div id="card" aria-live="polite"></div></div>
       </aside>
     </div>
   </main>
@@ -88,6 +116,7 @@
   </footer>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

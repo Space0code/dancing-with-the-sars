@@ -135,3 +135,49 @@ def test_bad_series_note_is_rejected(copy, note):
     doc["series"][0]["note"] = note
     path.write_text(json.dumps(doc), encoding="utf-8")
     assert any("note" in e for e in validate(copy))
+
+
+def _write_series(copy, **blocks):
+    path = next((copy / "fixture").glob("series/*.json"))
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    doc.update(blocks)
+    path.write_text(json.dumps(doc), encoding="utf-8")
+
+
+def test_ndvi_summary_may_be_null_on_both_sides(copy):
+    _write_series(copy, ndvi={"sensor": "HLS", "dates": ["2025-06-12", "2025-07-01"], "values": [0.7, 0.3],
+                              "before": None, "after": None})
+    assert validate(copy) == []
+
+
+def test_valid_ndvi_and_surface_blocks_pass(copy):
+    _write_series(copy, ndvi={"sensor": "HLS", "dates": ["2025-06-12", "2025-07-01"], "values": [0.7, 0.3],
+                              "before": 0.7, "after": None},
+                  surface={"snow_share": 0.0, "water_share": None, "dates_checked": ["2025-06-12"]})
+    assert validate(copy) == []
+
+
+@pytest.mark.parametrize("blocks,message", [
+    ({"ndvi": {"sensor": "HLS", "dates": ["2025-06-12"], "values": [0.7, 0.3], "before": None, "after": None}}, "ndvi"),
+    ({"ndvi": {"sensor": "HLS", "dates": ["2025-06-12"], "values": [1.4], "before": None, "after": None}}, "ndvi"),
+    ({"ndvi": {"sensor": "HLS", "dates": ["2025-06-12"], "values": [0.5], "before": 2, "after": None}}, "before"),
+    ({"surface": {"snow_share": 1.2, "water_share": None, "dates_checked": []}}, "snow_share"),
+    ({"surface": {"snow_share": None, "water_share": -0.1, "dates_checked": []}}, "water_share"),
+    ({"surface": {"snow_share": None, "water_share": None, "dates_checked": ["nope"]}}, "dates_checked"),
+])
+def test_bad_ndvi_or_surface_is_rejected(copy, blocks, message):
+    _write_series(copy, **blocks)
+    assert any(message in e for e in validate(copy))
+
+
+def test_confidence_base_and_ndvi_reason_are_optional_but_checked_together(copy):
+    doc = json.loads((copy / "fixture" / "changes.geojson").read_text(encoding="utf-8"))
+    conf = doc["features"][0]["properties"]["confidence"]
+    other = "low" if conf != "low" else "medium"
+    _edit_first_change(copy, confidence_base=other, confidence_ndvi="photos from the same time of year show the vegetation index falling")
+    assert validate(copy) == []
+    for props in ({"confidence_ndvi": None}, {"confidence_base": None}, {"confidence_base": "certain"},
+                  {"confidence_base": conf}, {"confidence_ndvi": ""}, {"confidence_ndvi": 3}):
+        _edit_first_change(copy, **props)
+        assert validate(copy) != [], props
+        _edit_first_change(copy, confidence_base=other, confidence_ndvi="reason")

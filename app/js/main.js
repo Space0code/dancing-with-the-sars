@@ -5,10 +5,18 @@ import { createChangeMap } from "./map.js";
 import { createTimeline } from "./timeline.js";
 import { renderIntro, renderOverview, setOverviewDate, showCard } from "./panel.js";
 import { createDrawer } from "./drawer.js";
-import { createInbox } from "./inbox.js";
+import { createInbox, kindName } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
 import { createRecords } from "./records.js";
+import { filterChanges, getSelection, isActive, clearSelection, setArea, onSelectionChange } from "./selection.js";
+import { createTimeFrame } from "./timeframe.js";
+import { createAoi } from "./aoi.js";
+import { createExport } from "./export.js";
+import "./report.js"; // registers the "PDF report" export format
+import "./download.js"; // registers the GeoJSON, Shapefile and GeoTIFF formats
+import { createBasemap } from "./basemap.js";
+import { createLeftPanel } from "./leftpanel.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -83,10 +91,16 @@ async function main() {
       if (!current || loading) return;
       const params = new URLSearchParams({ site: current.site.id });
       if (lastDate) params.set("date", lastDate);
-      if (picture.view !== "radar" && picture.stops()) params.set("view", "satellite"); // a site without photos stays in Radar
+      if (picture.view !== "radar") params.set("view", "satellite");
+      if (picture.view !== "radar" && picture.photos) params.set("photos", "1"); // Dated photos on (only possible on a site with photos)
       if (selectedId) params.set("change", selectedId);
+      if (basemap.value !== "satellite") params.set("base", basemap.value);
+      if (!leftPanel.shown) params.set("panel", "0");
+      timeFrame.toParams(params);
+      aoi.toParams(params);
       try {
-        history.replaceState(null, "", `${location.pathname}${location.search}#${params}`);
+        history.replaceState(null, "", `${location.pathname}${location.search}#${params.toString().replaceAll("%2C", ",")}`); // commas stay readable in bbox=w,s,e,n
+        sessionStorage.setItem("parallax-hash", location.hash); // the How it works and FAQ pages bring the user back here
       } catch {} // Safari refuses more than ~100 calls in 30 s: the link just stays at its last state
     }, 250);
   }
@@ -98,13 +112,17 @@ async function main() {
     writeHash();
     map.select(feature);
     inbox.setSelected(selectedId);
+    showCardNote();
     if (!feature) return;
     showCard(feature, current);
     drawer.setTitle(changeLabel(feature.properties.type));
     drawer.show("card");
   }
   const drawer = createDrawer({
-    onShow: (view) => view === "inbox" && inbox.refresh(),
+    onShow: (view) => {
+      $("filter").hidden = view === "card"; // the Filter row belongs to the lists, never above a change's card
+      if (view === "inbox") inbox.refresh();
+    },
     onClose: () => select(null),
     onBack: () => {
       select(null);
@@ -128,11 +146,25 @@ async function main() {
   $("changes-btn").addEventListener("click", () => (drawer.mode && drawer.mode !== "card" ? drawer.close() : (select(null), showSiteDrawer())));
   await map.ready;
   const records = createRecords(map.maplibre, $("records-box"));
+  const leftPanel = createLeftPanel({ onChange: () => writeHash() });
+  const basemap = createBasemap(map, $("basemap-box"), { onChange: () => writeHash() });
 
-  // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
+  // Filter block (time frame and area) in the site drawer; the draw tool moves the drawer out of the way.
+  const timeFrame = createTimeFrame($("tools-filter"));
+  const aoi = createAoi($("tools-filter"), {
+    map,
+    getSite: () => current?.site,
+    hideDrawer: () => drawer.close(),
+    showDrawer: () => showSiteDrawer(),
+    room: () => Math.min(480, $("map").clientWidth * 0.4),
+  });
+
+  // Play and the slider follow the open view: radar pictures in Radar, the site's passes in Satellite (the imagery has no
+  // date, so the slider moves the marked areas through time), the colour photos in Satellite with Dated photos on.
   const syncStops = () => {
     timeline.setStops(picture.view === "radar" ? null : picture.stops());
     $("legend-tint").hidden = picture.view !== "radar"; // the tint only exists on the radar pictures
+    basemap.lock(picture.view === "photo" && !picture.photos); // the Satellite view without photos is the imagery itself
     writeHash(); // the link carries the view
   };
   const picture = createPicture(map, document.querySelector(".map-wrap"), { onView: syncStops });
@@ -150,8 +182,58 @@ async function main() {
       map.setExtraFilter(inbox.mapFilter());
       refreshTotal();
     },
+    onExport: (button) => exporter.open(button),
   });
+  window.parallax = { snapshot: map.snapshot }; // console access (and the browser checks) to the map picture
+  const exporter = createExport({
+    buttons: [$("export-btn")],
+    getContext: () => current && { site: current.site, changes: inbox.rows(), selection: getSelection(), snapshot: map.snapshot, kindName },
+  });
+
+  const SHORT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const shortDay = (iso) => SHORT.format(new Date(iso));
+  /** The Filter row: collapsed by default; the summary says what is filtered, Clear removes it. */
+  function setFilterOpen(open) {
+    $("tools-filter").hidden = !open;
+    $("filter-toggle").setAttribute("aria-expanded", String(open));
+  }
+  function showFilterSummary() {
+    const { from, to } = getSelection();
+    const parts = [];
+    if (from && to) parts.push(`${shortDay(from)} \u2192 ${shortDay(to)}`);
+    else if (from) parts.push(`${shortDay(from)} \u2192`);
+    else if (to) parts.push(`\u2192 ${shortDay(to)}`);
+    if (aoi.kind()) parts.push(aoi.kind());
+    $("filter-summary").textContent = parts.join(" \u00B7 ");
+    $("filter-clear").hidden = !isActive();
+    showCardNote();
+  }
+  /** A card opened from a link can be outside the filter: say so (the list does not show it). */
+  function showCardNote() {
+    const f = selectedId && current?.changes.features.find((x) => x.properties.id === selectedId);
+    $("card-note").hidden = !f || filterChanges([f]).length > 0;
+  }
+
+  /** Show the selection (selection.js) everywhere changes are shown or counted: map, total, overview, list. */
+  function applySelection() {
+    showFilterSummary();
+    if (!current || loading) return;
+    const features = filterChanges(current.changes.features);
+    renderOverview(current.site, features);
+    timeline.setChanges(features); // the red bars on the timeline stand for the selected changes
+    map.setShownIds(isActive() ? new Set(features.map((f) => f.properties.id)) : null);
+    map.setAreaOutline(getSelection().area);
+    inbox.setPool(features);
+    if (selectedId && !features.some((f) => f.properties.id === selectedId)) select(null);
+  }
+  onSelectionChange(applySelection);
+  onSelectionChange(() => writeHash()); // the link carries the time frame and the box
+  $("filter-clear").addEventListener("click", clearSelection);
+  $("card-note-clear").addEventListener("click", clearSelection);
+  $("filter-toggle").addEventListener("click", () => setFilterOpen($("tools-filter").hidden));
   const timeline = createTimeline({
+    describe: (iso) => picture.position(iso),
+    pictured: () => Boolean(picture.stops()), // the Satellite imagery has no date: the slider steps through passes
     onDate(iso) {
       map.setDate(iso);
       picture.setDate(iso);
@@ -165,8 +247,11 @@ async function main() {
   });
 
   // Tour steps are the same for every site: they run on the open site, or on the first real one.
+  const clearTourFocus = () => document.querySelectorAll(".tour-focus").forEach((el) => el.classList.remove("tour-focus"));
   const tour = createTour(tourData.steps ?? [], {
+    onEnd: clearTourFocus,
     async runStep(step) {
+      clearTourFocus();
       if (!current) await openSite((sites.find((s) => !s.fixture) ?? sites[0]).id);
       const feature = findStepChange(current.changes.features, step);
       const day = (d) => ({ start: current.site.time_range[0], end: current.site.time_range[1] })[d] ?? d;
@@ -178,9 +263,13 @@ async function main() {
         map.focus(feature, room());
       } else {
         select(null);
-        drawer.close();
+        if (step.show === "filter") showSiteDrawer("inbox"); // the Filter block lives above the list of changes
+        else drawer.close();
         map.view(current.site, tourRoom());
       }
+      if (step.focus === "#basemap-box" && picture.view === "photo" && !picture.photos) picture.setView("radar"); // the base map can only be switched outside the Satellite imagery
+      if (step.focus && document.querySelector(step.focus)?.closest("#leftpanel")) { leftPanel.set(true); writeHash(); } // a step about the left card opens it first
+      if (step.focus) document.querySelector(step.focus)?.classList.add("tour-focus"); // outline the control the step talks about
     },
   });
   $("tour-btn").addEventListener("click", () => tour.start());
@@ -196,18 +285,24 @@ async function main() {
     $("site").value = "";
     $("fake-badge").hidden = true;
     history.replaceState(null, "", location.pathname + location.search);
+    try { sessionStorage.removeItem("parallax-hash"); } catch {}
     drawer.close();
+    clearSelection();
+    timeFrame.setSite(null);
+    aoi.setSite();
     $("changes-btn").hidden = true;
+    $("export-btn").hidden = true;
     renderIntro(sites, { onPick: (id) => openSite(id).catch((err) => showError(err.message)), onTour: () => tour.start() });
     $("intro").hidden = false;
     inbox.setSite([]);
     picture.setSite(null);
+    basemap.lock(false);
     records.setSite(null);
     map.showOverview(overview);
     timeline.clear();
   }
 
-  async function openSite(id) {
+  async function openSite(id, { keepLink = false } = {}) { // keepLink: the address already says what to restore, so a reload while loading still finds it
     const site = openable.find((s) => s.id === id);
     if (!site) return;
     $("map-error").hidden = true;
@@ -217,14 +312,21 @@ async function main() {
     $("fake-badge").hidden = !site.fixture;
     $("intro").hidden = true;
     $("changes-btn").hidden = false;
+    $("export-btn").hidden = false;
     drawer.close();
-    history.replaceState(null, "", `#site=${site.id}`);
+    if (!keepLink) {
+      history.replaceState(null, "", `#site=${site.id}`);
+      try { sessionStorage.setItem("parallax-hash", location.hash); } catch {}
+    }
     clearTimeout(hashTimer); // a pending write still describes the old site: drop it, and write nothing while this one loads
     selectedId = null;
     lastDate = null;
     loading = true;
     try {
+      clearSelection(); // a selection belongs to one site
       current = await loadSite(site);
+      timeFrame.setSite(site);
+      aoi.setSite();
       renderOverview(site, current.changes.features);
       inbox.setSite(current.changes.features);
       map.setExtraFilter(null);
@@ -253,8 +355,15 @@ async function main() {
     const date = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") ? params.get("date") : null; // anything else is ignored
     if (current?.site.id !== id) {
       tour.end();
-      await openSite(id);
+      await openSite(id, { keepLink: true });
     }
+    const wantsChange = current.changes.features.some((f) => f.properties.id === params.get("change"));
+    timeFrame.fromParams(params); // unknown or bad values are ignored
+    if (params.get("bbox")) aoi.fromParams(params, { zoom: !wantsChange });
+    else if (getSelection().area) setArea(null);
+    if (params.has("panel")) leftPanel.set(params.get("panel") !== "0");
+    basemap.set(params.get("base")); // anything but "light" is the default satellite map
+    picture.setPhotos(params.get("photos") === "1"); // anything else is the default: off
     const view = params.get("view");
     if (view === "radar" || view === "satellite") picture.setView(view === "satellite" ? "photo" : "radar"); // anything else is ignored; before the date, so the slider has the view's stops
     if (date) timeline.goTo(date);

@@ -41,7 +41,7 @@ Not useful here: GLAD alerts (tropics only), SEDAC (frozen 2025), ECOSTRESS, EMI
 ## 3. Spain / Catalonia: the "is it documented?" layers
 | Dataset | What | Machine query? | Use for us | Effort |
 |---|---|---|---|---|
-| **Cadastre buildings** (INSPIRE WFS) | footprints + construction date | ✓ WFS, ≤4 km² and ≤5,000 features per request, no login | new building with no record → flag | L |
+| **Cadastre buildings** (INSPIRE WFS) | footprints + construction date | ✓ WFS, ≤1 km² and ≤5,000 features per request, no login | new building with no record → flag | L |
 | **ICGC orthophoto** | 25 cm, yearly 2016–2025 | WMS `geoserveis.icgc.cat/servei/catalunya/orto-territorial/wms` | before/after evidence pictures | L |
 | ICGC land cover | 1 m, 41 classes: 2009, 2018, 2019–22, 2023, 2024 | WMS + GeoPackage | forest → built transitions | L |
 | ICGC LiDAR (PNOA fallback) | ≥8 pts/m², flown 2021–23 | download only | cut/fill elevation differences | M–H |
@@ -63,8 +63,8 @@ All Catalan / Spanish services answer in **EPSG:25831** (ETRS89 / UTM 31N, metre
   pnac/pnat/pnin/rni/rnp/rnfs + buffer zones zpnac/zpnat/zrnp). Covers all Catalonia (Delta de l'Ebre answers).
   `outFields` naming a field the layer lacks → HTTP 200 with `{"error":…}`. Occasional random 400s → retry.
 - **Cadastre** (`cadastre.py`): `ovc.catastro.meh.es/INSPIRE/wfsBU.aspx?service=WFS&version=2.0.0&request=GetFeature&
-  typeNames=BU:Building&srsName=EPSG::25831&bbox=x0,y0,x1,y1`. A 9 km² box → `Area of extension out of limits`; we
-  tile at 1.9 km. GML 3.2, ISO-8859-1. Construction date `dateOfConstruction/…/beginning` is **year precision** (1 Jan);
+  typeNames=BU:Building&srsName=EPSG::25831&bbox=x0,y0,x1,y1`. Box limit is **1 km²** (1,000 m square OK; 1,100 m square or
+  4,000 × 500 m → `Area of extension out of limits`); we tile at 990 m. GML 3.2, ISO-8859-1. Construction date `dateOfConstruction/…/beginning` is **year precision** (1 Jan);
   `beginLifespanVersion` is the record-edit date, not construction.
 - **MUC zoning** (`zoning.py`): GeoServer WFS `sig.gencat.cat/ows/PLANEJAMENT/wfs`, layer
   `PLANEJAMENT:MUC_CLASSIFICACIONS`, `bbox=…,urn:ogc:def:crs:EPSG::25831`, `outputFormat=application/json`.
@@ -198,6 +198,15 @@ Feb 2024), the [ATBD](https://lpdaac.usgs.gov/documents/1835/OPERA_DIST_ATBD__V1
   date; ~3 s per layer, mostly the redirect and the GDAL open). Muhos, 10 monthly states: 0.69 MB, 16 s with 4 states
   in parallel; Agroparc, 47 monthly states 2023→: 3.5 MB, 63 s. CMR search: 3–5 s (461 granules) to 12–17 s (3,686).
 - Tests: `python -m pytest tests/test_distalert.py`; live `SARWATCH_LIVE=1 python -m pytest tests/test_distalert.py -k live -s`.
+
+## HLS: NDVI, snow and water per change (`src/sarwatch/ndvi.py`)
+HLS (Harmonized Landsat Sentinel-2, 30 m, every 2-3 days) is a NASA product (LP DAAC) that corrects and aligns Landsat 8/9
+(NASA/USGS, product HLSL30) and Sentinel-2 (ESA, HLSS30) onto one grid. NDVI = (NIR - red) / (NIR + red) with red B04 in both
+and NIR B8A (S30) / B05 (L30). Quality layer Fmask (HLS User Guide v2.0): bit 1 cloud, 2 adjacent to cloud / shadow, 3 cloud
+shadow, 4 snow / ice, 5 water (255 = no data). We count a date only when >= 60 % of the polygon is cloud-free; snow pixels are
+left out of NDVI and give `snow_share`, water pixels give `water_share` (details in the module docstring). Both are caution
+flags only: Fmask confuses thin snow, wet fields and shadows. Read cost: 0.02 GB for Muhos (24 dates, 19 changes), 0.05 GB for
+Barcelona (2 areas, 20 dates each); run: `python -m sarwatch.ndvi <site> [--offline]`, cache in `data/hls/<site>/ndvi/`.
 
 ## Where processing runs
 The team is on mobile data: **never download NISAR to a laptop.** Radar processing runs in a GitHub Codespace

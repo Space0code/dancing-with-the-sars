@@ -35,18 +35,30 @@ class OfflineMiss(RuntimeError):
     """OFFLINE is set and the response is not in the cache."""
 
 
+def _cache_path(source: str, url: str, params: dict, method: str = "GET") -> Path:
+    key = hashlib.sha256(json.dumps([method, url, sorted(params.items())], ensure_ascii=False).encode()).hexdigest()
+    return Path(CACHE_DIR) / f"{source}-{key[:16]}.bin"
+
+
+def store(source: str, url: str, params: dict | None, body: bytes, method: str = "GET") -> None:
+    """Put a response in the cache by hand (for an answer ``fetch`` refuses to keep, such as a service's "nothing here")."""
+    path = _cache_path(source, url, dict(params or {}), method)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(body)
+
+
 def fetch(source: str, url: str, params: dict | None = None, *, method: str = "GET", cache: bool = True,
-          timeout: float | None = None) -> bytes:
+          timeout: float | None = None, retries: int | None = None) -> bytes:
     """Return the response body. Retries on network errors / 5xx, caches successes, raises on final failure."""
     params = dict(params or {})
-    key = hashlib.sha256(json.dumps([method, url, sorted(params.items())], ensure_ascii=False).encode()).hexdigest()
-    path = Path(CACHE_DIR) / f"{source}-{key[:16]}.bin"
+    path = _cache_path(source, url, params, method)
     if cache and path.exists():
         return path.read_bytes()
     if OFFLINE:
         raise OfflineMiss(f"offline and not cached: {source} {url}")
     last = None
-    for attempt in range(RETRIES + 1):
+    retries = RETRIES if retries is None else retries
+    for attempt in range(retries + 1):
         try:
             kw = {"params": params} if method == "GET" else {"data": params}
             r = requests.request(method, url, timeout=timeout or TIMEOUT, headers={"User-Agent": USER_AGENT}, **kw)
@@ -61,7 +73,7 @@ def fetch(source: str, url: str, params: dict | None = None, *, method: str = "G
             return body
         except (requests.RequestException, ServiceError) as e:
             last = e
-            if attempt < RETRIES:
+            if attempt < retries:
                 time.sleep(1.5 * (attempt + 1))
     raise last
 

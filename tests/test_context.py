@@ -249,7 +249,7 @@ def test_never_raises(fn, monkeypatch, tmp_path):
         assert r["checked"] is False and r["error"] and r["source"] and r["url"]
 
 
-def test_cadastre_tiles_stay_under_the_4km2_limit(monkeypatch):
+def test_cadastre_tiles_stay_under_the_1km2_limit(monkeypatch):
     boxes = []
     empty = b'<?xml version="1.0"?><gml:FeatureCollection xmlns:gml="http://www.opengis.net/gml/3.2"/>'
 
@@ -260,8 +260,8 @@ def test_cadastre_tiles_stay_under_the_4km2_limit(monkeypatch):
     monkeypatch.setattr(cadastre, "fetch", fake)
     r = cadastre.lookup(square(1.85, 41.45, 2600))  # 5.2 km square, 27 km²
     assert r["checked"] and r["buildings"] == 0
-    assert len(boxes) == 9
-    assert all((x1 - x0) * (y1 - y0) <= 4e6 for x0, y0, x1, y1 in boxes)
+    assert len(boxes) == 36
+    assert all((x1 - x0) * (y1 - y0) <= 1e6 for x0, y0, x1, y1 in boxes)
 
 
 def test_cadastre_since_compares_years(monkeypatch):
@@ -290,7 +290,48 @@ def test_port_and_airport_land_are_found_from_the_qualification_layer():
     assert "Sistemes, Portuari" in port["classes"]
 
 
-def test_a_malformed_construction_date_is_dropped_not_fatal():
-    assert cadastre._date("1-01-01") is None  # a placeholder some records carry: the building counts, with no year
+def test_cadastre_splits_a_slow_tile(monkeypatch):
+    import requests
+    calls = []
+
+    def fake(source, url, params, **kw):
+        x0, y0, x1, y1 = (float(v) for v in params["bbox"].split(","))
+        calls.append(x1 - x0)
+        if x1 - x0 > 600:  # the big tile is too slow; its quarters answer
+            raise requests.ReadTimeout("slow")
+        return b'<?xml version="1.0"?><gml:FeatureCollection xmlns:gml="http://www.opengis.net/gml/3.2"/>'
+
+    monkeypatch.setattr(cadastre, "fetch", fake)
+    r = cadastre.lookup(square(1.85, 41.45, 400))  # one 800 m tile
+    assert r["checked"] and r["buildings"] == 0
+    assert len(calls) == 5 and all(c <= 600 for c in calls[1:])
+
+
+def test_cadastre_ignores_malformed_dates():
+    assert cadastre._date("1975-01-01T00:00:00") == "1975-01-01"
+    assert cadastre._date("0-01-01T00:00:00") is None
     assert cadastre._date(None) is None and cadastre._date("") is None
-    assert cadastre._date("2019-01-01T00:00:00") == "2019-01-01"
+
+
+def test_a_tile_without_buildings_is_an_empty_list_not_an_error(monkeypatch, tmp_path):
+    monkeypatch.setattr(_common, "CACHE_DIR", tmp_path)  # the remembered answer goes here, not into the fixtures
+    monkeypatch.setattr(_common, "OFFLINE", False)
+    calls = []
+
+    def nothing_there(*a, **k):
+        calls.append(1)
+        raise _common.ServiceError("<ExceptionText>No records founded for BBOX and SRS provided</ExceptionText>")
+
+    monkeypatch.setattr(_common.requests, "request", lambda *a, **k: nothing_there())
+    assert cadastre._tile(400_000, 4_580_000, 400_990, 4_580_990) == []
+    n = len(calls)
+    assert n >= 1 and list(tmp_path.glob("cadastre-*.bin"))  # remembered
+    assert cadastre._tile(400_000, 4_580_000, 400_990, 4_580_990) == [] and len(calls) == n  # not asked again
+
+    def broken(*a, **k):
+        raise _common.ServiceError("<ExceptionText>Internal error</ExceptionText>")
+
+    monkeypatch.setattr(cadastre, "fetch", broken)
+    with pytest.raises(_common.ServiceError):  # any other service error still counts as a failure
+        cadastre._tile(400_000, 4_580_000, 400_990, 4_580_990)
+

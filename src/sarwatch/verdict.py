@@ -14,8 +14,10 @@ import json
 import re
 import sys
 from collections import Counter
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
+
+from .ndvi import same_season
 
 SCOPE_MAIN_SHARE = 0.5  # a change counts as part of the record's outline when at least this much of it lies inside
 BIG_HA = 5.0 # clearing / earthworks at least this big, on non-buildable land, with no record -> high concern
@@ -28,7 +30,17 @@ SOLAR_AUTHORISED = ("autoritzat", "en servei", "aprovat")  # plant statuses that
 SOLAR_PENDING = ("en tramitaci",)  # "En tramitació": an application still being processed is not an authorisation
 RECORD_TYPES = ("clearing", "earthworks", "structure")  # change types a solar-plant listing can explain
 FIRE_TYPES = ("fire", "clearing", "other")  # change types a recorded wildfire can explain
-KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system")
+KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system", "surface", "ndvi")
+SNOW_CAUTION = 0.25   # share of the change under snow or ice around its first date that makes snow a plausible cause
+WATER_CAUTION = 0.25  # share of the change under water after it (median of the clear scenes) that is worth saying
+SURFACE_SOURCE = "NASA HLS quality mask (Landsat and Sentinel-2)"
+SURFACE_URL = "https://lpdaac.usgs.gov/products/hlss30v002/"
+NDVI_SOURCE = "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)"
+NDVI_FELL = 0.15      # a drop in NDVI (median before minus median after) of at least this confirms vegetation loss
+NDVI_FLAT = 0.05      # a drop below this (or a rise) means the photos show no vegetation loss; in between is "slightly"
+NDVI_BARE = 0.2       # a before-median under this: little vegetation to lose, NDVI cannot show the change
+NDVI_GREEN = 0.4      # before-value from which the ground counts as "was green" (a crop or field cycle is then plausible)
+CONFIDENCE_STEPS = ("low", "medium", "high")
 LATE_START_LEAD_YEARS = 3  # a late start may be this many years older than the sensor's first pass
 SYSTEM_SHARE = 0.8  # a change counts as on port or airport land when at least this much of it lies on it (the rest of
                     # it would otherwise skip the zoning rules)
@@ -90,7 +102,7 @@ def _fire_text(fire: dict, explains: bool) -> str:
     return f"A recorded wildfire burned here{where}, but it does not explain a new building or ground movement."
 
 
-SENSOR_NAMES = {"OPERA DIST-ALERT": "NASA optical alerts (Landsat + Sentinel-2)"}
+SENSOR_NAMES = {"OPERA DIST-ALERT": "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)"}  # Landsat is NASA/USGS, Sentinel-2 is ESA, the OPERA product is NASA's
 
 
 def _detector(change: dict) -> str:
@@ -187,7 +199,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not area > 0:  # also catches NaN
         raise ValueError(f"change {change.get('id')!r}: area_ha must be a positive number")
     ctype = change.get("type")
-    prot, cad, zon, sol, fire, off, sysl = (records.get(k) for k in KEYS)
+    prot, cad, zon, sol, fire, off, sysl, sfc, ndvi = (records.get(k) for k in KEYS)
 
     # ---- facts
     areas = list(prot.get("areas") or []) if _ok(prot) else []
@@ -380,6 +392,58 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         for key in LABELS
         if not _ok(records.get(key)) and not (records.get(key) or {}).get("not_applicable")
     ]
+    # snow and water around the change (the series file's `surface` block): notes only, they never move the label
+    if _ok(sfc):
+        snow, water = sfc.get("snow_share"), sfc.get("water_share")
+        snow = snow if isinstance(snow, (int, float)) else None
+        water = water if isinstance(water, (int, float)) else None
+        calm = []
+        if snow is not None and snow >= SNOW_CAUTION:
+            facts["snow_caution"] = _reason(
+                "snow_caution",
+                f"Snow or ice covered {round(100 * snow)} % of the area around the date it was first seen, so snow can "
+                "explain this signal.", "neutral", sfc)
+        elif snow is not None:
+            calm.append("no snow")
+        if water is not None and water >= WATER_CAUTION:
+            facts["water_after"] = _reason(
+                "water_after",
+                f"{round(100 * water)} % of the area is under water after the change (possible flood or new water body).",
+                "neutral", sfc)
+        elif water is not None:
+            calm.append("no standing water")
+        if calm:
+            facts["surface_clear"] = _reason(
+                "surface_clear", f"Clear scenes around its dates show {' and '.join(calm)} over the area.", "neutral", sfc)
+    # the vegetation index (the series file's `ndvi` block, NASA HLS): compared between photos from the same time of
+    # year; a note, it never moves the label (the confidence is adjusted afterwards by ``ndvi_confidence``)
+    cmp_ = ndvi_compare(ndvi)
+    if cmp_ and cmp_["state"] == "few":
+        facts["ndvi_few"] = _reason("ndvi_few", "Not enough comparable clear photos to compare the vegetation index.", "neutral", ndvi)
+    elif cmp_ and cmp_["state"] == "ok":
+        kind, before, after = cmp_["kind"], cmp_["before"], cmp_["after"]
+        pair = f"{before:.2f} → {after:.2f}"
+        head = "Between photos from the same time of year, the vegetation index (NDVI)"
+        optical = _optical_saw(change)
+        if kind == "fell":
+            text = f"{head} fell from {before:.2f} to {after:.2f}, which fits vegetation loss."
+        elif kind == "bare":
+            what = "a clearing" if ctype == "clearing" else "this change"
+            text = (f"There was little vegetation here before the change (NDVI {before:.2f} in photos from the same time "
+                    f"of year), so the vegetation index cannot show {what}.")
+        else:
+            if kind == "flat":
+                text = f"{head} did not fall ({pair})."
+            else:
+                text = f"{head} fell slightly ({pair}), not enough on its own to show vegetation loss."
+            if optical:
+                text += (" NDVI often stays high after a thinning, or when ground plants grow back in the first summer, "
+                         "so this does not contradict the optical alert.")
+            elif kind == "flat":
+                text += " This does not confirm vegetation loss."
+            if kind == "flat" and ctype in ("structure", "earthworks") and before >= NDVI_GREEN:
+                text += " The ground was green before, so the radar signal may come from a crop or field cycle."
+        facts[f"ndvi_{kind}"] = _reason(f"ndvi_{kind}", text, "neutral", ndvi)
     # a port / airport lookup that failed is reported; an absent one was simply not asked
     if isinstance(sysl, dict) and not _ok(sysl) and not sysl.get("not_applicable"):
         unavailable.append(_reason(
@@ -497,6 +561,84 @@ def _site_country(path: Path):
     return None
 
 
+def _series_block(site_dir: Path, props: dict, key: str) -> dict | None:
+    rel = (props.get("evidence") or {}).get("series") or f"series/{props.get('id')}.json"
+    try:
+        block = json.loads((Path(site_dir) / rel).read_text(encoding="utf-8")).get(key)
+    except (OSError, ValueError):
+        return None
+    return block if isinstance(block, dict) else None
+
+
+def surface_record(site_dir: Path, props: dict) -> dict | None:
+    """The change's ``surface`` block (snow and water shares from the NASA HLS quality mask, written next to its
+    series) as a record, or None when the change has no series file or no such block."""
+    block = _series_block(site_dir, props, "surface")
+    return {"source": SURFACE_SOURCE, "url": SURFACE_URL, **block, "checked": True} if block else None
+
+
+def ndvi_record(site_dir: Path, props: dict) -> dict | None:
+    """The change's ``ndvi`` block (the clear HLS dates and their mean NDVI) as a record, with the change's first and
+    last date so the verdict can compare photos from the same time of year; None when the change has no series file
+    or no such block."""
+    block = _series_block(site_dir, props, "ndvi")
+    if not block:
+        return None
+    return {"source": NDVI_SOURCE, "url": SURFACE_URL, "dates": block.get("dates"), "values": block.get("values"),
+            "first_date": props.get("first_date"), "last_date": props.get("last_date"), "checked": True}
+
+
+def ndvi_compare(ndvi) -> dict | None:
+    """Compare NDVI between photos from the same time of year, with ``ndvi.same_season`` (the same function writes the
+    card's ``before`` / ``after``). From an ``ndvi`` record (``dates``, ``values``, ``first_date``, ``last_date``).
+    Returns None without a usable series, ``{"state": "nodata"}`` when a side has no date at all, ``{"state": "few"}``
+    when a side keeps fewer than two dates, else ``{"state": "ok", "kind": fell | slightly | flat | bare,
+    "before", "after" (medians), "n_before", "n_after"}``. ``bare``: the before median is under ``NDVI_BARE``."""
+    if not _ok(ndvi):
+        return None
+    try:
+        first, last = date.fromisoformat(str(ndvi["first_date"])[:10]), date.fromisoformat(str(ndvi["last_date"])[:10])
+        r = same_season(ndvi["dates"], ndvi["values"], first, last)
+    except (KeyError, TypeError, ValueError):
+        return None
+    if r["state"] != "ok":
+        return {"state": r["state"]}
+    mb, ma = r["before"], r["after"]
+    drop = round(mb - ma, 4)  # 0.60 - 0.45 must count as 0.15, not 0.1499999
+    kind = "bare" if mb < NDVI_BARE else "fell" if drop >= NDVI_FELL else "flat" if drop < NDVI_FLAT else "slightly"
+    return {"state": "ok", "kind": kind, "before": mb, "after": ma, "n_before": r["n_before"], "n_after": r["n_after"]}
+
+
+def _optical_saw(change: dict) -> bool:
+    """Did an optical source (an alert computed from the same HLS photos) detect this change?"""
+    return any(s.get("kind") == "optical" and s.get("role") in ("detected", "late_start") for s in change.get("sources") or [])
+
+
+def ndvi_confidence(change: dict, ndvi) -> tuple[str, str | None]:
+    """The confidence after the NDVI check and the sentence that says why (None when it did not move). Only a
+    clearing seen by radar alone moves, and only up one step: when the vegetation index fell and exactly one radar
+    sensor saw it (a second, independent kind of satellite agrees; two radars already got their step from the exporter),
+    except low to medium under ``MID_HA`` (the label rules, which see the original confidence, treat a small low-confidence
+    change differently, so the card would show a confidence that does not fit its label).
+    Bare ground before (``bare``) moves nothing: the index cannot show a change there, which is no evidence against it,
+    and a step down would show a confidence the label rules never saw. Never lowered when an optical source saw the
+    change: NDVI and the optical alert come from the same photos, so NDVI is no independent check.
+    ``change["confidence"]`` must be the one from the exporter, not an adjusted one."""
+    conf = change.get("confidence")
+    cmp_ = ndvi_compare(ndvi)
+    if conf not in CONFIDENCE_STEPS or not cmp_ or cmp_["state"] != "ok" or change.get("type") != "clearing":
+        return conf, None
+    if _optical_saw(change):
+        return conf, None
+    i = CONFIDENCE_STEPS.index(conf)
+    saw = [s for s in change.get("sources") or [] if s.get("role") in ("detected", "late_start")]
+    if conf == "low" and (change.get("area_ha") or 0) < MID_HA:
+        return conf, None  # the rules treat a small low-confidence change differently (row 9): a step up would contradict the label
+    if cmp_["kind"] == "fell" and i < 2 and len(saw) == 1 and saw[0].get("kind") == "radar":
+        return CONFIDENCE_STEPS[i + 1], "photos from the same time of year show the vegetation index falling"
+    return conf, None
+
+
 def apply_file(
     path, records_path=None, dry_run=False, lookup=run_lookups, allow_unchecked=False
 ) -> tuple[Counter, Counter, Counter]:
@@ -528,7 +670,19 @@ def apply_file(
                 asked += 1
                 if not _ok(rec):
                     failed[key] += 1
+        surface = surface_record(path.parent, props)  # read after the lookups were counted: it is not a service
+        if surface:
+            records["surface"] = surface
+        ndvi = ndvi_record(path.parent, props)
+        if ndvi:
+            records["ndvi"] = ndvi
+        if "confidence_base" in props:  # undo an earlier run's NDVI step: the label rules see the exporter's confidence
+            props["confidence"] = props.pop("confidence_base")
+            props.pop("confidence_ndvi", None)
         props["verdict"], props["reasons"], props["explain"] = judge(props, records)
+        conf, why = ndvi_confidence(props, ndvi)
+        if why and conf != props.get("confidence"):
+            props["confidence_base"], props["confidence"], props["confidence_ndvi"] = props["confidence"], conf, why
         after[props["verdict"]] += 1
     if asked and sum(failed.values()) == asked and not allow_unchecked:
         raise SystemExit(
