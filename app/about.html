@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- Written by Claude -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About · Parallax</title>
+  <meta name="description" content="What Parallax is, where it comes from and who made it.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230a0a0a' fill-rule='evenodd' d='M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z'/%3E%3C/svg%3E">
+  <link rel="preload" href="fonts/funnel-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="brand">
+      <a class="brand-name" href="./" aria-label="Parallax, back to the map">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 5.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z"/></svg>
+        <h1 id="app-name">Parallax</h1>
+      </a>
+    </div>
+    <nav class="site-links" aria-label="Pages">
+      <a href="./">Map</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="faq.html">FAQ</a>
+      <a href="about.html" aria-current="page">About</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <h1>About Parallax</h1>
+    <p class="lede">Parallax uses radar satellites to find where the land surface has changed, and gives each change a plain-language label from public records: expected, needs review, or high concern.</p>
+
+    <h2>Where it comes from</h2>
+    <p>Built at the NASA Space Apps Challenge 2026 in Barcelona, for the challenge &ldquo;Dancing with the SARs&rdquo;.</p>
+
+    <h2>The team</h2>
+    <ul>
+      <li>Tomi Božak (Space0code)</li>
+      <li>Tian Kljucanin (TianK003)</li>
+      <li>Andrea Molteni (molte38)</li>
+    </ul>
+    <p>We are students of the Erasmus Mundus Master in Artificial Intelligence (EMAI).</p>
+
+    <h2>Data and credits</h2>
+    <p>Satellite data comes from NASA, ISRO and ESA, and the records behind the labels from each place's own authorities. Details are on <a href="how-it-works.html">How it works</a>. The code is open in the <a href="https://github.com/Space0code/dancing-with-the-sars">project repository</a>.</p>
+
+    <h2>Contact</h2>
+    <p><a href="mailto:tomi.bozak01@estudiant.upf.edu">tomi.bozak01@estudiant.upf.edu</a>, or open an <a href="https://github.com/Space0code/dancing-with-the-sars/issues">issue on GitHub</a>.</p>
+  </main>
+  <script>
+    // "Map" brings the user back to the site, filter and base map they left (saved by the app in main.js).
+    try {
+      const h = sessionStorage.getItem("parallax-hash");
+      if (h && /^#[\w=&.,%:-]*$/.test(h)) for (const a of document.querySelectorAll('a[href="./"]')) a.href = "./" + h;
+    } catch {}
+  </script>
+</body>
+</html>
