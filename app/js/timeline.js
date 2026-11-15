@@ -8,6 +8,14 @@ const MAX_TICKS = 80; // with more snapshots the plain ticks would merge into a 
 const GAP_DAYS = 60; // a longer pause between two snapshots is a gap worth a note
 const LEAD_IN = 4; // play from the end starts this many snapshots before the first change, not at the (often quiet) first one
 
+const MONTH_YEAR = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+
+/** Short satellite name for the strip and its line. */
+const shortName = (sensor) => (/nisar/i.test(sensor) ? "NISAR radar" : /sentinel-1/i.test(sensor) ? "Sentinel-1 radar" : /dist-alert|optical|hls|sentinel-2/i.test(sensor) ? "Optical alerts" : sensor);
+
+/** "2023" for a start on 1 January (the year is all we know), else "June 2026". */
+const whenStarts = (iso) => (iso.slice(5) === "01-01" ? iso.slice(0, 4) : MONTH_YEAR.format(new Date(iso)));
+
 /** The site's snapshots, or (older data) the distinct change dates plus both ends of its time range. */
 function snapshotsOf(site, features) {
   if (site.snapshots?.length) return site.snapshots;
@@ -29,6 +37,7 @@ export function createTimeline({ onDate, describe = () => "", pictured = () => t
   let stopAt = 0; // slider value where playing stops
   let playFrom = 0; // where play starts when the slider is at the end
 
+  let sources = []; // the open site's `sources` (who watches, from when to when), oldest start first; [] = unknown, strip hidden
   const index = () => Number(slider.value);
   const pct = (i) => (stops.length > 1 ? (i / (stops.length - 1)) * 100 : 50);
 
@@ -39,8 +48,48 @@ export function createTimeline({ onDate, describe = () => "", pictured = () => t
     return found;
   }
 
+  /** Slider position (0 to 100 %) of a date: between two snapshots it sits in between, outside the track it stops at the ends. */
+  function pctOfDate(iso) {
+    if (stops.length < 2 || iso <= stops[0].date) return 0;
+    if (iso >= stops.at(-1).date) return 100;
+    const i = snap(iso);
+    const [a, b] = [toDay(stops[i].date), toDay(stops[i + 1].date)];
+    return pct(i + (toDay(iso) - a) / (b - a));
+  }
+
+  /** "Watching on 12 Mar 2021: Sentinel-1 radar. Optical alerts start in 2023, NISAR radar in June 2026." */
+  function watchingText(iso) {
+    const active = sources.filter((s) => s.start <= iso && (!s.end || s.end >= iso)).map((s) => shortName(s.sensor));
+    const later = sources.filter((s) => s.start > iso);
+    const parts = [active.length ? `Watching on ${formatDate(iso)}: ${active.join(" and ")}.` : `No satellite record before ${later[0] ? whenStarts(later[0].start) : "now"}.`];
+    if (later.length) {
+      const [first, ...rest] = later.map((s) => [shortName(s.sensor), whenStarts(s.start)]);
+      const verb = /alerts$/.test(first[0]) ? "start" : "starts";
+      parts.push([`${first[0]} ${verb} in ${first[1]}`, ...rest.map(([n, w]) => `${n} in ${w}`)].join(", ") + ".");
+    }
+    return parts.join(" ");
+  }
+
+  /** The strip under the slider: one thin bar per source on the slider's own axis, the part before the first record greyed. */
+  function drawCoverage() {
+    const box = $("coverage");
+    box.hidden = !sources.length || !stops.length;
+    const rowsBox = box.querySelector(".cov-rows");
+    if (box.hidden) return rowsBox.replaceChildren();
+    const first = pctOfDate(sources[0].start);
+    const rows = sources.map((s) => {
+      const left = pctOfDate(s.start);
+      const right = s.end ? pctOfDate(s.end) : 100;
+      const begins = left > 0 ? `${shortName(s.sensor)} begins ${whenStarts(s.start)}` : "";
+      return h("div", { class: "cov-row" }, h("span", { class: `cov-bar${begins ? " cov-begins" : ""}`, style: `left:${left}%;width:${Math.max(right - left, 1)}%`, title: begins || shortName(s.sensor) }, shortName(s.sensor)));
+    });
+    const grey = first > 0 ? [h("span", { class: "cov-none", style: `width:${first}%` }, `No satellite record here before ${sources[0].start.slice(0, 4)}`)] : [];
+    rowsBox.replaceChildren(...grey, ...rows);
+  }
+
   function emit() {
     const stop = stops[index()];
+    if (sources.length) $("watching").textContent = watchingText(stop.date);
     const sub = describe(stop.date);
     $("date-label").replaceChildren(formatDate(stop.date), ...(sub ? [h("span", { class: "date-sub" }, ` · ${sub}`)] : [])); // no sub: the date alone (null would print "null")
     // Just stepped past a long gap in the snapshots (winter, left out on purpose): say so instead of silently jumping.
@@ -131,6 +180,7 @@ export function createTimeline({ onDate, describe = () => "", pictured = () => t
     $("range-end").textContent = formatDate(stops[stops.length - 1].date);
     $("event-note").textContent = "";
     drawTicks(features);
+    drawCoverage();
   }
 
   playBtn.addEventListener("click", () => (playing ? stop() : play()));
@@ -158,6 +208,7 @@ export function createTimeline({ onDate, describe = () => "", pictured = () => t
     setRange(site, features = []) {
       stop();
       stops = snapshotsOf(site, features);
+      sources = [...(site.sources ?? [])].sort((a, b) => a.start.localeCompare(b.start));
       own = { features, stops };
       slider.disabled = playBtn.disabled = false;
       slider.max = stops.length - 1;
@@ -188,6 +239,9 @@ export function createTimeline({ onDate, describe = () => "", pictured = () => t
       stop();
       own = null;
       stops = [];
+      sources = [];
+      $("watching").textContent = "";
+      $("coverage").hidden = true;
       slider.disabled = playBtn.disabled = true;
       for (const id of ["range-start", "range-end", "event-note", "gap-note", "total"]) $(id).textContent = "";
       $("ticks").replaceChildren();
