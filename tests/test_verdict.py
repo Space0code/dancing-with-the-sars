@@ -669,7 +669,7 @@ def test_inside_the_records_scope_the_size_floor_does_not_apply():
 def test_the_size_reason_names_the_changes_own_sensor():
     na = _no_records()
     optical = {**change(area=9, ctype="other"), "sensor": "OPERA DIST-ALERT"}
-    assert judge(optical, na)[1][0]["source"] == "NASA optical alerts (Landsat + Sentinel-2)"
+    assert judge(optical, na)[1][0]["source"] == "Optical alerts (NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA)"
     assert judge({**change(area=9, ctype="other"), "sensor": "Sentinel-1 C-band"}, na)[1][0]["source"] == "Sentinel-1 C-band"
     assert judge(change(area=9, ctype="other"), na)[1][0]["source"] == "Satellite detection"
     small = judge({**change(area=0.5), "sensor": "NISAR L-band"}, records(zone="urban"))
@@ -737,3 +737,165 @@ def test_zoning_without_a_developable_share_is_not_a_planned_area_just_because_t
     assert "planned_sector" not in codes(reasons)
     alone = judge(change(area=12, ctype="earthworks"), records(zoning=ok(zone="developable")))  # no shares at all
     assert "planned_sector" in codes(alone[1])
+
+
+# ---- Barcelona: port and airport land, late starts ----
+
+
+def system_rec(kind="port", share=0.9):
+    return {"system": ok(system=kind, shares={kind: share})}
+
+
+def test_a_structure_on_port_land_is_expected_even_when_the_zoning_says_non_buildable():
+    verdict, reasons, _ = judge(change(area=23, ctype="structure"),
+                                {**records(zone="non_buildable"), **system_rec()})
+    assert verdict == "expected" and codes(reasons)[0] == "system_land"
+    assert reasons[0]["effect"] == "lowers" and "port system land" in reasons[0]["text"]
+    assert "zoning_non_buildable" in codes(reasons)  # still listed: the card shows both records
+    air = judge(change(area=9, ctype="earthworks"), {**records(zone="urban"), **system_rec("airport")})
+    assert air[0] == "expected" and "airport system land" in air[1][0]["text"]
+
+
+def test_port_land_does_not_hide_a_protected_area_or_a_buffer_zone():
+    assert judge(change(area=8), {**records(inside=True), **system_rec()})[0] == "high_concern"
+    buffer = {"protected": ok(inside=True, areas=[{"name": "Delta", "kind": "Natura 2000 buffer zone"}])}
+    assert judge(change(area=8), {**records(), **buffer, **system_rec()})[0] == "review"
+
+
+def test_port_land_needs_most_of_the_change_and_a_change_type_works_can_explain():
+    assert judge(change(area=8, ctype="structure"), {**records(zone="urban"), **system_rec(share=0.4)})[0] == "review"
+    assert judge(change(area=8, ctype="other"), {**records(zone="urban"), **system_rec()})[0] == "review"
+    assert judge(change(area=8), {**records(zone="urban"), "system": ok(system=None, shares={})})[0] == "review"
+    assert judge(change(area=8), records(zone="urban"))[0] == "review"  # no system record at all: as before
+
+
+def test_a_failed_port_lookup_is_reported_and_changes_nothing_else():
+    failed = {"system": {"source": "MUC", "url": None, "checked": False, "error": "boom"}}
+    verdict, reasons, _ = judge(change(area=8), {**records(zone="urban"), **failed})
+    assert verdict == "review" and any("port and airport land map could not be checked" in r["text"] for r in reasons)
+
+
+def late(**kw):
+    return {**change(**kw), "sources": [{"role": "late_start"}, {"role": "not_watching"}]}
+
+
+def test_a_late_start_counts_buildings_from_a_year_before_the_sensor_began_or_with_no_year():
+    old = {"cadastre": ok(buildings=3, built_since=0, undated=0)}  # three buildings, all older than that
+    dated = judge(change(area=8), {**records(zone="urban"), **old})
+    assert dated[0] == "review" and "No building registered since the change" in dated[1][0]["text"]
+    none = judge(late(area=8), {**records(zone="urban"), **old})
+    assert none[0] == "review" and none[1][0]["text"].startswith("No building registered here is from the years")
+    assert "since the change" not in none[1][0]["text"]
+    recent = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=3, built_since=1, undated=0)})
+    assert recent[0] == "expected" and codes(recent[1])[0] == "cadastre_building_found"
+    assert "date from 2025 or later" in recent[1][0]["text"]  # the change's first date is in 2026: one year of lead
+    undated = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=1, built_since=0, undated=1)})
+    assert undated[0] == "expected" and "have no year" in undated[1][0]["text"]
+    # a source that detected the change dates it: not a late start, the plain rule applies
+    dated_by_one = {**late(area=8), "sources": [{"role": "late_start"}, {"role": "detected"}]}
+    assert judge(dated_by_one, {**records(zone="urban"), **old})[0] == "review"
+
+
+def test_late_start_lookups_get_a_one_year_lead(monkeypatch):
+    from sarwatch import verdict
+
+    seen = {}
+    monkeypatch.setattr("sarwatch.context.lookup_all", lambda g, since=None, until=None: seen.update(since=since, until=until) or {})
+    verdict.run_lookups({"type": "Point", "coordinates": [0, 0]}, {**late(area=8), "first_date": "2016-06-05"})
+    assert seen == {"since": "2015-01-01", "until": "2016-06-05"}
+    verdict.run_lookups({"type": "Point", "coordinates": [0, 0]}, {**change(area=8), "first_date": "2016-06-05"})
+    assert seen == {"since": "2016-06-05", "until": "2016-06-05"}
+
+
+def test_port_land_needs_80_percent_and_hides_the_municipal_solar_plant():
+    assert judge(change(area=8), {**records(zone="urban"), **system_rec(share=0.7)})[0] == "review"
+    plants = [plant(ha=17.3)]
+    verdict, reasons, explain = judge(change(area=23), {**records(zone="non_buildable", plants=plants), **system_rec(share=0.97)})
+    assert verdict == "expected" and codes(reasons)[0] == "system_land" and "solar_plant_listed" not in codes(reasons)
+    assert "solar plant" not in explain
+    assert "solar_plant_listed" in codes(judge(change(area=23), {**records(zone="urban", plants=plants)})[1])  # elsewhere it stays
+
+
+def test_a_protected_area_is_named_once_and_a_missing_share_does_not_crash():
+    twin = {"protected": ok(inside=True, areas=[{"name": "Delta del Llobregat", "kind": "PEIN"},
+                                                {"name": "Delta del Llobregat", "kind": "Natura 2000"}])}
+    assert judge(change(area=8), {**records(), **twin})[1][0]["text"].count("Delta del Llobregat") == 1
+    nones = {"system": ok(system="port", shares={"port": None})}
+    assert judge(change(area=8), {**records(zone="urban"), **nones})[0] == "review"
+
+
+# ---- snow and flood caution (the series file's `surface` block, NASA HLS quality mask) ----
+
+
+def surface(snow=0.0, water=0.0):
+    return {"surface": ok(snow_share=snow, water_share=water, dates_checked=["2026-04-03"])}
+
+
+def test_snow_over_the_threshold_adds_a_caution_and_never_moves_the_label():
+    base = judge(change(area=8), records(zone="urban"))
+    cautious = judge(change(area=8), {**records(zone="urban"), **surface(snow=0.4)})
+    assert cautious[0] == base[0]  # same label
+    caution = next(r for r in cautious[1] if r["code"] == "snow_caution")
+    assert caution["effect"] == "neutral" and "40 %" in caution["text"] and "snow can explain this signal" in caution["text"]
+    assert caution["source"] == "Test source"  # the record's own source is shown
+    assert codes(cautious[1])[0] == codes(base[1])[0]  # and it is never the deciding reason
+    clear = next(r for r in cautious[1] if r["code"] == "surface_clear")  # water is 0, so only that part is called clear
+    assert "no standing water" in clear["text"] and "no snow" not in clear["text"]
+
+
+def test_water_after_the_change_is_reported_as_a_possible_flood_not_a_label():
+    verdict, reasons, explain = judge(change(area=8), {**records(zone="urban"), **surface(water=0.6)})
+    water = next(r for r in reasons if r["code"] == "water_after")
+    assert "60 %" in water["text"] and "possible flood or new water body" in water["text"] and water["effect"] == "neutral"
+    assert verdict == judge(change(area=8), records(zone="urban"))[0]
+    assert "flood" not in explain  # the sentence on the card follows the label, not the caution
+
+
+def test_below_the_thresholds_there_is_a_short_clear_note_and_unknowns_stay_silent():
+    clear = judge(change(area=8), {**records(zone="urban"), **surface(snow=0.08, water=0.11)})[1]
+    note = next(r for r in clear if r["code"] == "surface_clear")
+    assert note["text"] == "Clear scenes around its dates show no snow and no standing water over the area."
+    assert not {"snow_caution", "water_after"} & set(codes(clear))
+    only_water = judge(change(area=8), {**records(zone="urban"), "surface": ok(snow_share=None, water_share=0.0)})[1]
+    assert next(r for r in only_water if r["code"] == "surface_clear")["text"].endswith("show no standing water over the area.")
+    nothing = judge(change(area=8), {**records(zone="urban"), "surface": ok(snow_share=None, water_share=None)})[1]
+    assert not {"snow_caution", "water_after", "surface_clear"} & set(codes(nothing))
+    assert not {"snow_caution", "surface_clear"} & set(codes(judge(change(area=8), records(zone="urban"))[1]))  # no block
+
+
+def test_thresholds_are_inclusive_and_both_cautions_can_show_together():
+    at = judge(change(area=8), {**records(zone="urban"), **surface(snow=0.25, water=0.25)})[1]
+    assert {"snow_caution", "water_after"} <= set(codes(at))
+    below = judge(change(area=8), {**records(zone="urban"), **surface(snow=0.249, water=0.249)})[1]
+    assert not {"snow_caution", "water_after"} & set(codes(below)) and "surface_clear" in codes(below)
+
+
+def test_the_series_files_surface_block_becomes_a_record(tmp_path):
+    from sarwatch.verdict import surface_record
+
+    (tmp_path / "series").mkdir()
+    (tmp_path / "series" / "a-0001.json").write_text(json.dumps(
+        {"series": [], "surface": {"snow_share": 0.3, "water_share": None, "dates_checked": ["2026-04-03"]}}))
+    (tmp_path / "series" / "a-0002.json").write_text(json.dumps({"series": []}))
+    rec = surface_record(tmp_path, {"id": "a-0001", "evidence": {"series": "series/a-0001.json"}})
+    assert rec["checked"] is True and rec["snow_share"] == 0.3 and rec["water_share"] is None
+    assert "HLS" in rec["source"] and rec["url"].startswith("https://")
+    assert surface_record(tmp_path, {"id": "a-0001"})["snow_share"] == 0.3  # path from the id when evidence has none
+    assert surface_record(tmp_path, {"id": "a-0002"}) is None and surface_record(tmp_path, {"id": "missing"}) is None
+
+
+def test_apply_file_gives_each_change_its_own_surface_block(tmp_path):
+    site = tmp_path / "site"
+    (site / "series").mkdir(parents=True)
+    feature = {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [0, 0]]]},
+               "properties": {"id": "s-0001", "type": "clearing", "area_ha": 8.0, "first_date": "2026-03-01", "last_date": "2026-03-01",
+                              "explain": "Radar saw it.", "confidence": "high"}}
+    (site / "changes.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": [feature]}))
+    (site / "series" / "s-0001.json").write_text(json.dumps({"surface": {"snow_share": 0.5, "water_share": 0.0}}))
+    (site / "records.json").write_text(json.dumps({"version": 1, "default": {}}))
+    apply_file(site / "changes.geojson")
+    props = json.loads((site / "changes.geojson").read_text())["features"][0]["properties"]
+    assert "snow_caution" in codes(props["reasons"]) and "50 %" in next(r for r in props["reasons"] if r["code"] == "snow_caution")["text"]
+    first = (site / "changes.geojson").read_text()
+    apply_file(site / "changes.geojson")
+    assert (site / "changes.geojson").read_text() == first  # a second run is identical

@@ -36,6 +36,14 @@ export function sensorLabel(sensor) {
   return sensor;
 }
 
+/** Who provides a source, for the "Seen by" list: the satellites belong to agencies, the products to NASA. */
+export function sensorCredit(sensor) {
+  if (/nisar/i.test(sensor)) return "By NASA and ISRO";
+  if (/sentinel-1/i.test(sensor)) return "By ESA; prepared by NASA as the OPERA RTC-S1 product";
+  if (/dist-alert/i.test(sensor)) return "NASA OPERA product, from Landsat by NASA/USGS and Sentinel-2 by ESA";
+  return null;
+}
+
 export function setVerdictColors() {
   for (const [key, v] of Object.entries(VERDICTS)) document.documentElement.style.setProperty(`--c-${key}`, v.color);
 }
