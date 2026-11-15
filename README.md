@@ -19,6 +19,11 @@ Example sites: a forest area in northern Finland and the Barcelona metropolitan 
   the reasons (protected areas, zoning, cadastre, solar-plant list, other official records) and their sources next to
   the radar evidence. The app shows reasons; it never judges legality.
 - Click a change to see a before/after swipe and the radar signal over time; move the time slider to replay the site.
+- **Choose dates and an area:** draw a box, type coordinates or upload a file, and everything follows the selection.
+- **Export** a PDF report (map picture, key numbers, summary) or data files: CSV, GeoJSON, shapefile, GeoTIFF.
+- **NDVI** (greenness from NASA's optical data) on each change, over time.
+- **Two base maps:** satellite and light grey.
+- **How it works** and **FAQ** pages explain the method, the labels and the credits.
 
 Product brief: [kb/product.md](kb/product.md) · plan: [kb/plan.md](kb/plan.md) ·
 new to radar? [kb/sar-primer.md](kb/sar-primer.md).
