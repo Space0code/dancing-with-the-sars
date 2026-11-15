@@ -171,6 +171,15 @@ def focus_area(site: str, buffer_m: float = FOCUS_M):
     return area.buffer(buffer_m, 4).simplify(5)
 
 
+def _building_shape(parts, area):
+    """One building's footprint clipped to ``area``, or None. Registry outlines are sometimes invalid (a bowtie from a
+    mistyped vertex): repair each part first, and leave out a building that still cannot be clipped."""
+    try:
+        return _polys(unary_union([shapely.make_valid(p) for p in parts]).intersection(area))
+    except shapely.errors.GEOSException:
+        return None
+
+
 def buildings_layer(site_box, tol: float, focus=None):
     """Registered buildings in the box; with ``focus`` (a big site) only those within it, clipped to it."""
     area = focus.intersection(site_box) if focus is not None else site_box
@@ -182,7 +191,7 @@ def buildings_layer(site_box, tol: float, focus=None):
                 found.setdefault(b["id"], b)
     groups, years = {}, []  # one feature per (year, use): thousands of footprints stay under 1 MB
     for b in found.values():
-        g = _polys(unary_union(b["parts"]).buffer(0).intersection(area)) if b["parts"] else None
+        g = _building_shape(b["parts"], area) if b["parts"] else None
         if g is None:
             continue
         year = int(b["date"][:4]) if b["date"] else None
@@ -194,7 +203,7 @@ def buildings_layer(site_box, tol: float, focus=None):
         n = len(gs)
         label = (f"{n} registered building{'s' if n > 1 else ''}" + (f" ({use})" if use else "")
                  + (f", built {year}" if year else ", year unknown"))
-        feats.append((unary_union(gs), {"label": label, "year": year}))
+        feats.append((unary_union([shapely.make_valid(g) for g in gs]), {"label": label, "year": year}))
     recent = sum(1 for y in years if y >= 2016)
     note = (f"{sum(len(gs) for gs in groups.values())} buildings on the land registry; {recent} built in 2016 or later"
             + (f", newest {max(years)}" if years else "") + ". Construction year only, no exact date."

@@ -1,0 +1,33 @@
+{
+ "layers": [
+  {
+   "id": "protected",
+   "title": "Protected nature areas",
+   "kind": "protected",
+   "source": "PEIN + Natura 2000 (Generalitat de Catalunya, via Diputació de Barcelona)",
+   "url": "https://sig.gencat.cat/visors/hipermapa.html",
+   "note": "Inside the box: Aiguamolls del Delta del Llobregat; Costes del Garraf; Costes del Maresme; Delta del Llobregat; Gallecs; Massís del Garraf; Montserrat; Montser…",
+   "file": "protected.geojson",
+   "checked": "2026-11-15"
+  },
+  {
+   "id": "zoning",
+   "title": "Zoning: where building is allowed",
+   "kind": "zoning",
+   "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
+   "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
+   "note": "Share of the box: non-buildable land 40 %, land planned for development 5 %, urban land 22 %",
+   "file": "zoning.geojson",
+   "checked": "2026-11-15"
+  }
+ ],
+ "notes": [
+  {
+   "kind": "solar",
+   "source": "Solar PV plant applications (Generalitat de Catalunya open data, ggx8-jkp4)",
+   "url": "https://analisi.transparenciacatalunya.cat/d/ggx8-jkp4",
+   "checked": "2026-11-15",
+   "note": "15 solar plants filed in these towns (no map positions): PSFV L'Arca, Caldes de Montbui, 2.1 ha, pending; +14 more"
+  }
+ ]
+}

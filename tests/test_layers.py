@@ -99,3 +99,22 @@ def test_focus_area_covers_every_change_of_a_big_site():
         assert focus.contains(g.buffer(-1)), f["properties"]["id"]
     assert focus.area < layers._utm_box(layers.site_bbox("barcelona")).area / 10  # far smaller than the 1,950 km2 window
     assert layers.focus_area("no-such-site") is None
+
+
+def test_an_invalid_building_outline_does_not_sink_the_buildings_layer(monkeypatch):
+    from shapely.geometry import Polygon, box
+
+    bowtie = Polygon([(0, 0), (10, 10), (10, 0), (0, 10), (0, 0)])  # self-intersecting: invalid
+    good = box(20, 0, 30, 10)
+    area = box(-5, -5, 50, 20)
+    monkeypatch.setattr(layers.cadastre, "grid_tiles", lambda *b: [(-5, -5, 50, 20)])
+    monkeypatch.setattr(layers.cadastre, "_tile", lambda *t: [
+        {"id": "a", "date": "2019-01-01", "use": "1_residential", "parts": [bowtie]},
+        {"id": "b", "date": "2019-01-01", "use": "1_residential", "parts": [good]},
+        {"id": "c", "date": None, "use": None, "parts": []}])
+    feats, meta = layers.buildings_layer(area, 0.5)
+    assert meta["id"] == "buildings"
+    labels = [props["label"] for _, props in feats]
+    assert any("2 registered buildings (home), built 2019" in label for label in labels), labels
+    assert all(g.is_valid for g, _ in feats)
+
