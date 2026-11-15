@@ -19,7 +19,7 @@ from shapely.geometry import Polygon, box
 
 from ._common import UTM, OfflineMiss, ServiceError, fetch, safe, store, to_utm
 
-SOURCE = "Catastro buildings (INSPIRE WFS, Dirección General del Catastro)"
+SOURCE = "Derived from Dirección General del Catastro data (buildings, INSPIRE)"
 SERVICE = "https://ovc.catastro.meh.es/INSPIRE/wfsBU.aspx"
 VIEWER = "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx"
 TILE_M = 990           # 0.98 km² < 1 km² limit

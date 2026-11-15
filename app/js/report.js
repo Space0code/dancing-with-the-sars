@@ -208,7 +208,8 @@ function viewText() {
 function attributionText() {
   const text = document.querySelector(".maplibregl-ctrl-attrib-inner")?.textContent.replace(/\s+/g, " ").trim();
   const base = text || "Background map: Esri and contributors";
-  return hasPhotos() ? `Dated photo: NASA HLS (Landsat, Sentinel-2) · ${base}` : base;
+  const notice = "Contains modified Copernicus Sentinel data (2016–2026)";
+  return hasPhotos() ? `Dated photo: NASA HLS (Landsat, Sentinel-2) · ${notice} · ${base}` : `${notice} · ${base}`;
 }
 
 // --- the PDF ---
@@ -276,7 +277,7 @@ export async function buildReport(ctx, aiText, picture) {
   if (aiText) {
     heading("Summary");
     const rows = [
-      { s: "AI-written summary", font: "bold", size: 10, color: 0 },
+      { s: "AI-written summary (Google Gemini)", font: "bold", size: 10, color: 0 },
       ...lines(aiText, W - 8).map((s) => ({ s, font: "normal", size: 10, color: 30 })),
       { s: "Written by an AI model from the numbers in this report. Check the list below before acting.", font: "normal", size: 8, color: GREY },
     ];
