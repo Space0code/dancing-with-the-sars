@@ -478,6 +478,13 @@ def _check_change(feature, site_id: str, site_dir: Path, seen: set, where: str, 
             errors.append(f"{where}: signal must be null or {{metric, before, after, delta}}")
     if p.get("confidence") not in CONFIDENCE:
         errors.append(f"{where}: confidence must be one of {sorted(CONFIDENCE)}")
+    if ("confidence_base" in p) != ("confidence_ndvi" in p):
+        errors.append(f"{where}: confidence_base and confidence_ndvi must both be present or both absent")
+    elif "confidence_base" in p:
+        if p["confidence_base"] not in CONFIDENCE or p["confidence_base"] == p.get("confidence"):
+            errors.append(f"{where}: confidence_base must be one of {sorted(CONFIDENCE)} and differ from confidence")
+        if not (isinstance(p["confidence_ndvi"], str) and p["confidence_ndvi"]):
+            errors.append(f"{where}: confidence_ndvi must be a non-empty string")
     verdict = p.get("verdict")
     if verdict is not None and verdict not in VERDICTS:
         errors.append(f"{where}: verdict must be null or one of {sorted(VERDICTS)}")

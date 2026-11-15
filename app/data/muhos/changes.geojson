@@ -3534,6 +3534,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_fell",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.81 to 0.49, which fits vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026; Sentinel-1 radar saw its vegetation echo drop by 16 Apr 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -3693,6 +3700,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.43 → 0.61). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -4066,6 +4080,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.65 → 0.74). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (3.06 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -4341,6 +4362,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.58 → 0.62). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.88 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -4574,6 +4602,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_slightly",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell slightly (0.80 → 0.74), not enough on its own to show vegetation loss. NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -4819,6 +4854,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.76 → 0.72). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 21 Oct 2025 and 29 Apr 2026. The change is small (2.61 ha), too small to flag on its own. No land registry or zoning records are connected for this country yet, and no official record we have covers this spot.",
@@ -4986,6 +5028,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.44 → 0.56). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -5197,6 +5246,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.53 → 0.77). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -8165,6 +8221,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_fell",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.81 to 0.43, which fits vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -12609,6 +12672,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_fell",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.81 to 0.48, which fits vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 31 May and 30 Jun 2026; Sentinel-1 radar saw its vegetation echo drop by 22 Jun 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -12792,6 +12862,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.77 → 0.79). NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -17706,6 +17783,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_fell",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.80 to 0.37, which fits vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Vegetation loss here happened between 22 May and 31 Jul 2026: an optical alert confirmed it by 31 Jul 2026; Sentinel-1 radar saw its vegetation echo drop earlier, by 22 Jun 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -18037,6 +18121,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 30 Jun and 31 Jul 2026. No public land records are connected for this country yet, so a change of this size is flagged for review.",
@@ -18212,6 +18303,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_slightly",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell slightly (0.63 → 0.52), not enough on its own to show vegetation loss. NDVI often stays high after a thinning, or when ground plants grow back in the first summer, so this does not contradict the optical alert.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -20644,6 +20742,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_fell",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.80 to 0.41, which fits vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -25015,6 +25120,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "An optical alert found vegetation loss here between 31 Aug and 30 Sep 2026. The required environmental assessment was not finished when this clearing happened. 6 Oct 2026: The permit and supervisory agency (LVV) called for the preparatory work on the data-centre site to be suspended immediately, and at the latest by 23 October 2026.",
@@ -25256,6 +25368,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
