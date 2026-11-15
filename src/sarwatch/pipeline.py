@@ -121,6 +121,16 @@ class Site:
                                   # a change is dropped when its outline contains the point; applied before max_changes
     max_changes: int | None = None  # a large window: keep only this many changes (largest first, low confidence
                                     # counted at half its area); needs `sources` (applies to the merged changes)
+    recent_from: date | None = None  # with max_changes: every change first seen on or after this day (dated by a
+                                     # sensor that watched it start, not a late start) is kept before older ones
+    max_recent: int | None = None    # cap on those recent changes (largest first); the places left up to
+                                     # max_changes go to the largest older changes
+    recent_low_conf_ha: float = 0.0  # a recent change with low confidence is kept only from this area (weak
+                                     # signal on small areas is mostly fields); 0 = no extra filter
+    recent_min_ha: float = 0.0       # a recent change is kept only from this area (geodesic ha); 0 = no filter
+    recent_min_step_db: float = 0.0  # ... and only if its signal step |delta| is at least this (dB); a change
+                                     # without a step value is kept; 0 = no filter
+    recent_drop_types: tuple[str, ...] = ()  # ... and only if its type is not one of these
     notes: tuple[str, ...] = ()   # sites.json `notes`: neutral facts about the data, at most 4, each up to 140 characters
 
 
@@ -217,11 +227,15 @@ SITES = {
         ),
         # Port of Barcelona, a berth: NISAR's "earthworks" there is most likely a moored ship, not ground works
         exclude_points=((2.1705, 41.3525),),
-        max_changes=100, layer_bytes=2_000_000,
-        notes=("Open water (the sea and port basins) is masked out of the radar comparison.",
-               "Sentinel-1 is compared summer (Jun-Sep) against summer: the 2016 summer is the baseline, 2026 the end state.",
+        # recent first (kb/site-barcelona.md): from 2024 on is what matters; small, weak or "other" ones are mostly
+        # crop cycles and are left out; the places left up to 100 go to the largest older changes
+        max_changes=100, recent_from=date(2024, 1, 1), max_recent=120, recent_low_conf_ha=2.0,
+        recent_min_ha=1.2, recent_min_step_db=7.0, recent_drop_types=("other",),
+        layer_bytes=2_000_000,
+        notes=("Sentinel-1 is compared summer (Jun-Sep) against summer: the 2016 summer is the baseline, 2026 the end state.",
                "NISAR L-band has observed since June 2026; it reports clearing, structure and earthworks only.",
-               "Only the 100 largest changes are kept."),
+               "Changes from 2024 on are kept first, then the largest older ones (100 in all).",
+               "Small recent changes on farmland can be crop cycles, not works."),
     ),
 }
 
@@ -1126,17 +1140,47 @@ def merged_changes(runs: list, site: Site, n_early: dict, optical=None, params: 
 CONFIDENCE_WEIGHT = {"low": 0.5, "medium": 1.0, "high": 1.0}  # top_changes: a low-confidence change counts half
 
 
-def top_changes(merged: list, n: int) -> list:
+def is_recent(m, recent_from: date) -> bool:
+    """First seen on or after recent_from by a sensor that watched it start. A late start (already under way when
+    the sensor began, so dated to its first pass) is not recent: the record cannot date it."""
+    return m.first_date >= recent_from and any(
+        e.get("role") == "detected" and e.get("sensor") == m.sensor for e in m.sources)
+
+
+def top_changes(merged: list, n: int, recent_from: date | None = None, max_recent: int | None = None,
+                recent_low_conf_ha: float = 0.0, recent_min_ha: float = 0.0, recent_min_step_db: float = 0.0,
+                recent_drop_types: tuple = ()) -> list:
     """The n changes that matter most on a large site: largest geodesic area first, a low-confidence one counted at
-    CONFIDENCE_WEIGHT of its area. Order of the kept ones is unchanged (write_site sorts them by date anyway)."""
+    CONFIDENCE_WEIGHT of its area. With recent_from, the recent changes (is_recent) go first, largest first up to
+    max_recent, and the places left go to the largest older ones; a recent change with low confidence below
+    recent_low_conf_ha is dropped; so is a recent change under recent_min_ha, with a signal step |delta| under
+    recent_min_step_db (no step value: kept) or of a type in recent_drop_types. Order of the kept ones is unchanged (write_site sorts them by date anyway)."""
     from shapely.geometry import shape
 
     from . import merge
 
-    if n is None or len(merged) <= n:
+    if n is None:
         return merged
-    score = {id(m): merge.area_ha(shape(m.geometry)) * CONFIDENCE_WEIGHT.get(m.confidence, 1.0) for m in merged}
-    keep = {id(m) for m in sorted(merged, key=lambda m: -score[id(m)])[:n]}
+    area = {id(m): merge.area_ha(shape(m.geometry)) for m in merged}
+    score = {id(m): area[id(m)] * CONFIDENCE_WEIGHT.get(m.confidence, 1.0) for m in merged}
+    if recent_from is None:
+        if len(merged) <= n:
+            return merged
+        keep = {id(m) for m in sorted(merged, key=lambda m: -score[id(m)])[:n]}
+        return [m for m in merged if id(m) in keep]
+
+    def step(m):
+        delta = ((m.region.signal if m.region is not None else m.signal) or {}).get("delta")
+        return None if delta is None else abs(delta)
+
+    recent = [m for m in merged if is_recent(m, recent_from)
+              and not (m.confidence == "low" and area[id(m)] < recent_low_conf_ha)
+              and area[id(m)] >= recent_min_ha and m.type not in recent_drop_types
+              and (step(m) is None or step(m) >= recent_min_step_db)]
+    recent = sorted(recent, key=lambda m: -score[id(m)])[:min(n, max_recent if max_recent is not None else n)]
+    older = sorted((m for m in merged if not is_recent(m, recent_from)),
+                   key=lambda m: -score[id(m)])[:n - len(recent)]
+    keep = {id(m) for m in recent + older}
     return [m for m in merged if id(m) in keep]
 
 
@@ -1325,9 +1369,13 @@ def run(site_id: str, out="app/data", cache="data/stacks", *, sensors=(NISAR, S1
             hit = [m for m in merged if any(shape(m.geometry).contains(Point(pt)) for pt in site.exclude_points)]
             merged = [m for m in merged if m not in hit]
             log.info("left out %d change(s) at the site's exclude_points", len(hit))
-        if site.max_changes is not None and len(merged) > site.max_changes:
-            merged = top_changes(merged, site.max_changes)
-            log.info("kept the %d largest changes (max_changes)", len(merged))
+        if site.max_changes is not None and (len(merged) > site.max_changes or site.recent_from):
+            merged = top_changes(merged, site.max_changes, site.recent_from, site.max_recent,
+                                 site.recent_low_conf_ha, site.recent_min_ha, site.recent_min_step_db,
+                                 site.recent_drop_types)
+            log.info("kept %d changes (max_changes%s)", len(merged),
+                     f", {sum(is_recent(m, site.recent_from) for m in merged)} recent first" if site.recent_from
+                     else ", the largest")
             optical_days = [d for d in optical_days if any(m.first_date == d for m in merged)]
     elif site.max_changes is not None:
         raise PipelineError(f"{site_id}: max_changes needs the site's `sources` (it applies to the merged changes)")
