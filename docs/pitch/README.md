@@ -18,6 +18,6 @@ Fetched with the public NASA Worldview Snapshots API using the radar picture's b
 
 - `layers-strip.jpg` (3600x1200): the four tiles in a row with captions, for the slide.
 - `layer-nisar.jpg`: NISAR L-band radar, 19 Jul 2026, from `frames/radar/2026-07-19-nisar.jpg`. Credit: NISAR (NASA/ISRO).
-- `layer-sentinel1.jpg`: Sentinel-1 C-band radar, 22 Jun 2026 (the last Sentinel-1 frame in the app), from `frames/radar/2026-06-22.jpg`. The app's pink change marks were painted out of this frame. Credit: Contains modified Copernicus Sentinel data (ESA, Copernicus), prepared as OPERA RTC-S1 (NASA).
+- `layer-sentinel1.jpg`: Sentinel-1 C-band radar, a colour composite (mean of 3 passes, 14 to 26 Oct 2026, the app's Sentinel-1 "after" layer dated 20 Oct), from `app/data/muhos/layers/sentinel_1_c_band_after.png`, cropped to the same ground area as the other tiles by longitude/latitude (no marks, not retouched; the source is 290x302 px, so it is soft). Credit: Contains modified Copernicus Sentinel data (ESA, Copernicus), prepared as OPERA RTC-S1 (NASA).
 - `layer-hls-photo.jpg`: optical photo, 27 Aug 2026, from `frames/photo/2026-08-27.jpg`. Credit: HLS (NASA; made from Landsat and Sentinel-2).
 - `layer-dist-alert.jpg`: OPERA DIST-ALERT vegetation-loss alerts (dated 29 Apr to 31 Aug 2026) in orange over a darkened copy of the 27 Aug photo, from `changes.geojson`. Credit: OPERA DIST-ALERT-HLS (NASA).
