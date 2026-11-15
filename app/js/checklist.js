@@ -11,7 +11,7 @@ const QUESTIONS = [
   { key: "fire", q: "A recorded wildfire?", codes: ["fire_recorded"], none: "No wildfire in the records we have." },
   { key: "official", q: "Any official record (assessment, orders)?", codes: ["assessment_missing", "official_stop_order", "official_investigation", "official_action"], none: "None in the records we have (official records are entered by hand)." },
   { key: "surface", q: "Snow or flood?", codes: ["snow_caution", "water_after", "surface_clear"], none: "No snow or water check for this change." },
-  { key: "ndvi", q: "Does the vegetation index agree?", codes: ["ndvi_fell", "ndvi_slightly", "ndvi_flat", "ndvi_bare", "ndvi_few"], none: "Not enough clear photos from the same time of year before and after the change to compare the vegetation index." },
+  { key: "ndvi", q: "Does the vegetation index agree?", codes: ["ndvi_fell", "ndvi_slightly", "ndvi_flat", "ndvi_bare", "ndvi_few"], none: "No vegetation index for this change: no photos were compared." },
   { key: "size", q: "How big?", codes: ["small_area", "small_uncertain", "small_no_records", "size_only"], none: null },
 ];
 
