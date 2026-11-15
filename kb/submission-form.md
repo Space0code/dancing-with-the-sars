@@ -94,7 +94,7 @@ Paste the table of [`submission.md` section 4](submission.md#4-data-used) ("Spac
 - Our code and derived data: MIT licence, https://github.com/Space0code/dancing-with-the-sars
 
 ## 9. Images to upload
-From [`../docs/screenshots/submission/`](../docs/screenshots/submission/) (taken from the live app on 15 Nov), in this order: the Finland radar view · a change card with "Why this label?" · Compare before and after · the Barcelona map · a Barcelona card with the record layers · the export dialog · the first page of the PDF report. Plus `../docs/pitch/cloud-pair.jpg` (optical under cloud next to radar). JPG, PNG or GIF, up to 10 MB each; the guide sets no number.
+From [`../docs/screenshots/submission/`](../docs/screenshots/submission/) (taken from the live app on 15 Nov), in this order: `01-finland-radar.png` · `02b-finland-card-top.png` (the label) · `02-finland-card.png` ("Why this label?") · `03-finland-compare.png` · `04-barcelona-map.png` · `05-barcelona-card-records.png` · `07-filter-export.png` · `08-report-pdf.png`. Plus `../docs/pitch/barcelona-demo.gif` (the app working on Barcelona, 7.2 MB) and `../docs/pitch/cloud-pair.jpg` (optical under cloud next to radar). JPG, PNG or GIF, up to 10 MB each; the guide sets no number.
 
 ## 10. Before pressing "Submit for Judging"
 - [ ] Team page: team name "4", all three members on the Members tab and confirmed for the Barcelona event.
