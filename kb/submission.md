@@ -170,7 +170,7 @@ limits we state · next: Catalonia.
 | Dataset | Used for | Link |
 |---|---|---|
 | NISAR L2 GCOV (L-band backscatter HH/HV) | the block through cloud from late June 2026; radar frames | [ASF](https://search.asf.alaska.edu/#/?dataset=NISAR) · [docs](https://nisar-docs.asf.alaska.edu/) |
-| OPERA RTC-S1 (Sentinel-1 backscatter, 30 m, 2016 on) | radar history and the first radar sighting (March 2026) | [guide](https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/) |
+| OPERA RTC-S1 (Sentinel-1 backscatter, 30 m, 2016 on) | radar history and the first radar sighting (early April 2026) | [guide](https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/) |
 | OPERA DIST-ALERT-HLS (vegetation-loss alerts, 30 m) | dating the clearing month by month; the block's outline | [LP DAAC](https://lpdaac.usgs.gov/products/opera_l3_dist-alert-hls_v1v001/) |
 | HLS (Harmonized Landsat Sentinel-2) | the "Satellite photo" frames of the time-lapse | [Earthdata](https://www.earthdata.nasa.gov/data/projects/hls) |
 
