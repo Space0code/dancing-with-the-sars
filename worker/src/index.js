@@ -1,9 +1,10 @@
 // Parallax report proxy: validates facts from the app, writes the prompt itself, calls Gemini.
-// Primary model, then a lighter one when the primary is overloaded (503 / slow). 8 s in total.
+// Primary model, then a lighter one when the primary fails or is slow. 4 s each, 8 s in total.
 const MODELS = [
-  { name: "gemini-flash-latest", ms: 5000 },
-  { name: "gemini-flash-lite-latest", ms: 3000 },
+  { name: "gemini-flash-latest", ms: 4000 },
+  { name: "gemini-flash-lite-latest", ms: 4000 },
 ];
+const TOTAL_MS = 8000;
 const upstream = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const MAX_BODY = 8 * 1024;
 const LABELS = ["high_concern", "review", "expected", "none"];
@@ -92,6 +93,7 @@ function buildPrompt(facts) {
     "",
     "Rules:",
     "- Write at most 180 words of plain English, as 2 short paragraphs.",
+    "- Write every number as digits exactly as given in the facts (19, 397.2 ha, 2026). Never spell numbers out. Do not read coordinates aloud.",
     "- Use only the facts in the JSON block below. Use no other knowledge.",
     "- Say what was detected, where and when, how much (hectares), and which changes to look at first.",
     "- A label (expected, review, high_concern) is a prompt for a person to check. It is never a finding of wrongdoing.",
@@ -148,9 +150,14 @@ export default {
     if (request.method !== "POST") return json(405, { error: "method_not_allowed" }, origin);
 
     const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-    const [minute, burst] = await Promise.all([env.LIMITER.limit({ key: ip }), env.BURST_LIMITER.limit({ key: ip })]);
-    const success = minute.success && burst.success;
-    if (!success) return json(429, { error: "rate_limited" }, origin);
+    // Global cap first (one shared key), then the two per-address limits. All three are approximate.
+    const [all, minute, burst] = await Promise.all([
+      env.GLOBAL_LIMITER.limit({ key: "all" }),
+      env.LIMITER.limit({ key: ip }),
+      env.BURST_LIMITER.limit({ key: ip }),
+    ]);
+    if (!all.success) return json(429, { error: "busy" }, origin);
+    if (!minute.success || !burst.success) return json(429, { error: "rate_limited" }, origin);
 
     let facts;
     try {
@@ -165,7 +172,7 @@ export default {
     let model = "";
     let failure = "upstream_error";
     for (const m of MODELS) {
-      const left = Math.min(m.ms, 8000 - (Date.now() - t0));
+      const left = Math.min(m.ms, TOTAL_MS - (Date.now() - t0));
       if (left < 500) break;
       const ctl = new AbortController();
       const timer = setTimeout(() => ctl.abort(), left);
@@ -181,7 +188,12 @@ export default {
         });
         if (!res.ok) continue;
         const data = await res.json();
-        text = (data?.candidates?.[0]?.content?.parts ?? [])
+        const cand = data?.candidates?.[0];
+        if (cand?.finishReason !== "STOP") {
+          failure = "bad_summary";
+          continue;
+        }
+        text = (cand?.content?.parts ?? [])
           .map((p) => (typeof p?.text === "string" ? p.text : ""))
           .join("")
           .trim();
@@ -195,7 +207,8 @@ export default {
     }
     if (!model) return json(failure === "upstream_timeout" ? 504 : 502, { error: failure }, origin);
 
-    if (!text || text.length > 1500 || /illegal|unlawful/i.test(text)) return json(502, { error: "bad_summary" }, origin);
+    const plain = !/^\s*[#*-]/m.test(text) && !/\*\*|`/.test(text) && text.split(/\n\s*\n/).filter((x) => x.trim()).length <= 2;
+    if (!text || text.length > 1500 || !plain || /illegal|unlawful/i.test(text)) return json(502, { error: "bad_summary" }, origin);
     return json(200, { summary: text, model }, origin);
   },
 };
