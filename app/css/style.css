@@ -345,7 +345,6 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .facts dd { margin: 0; }
 .explain { margin: var(--s-3) 0; font-size: var(--t-body); line-height: 1.55; }
 .note { margin: var(--s-2) 0; font-size: var(--t-small); color: var(--muted); }
-span.note { padding: 0; border-radius: 0; background: none; color: var(--muted); } /* inline: not the pages' notice box (css/pages.css) */
 
 /* "Why this label?" checklist (js/checklist.js): one row per question; the row that decided the label sits in a well */
 .checklist { list-style: none; margin: 0; padding: 0; }
@@ -598,6 +597,7 @@ span.note { padding: 0; border-radius: 0; background: none; color: var(--muted);
   .leftcard .switch button { height: 28px; padding: 0 var(--s-2); font-size: var(--t-small); }
   .leftcard .compare { height: 34px; padding: 0 var(--s-2); font-size: var(--t-small); }
   #legend { gap: 0 var(--s-3); }
+  span.note { padding: 0; border-radius: 0; background: none; color: var(--muted); } /* inline in a card: not the pages' yellow notice box */
 
   /* the drawer: a bottom sheet under the top third of the map; during the tour it fills the space above the tour */
   .drawer { top: 33%; left: 0; right: 0; bottom: 0; width: auto; border-radius: var(--r-lg) var(--r-lg) 0 0; transform: translateY(24px); }

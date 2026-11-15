@@ -270,7 +270,7 @@ async function main() {
         map.focus(feature, room());
       } else {
         select(null);
-        if (step.show === "filter") { showSiteDrawer("inbox"); setFilterOpen(true); } // the Filter block lives above the list of changes, folded by default
+        if (step.show === "filter") { showSiteDrawer("inbox"); if (phone()) setFilterOpen(true); } // the Filter block lives above the list of changes (on a phone: unfold it)
         else drawer.close();
         map.view(current.site, tourRoom());
       }
