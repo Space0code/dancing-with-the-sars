@@ -917,3 +917,117 @@ def test_plants_without_a_location_add_no_reason_and_decide_nothing():
     # the same plants with a position behave as before
     located = {"solar": ok(plants=[{"name": "Solar X", "status": "Autoritzat", "ha": 17.3, "located": True}])}
     assert judge(change(area=12), {**records(zone="urban"), **located})[0] == "expected"
+
+
+# ---- the vegetation index (the series file's `ndvi` block, NASA HLS): a note, never a label ----
+
+
+def ndvi(before=0.81, after=0.49):
+    return {"ndvi": ok(before=before, after=after, source="NASA HLS (test)", url="https://example.org/hls")}
+
+
+def ndvi_row(reasons):
+    return next((r for r in reasons if r["code"].startswith("ndvi_")), None)
+
+
+@pytest.mark.parametrize("ctype", ["clearing", "structure", "earthworks", "fire", "ground_motion", "other"])
+@pytest.mark.parametrize("before, after, code", [
+    (0.81, 0.49, "ndvi_fell"), (0.60, 0.45, "ndvi_fell"),  # a drop of 0.15 counts (inclusive)
+    (0.51, 0.43, "ndvi_slightly"), (0.60, 0.4501, "ndvi_slightly"),
+    (0.51, 0.50, "ndvi_flat"), (0.50, 0.46, "ndvi_flat"), (0.30, 0.55, "ndvi_flat"),  # a rise is flat too
+])
+def test_ndvi_band_row_and_the_label_never_moves(ctype, before, after, code):
+    base = judge(change(area=8, ctype=ctype), records(zone="urban"))
+    verdict, reasons, explain = judge(change(area=8, ctype=ctype), {**records(zone="urban"), **ndvi(before, after)})
+    assert verdict == base[0] and codes(reasons)[0] == codes(base[1])[0]  # same label, never the deciding reason
+    row = ndvi_row(reasons)
+    assert row["code"] == code and row["effect"] == "neutral" and row["source"] == "NASA HLS (test)"
+    assert "vegetation index" in row["text"] and "vegetation index" not in explain
+
+
+def test_ndvi_texts():
+    texts = {k: ndvi_row(judge(change(area=8), {**records(zone="urban"), **ndvi(b, a)})[1])["text"]
+             for k, (b, a) in {"fell": (0.81, 0.49), "slightly": (0.51, 0.43), "flat": (0.51, 0.50)}.items()}
+    assert texts["fell"] == "The vegetation index (NDVI) fell from 0.81 to 0.49: optical photos show vegetation loss here."
+    assert texts["slightly"] == "The vegetation index (NDVI) fell slightly (0.51 → 0.43): not enough to confirm vegetation loss."
+    assert texts["flat"] == "The vegetation index (NDVI) did not fall (0.51 → 0.50): optical photos do not show vegetation loss here."
+
+
+def test_ndvi_not_fallen_on_green_ground_warns_structures_and_earthworks_only():
+    for ctype in ("structure", "earthworks"):
+        text = ndvi_row(judge(change(area=8, ctype=ctype), {**records(zone="urban"), **ndvi(0.7, 0.7)})[1])["text"]
+        assert text.endswith("so the radar signal may come from a crop or field cycle.")
+        bare = ndvi_row(judge(change(area=8, ctype=ctype), {**records(zone="urban"), **ndvi(0.2, 0.2)})[1])["text"]
+        assert "crop" not in bare  # the ground was not green before
+    assert "crop" not in ndvi_row(judge(change(area=8), {**records(zone="urban"), **ndvi(0.7, 0.7)})[1])["text"]
+
+
+def test_ndvi_without_both_numbers_adds_no_row():
+    for rec in ({}, {"ndvi": ok(before=0.8, after=None)}, {"ndvi": ok(before=None, after=0.4)}, {"ndvi": ok(before="x", after=0.4)},
+                {"ndvi": {"checked": False, "before": 0.8, "after": 0.4}}):
+        assert ndvi_row(judge(change(area=8), {**records(zone="urban"), **rec})[1]) is None
+
+
+def clearing(conf, *kinds):
+    return {**change(area=8, confidence=conf), "sources": [{"role": "detected", "kind": k} for k in kinds]}
+
+
+def test_ndvi_confidence_steps_only_for_clearings():
+    from sarwatch.verdict import ndvi_confidence
+
+    rec = lambda b, a: ndvi(b, a)["ndvi"]  # noqa: E731
+    assert ndvi_confidence(clearing("high", "radar"), rec(0.5, 0.5))[0] == "medium"  # not confirmed: down one
+    assert "do not show" in ndvi_confidence(clearing("high", "radar"), rec(0.5, 0.5))[1]
+    assert ndvi_confidence(clearing("low", "radar"), rec(0.5, 0.5)) == ("low", None)  # already at the bottom
+    assert ndvi_confidence(clearing("medium", "radar"), rec(0.8, 0.4))[0] == "high"  # confirmed, one radar: up one
+    assert ndvi_confidence(clearing("high", "radar"), rec(0.8, 0.4)) == ("high", None)
+    assert ndvi_confidence(clearing("medium", "radar", "radar"), rec(0.8, 0.4)) == ("medium", None)  # two sensors already
+    assert ndvi_confidence(clearing("medium", "optical"), rec(0.8, 0.4)) == ("medium", None)  # optical is not counted twice
+    assert ndvi_confidence(clearing("medium", "radar", "optical"), rec(0.8, 0.4)) == ("medium", None)
+    assert ndvi_confidence(clearing("medium", "radar"), rec(0.5, 0.43)) == ("medium", None)  # slightly: unchanged
+    assert ndvi_confidence(clearing("medium", "radar"), {}) == ("medium", None)  # no data
+    for ctype in ("structure", "earthworks", "fire", "ground_motion", "other"):
+        other = {**clearing("medium", "radar"), "type": ctype}
+        assert ndvi_confidence(other, rec(0.5, 0.5)) == ("medium", None) and ndvi_confidence(other, rec(0.8, 0.4)) == ("medium", None)
+
+
+def test_apply_file_adjusts_confidence_once_and_the_label_never_moves(tmp_path):
+    site = tmp_path / "site"
+    (site / "series").mkdir(parents=True)
+
+    def feature(i, conf):
+        return {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [0, 0]]]},
+                "properties": {"id": f"s-000{i}", "type": "clearing", "area_ha": 1.0, "first_date": "2026-03-01",
+                               "last_date": "2026-03-01", "explain": "Radar saw it.", "confidence": conf,
+                               "sources": [{"role": "detected", "kind": "radar"}]}}
+
+    feats = [feature(1, "low"), feature(2, "high"), feature(3, "medium")]
+    (site / "changes.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}))
+    for i, (b, a) in {1: (0.8, 0.4), 2: (0.5, 0.5), 3: (0.8, 0.4)}.items():
+        (site / "series" / f"s-000{i}.json").write_text(json.dumps({"ndvi": {"before": b, "after": a}}))
+    (site / "records.json").write_text(json.dumps({"version": 1, "default": {}}))
+    apply_file(site / "changes.geojson")
+    once = (site / "changes.geojson").read_text()
+    out = {f["properties"]["id"]: f["properties"] for f in json.loads(once)["features"]}
+    assert out["s-0001"]["confidence"] == "medium" and out["s-0001"]["confidence_base"] == "low"
+    assert out["s-0002"]["confidence"] == "medium" and "do not show" in out["s-0002"]["confidence_ndvi"]
+    assert out["s-0003"]["confidence"] == "high"
+    assert out["s-0001"]["verdict"] == "expected" and "too uncertain" in out["s-0001"]["reasons"][0]["text"]  # rules saw "low"
+    assert next(r for r in out["s-0001"]["reasons"] if r["code"].startswith("ndvi_"))["code"] == "ndvi_fell"
+    apply_file(site / "changes.geojson")  # a second run gives the same file (no second step)
+    assert (site / "changes.geojson").read_text() == once
+    (site / "series" / "s-0002.json").write_text(json.dumps({"series": []}))  # the data goes away: the step is undone
+    apply_file(site / "changes.geojson")
+    back = {f["properties"]["id"]: f["properties"] for f in json.loads((site / "changes.geojson").read_text())["features"]}
+    assert back["s-0002"]["confidence"] == "high" and "confidence_base" not in back["s-0002"] and "confidence_ndvi" not in back["s-0002"]
+
+
+def test_the_series_files_ndvi_block_becomes_a_record(tmp_path):
+    from sarwatch.verdict import ndvi_record
+
+    (tmp_path / "series").mkdir()
+    (tmp_path / "series" / "a-0001.json").write_text(json.dumps({"ndvi": {"sensor": "x", "dates": ["d"], "values": [1], "before": 0.8, "after": 0.4}}))
+    (tmp_path / "series" / "a-0002.json").write_text(json.dumps({"series": []}))
+    rec = ndvi_record(tmp_path, {"id": "a-0001"})
+    assert rec["checked"] is True and rec["before"] == 0.8 and rec["after"] == 0.4 and "HLS" in rec["source"] and rec["url"].startswith("https://")
+    assert ndvi_record(tmp_path, {"id": "a-0002"}) is None and ndvi_record(tmp_path, {"id": "missing"}) is None

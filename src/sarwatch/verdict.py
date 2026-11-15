@@ -28,11 +28,16 @@ SOLAR_AUTHORISED = ("autoritzat", "en servei", "aprovat")  # plant statuses that
 SOLAR_PENDING = ("en tramitaci",)  # "En tramitació": an application still being processed is not an authorisation
 RECORD_TYPES = ("clearing", "earthworks", "structure")  # change types a solar-plant listing can explain
 FIRE_TYPES = ("fire", "clearing", "other")  # change types a recorded wildfire can explain
-KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system", "surface")
+KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system", "surface", "ndvi")
 SNOW_CAUTION = 0.25   # share of the change under snow or ice around its first date that makes snow a plausible cause
 WATER_CAUTION = 0.25  # share of the change under water after it (median of the clear scenes) that is worth saying
 SURFACE_SOURCE = "NASA HLS quality mask (Landsat and Sentinel-2)"
 SURFACE_URL = "https://lpdaac.usgs.gov/products/hlss30v002/"
+NDVI_SOURCE = "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)"
+NDVI_FELL = 0.15      # a drop in NDVI (median before minus median after) of at least this confirms vegetation loss
+NDVI_FLAT = 0.05      # a drop below this (or a rise) means the photos show no vegetation loss; in between is "slightly"
+NDVI_GREEN = 0.4      # before-value from which the ground counts as "was green" (a crop or field cycle is then plausible)
+CONFIDENCE_STEPS = ("low", "medium", "high")
 LATE_START_LEAD_YEARS = 3  # a late start may be this many years older than the sensor's first pass
 SYSTEM_SHARE = 0.8  # a change counts as on port or airport land when at least this much of it lies on it (the rest of
                     # it would otherwise skip the zoning rules)
@@ -191,7 +196,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not area > 0:  # also catches NaN
         raise ValueError(f"change {change.get('id')!r}: area_ha must be a positive number")
     ctype = change.get("type")
-    prot, cad, zon, sol, fire, off, sysl, sfc = (records.get(k) for k in KEYS)
+    prot, cad, zon, sol, fire, off, sysl, sfc, ndvi = (records.get(k) for k in KEYS)
 
     # ---- facts
     areas = list(prot.get("areas") or []) if _ok(prot) else []
@@ -407,6 +412,21 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
         if calm:
             facts["surface_clear"] = _reason(
                 "surface_clear", f"Clear scenes around its dates show {' and '.join(calm)} over the area.", "neutral", sfc)
+    # the vegetation index (the series file's `ndvi` block, NASA HLS): a note on every change with clear photos before
+    # and after; it never moves the label (the confidence is adjusted afterwards by ``ndvi_confidence``)
+    band = ndvi_band(ndvi)
+    if band:
+        kind, before, after = band
+        pair = f"{before:.2f} → {after:.2f}"
+        if kind == "fell":
+            text = f"The vegetation index (NDVI) fell from {before:.2f} to {after:.2f}: optical photos show vegetation loss here."
+        elif kind == "flat":
+            text = f"The vegetation index (NDVI) did not fall ({pair}): optical photos do not show vegetation loss here."
+            if ctype in ("structure", "earthworks") and before >= NDVI_GREEN:
+                text += " The ground was green before, so the radar signal may come from a crop or field cycle."
+        else:
+            text = f"The vegetation index (NDVI) fell slightly ({pair}): not enough to confirm vegetation loss."
+        facts[f"ndvi_{kind}"] = _reason(f"ndvi_{kind}", text, "neutral", ndvi)
     # a port / airport lookup that failed is reported; an absent one was simply not asked
     if isinstance(sysl, dict) and not _ok(sysl) and not sysl.get("not_applicable"):
         unavailable.append(_reason(
@@ -524,17 +544,60 @@ def _site_country(path: Path):
     return None
 
 
+def _series_block(site_dir: Path, props: dict, key: str) -> dict | None:
+    rel = (props.get("evidence") or {}).get("series") or f"series/{props.get('id')}.json"
+    try:
+        block = json.loads((Path(site_dir) / rel).read_text(encoding="utf-8")).get(key)
+    except (OSError, ValueError):
+        return None
+    return block if isinstance(block, dict) else None
+
+
 def surface_record(site_dir: Path, props: dict) -> dict | None:
     """The change's ``surface`` block (snow and water shares from the NASA HLS quality mask, written next to its
     series) as a record, or None when the change has no series file or no such block."""
-    rel = (props.get("evidence") or {}).get("series") or f"series/{props.get('id')}.json"
-    try:
-        block = json.loads((Path(site_dir) / rel).read_text(encoding="utf-8")).get("surface")
-    except (OSError, ValueError):
+    block = _series_block(site_dir, props, "surface")
+    return {"source": SURFACE_SOURCE, "url": SURFACE_URL, **block, "checked": True} if block else None
+
+
+def ndvi_record(site_dir: Path, props: dict) -> dict | None:
+    """The change's ``ndvi`` block (median NDVI of the clear HLS dates before and after the change) as a record, or
+    None when the change has no series file or no such block. The dates and values are not needed by the verdict."""
+    block = _series_block(site_dir, props, "ndvi")
+    if not block:
         return None
-    if not isinstance(block, dict):
+    return {"source": NDVI_SOURCE, "url": SURFACE_URL, "before": block.get("before"), "after": block.get("after"),
+            "checked": True}
+
+
+def ndvi_band(ndvi) -> tuple[str, float, float] | None:
+    """``("fell" | "slightly" | "flat", before, after)`` from an ``ndvi`` record, or None without both numbers."""
+    if not _ok(ndvi):
         return None
-    return {"source": SURFACE_SOURCE, "url": SURFACE_URL, **block, "checked": True}
+    before, after = ndvi.get("before"), ndvi.get("after")
+    if not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in (before, after)):
+        return None
+    drop = round(before - after, 4)  # 0.60 - 0.45 must count as 0.15, not 0.1499999
+    return ("fell" if drop >= NDVI_FELL else "flat" if drop < NDVI_FLAT else "slightly"), float(before), float(after)
+
+
+def ndvi_confidence(change: dict, ndvi) -> tuple[str, str | None]:
+    """The confidence after the NDVI check and the sentence that says why (None when it did not move). Only a
+    clearing moves: not confirmed goes down one step; confirmed, and seen by one radar sensor alone, goes up one step
+    (a second, independent kind of satellite agrees; an optical alert already is that kind, so it is not counted again).
+    ``change["confidence"]`` must be the one from the exporter, not an adjusted one."""
+    conf = change.get("confidence")
+    band = ndvi_band(ndvi)
+    if conf not in CONFIDENCE_STEPS or not band or change.get("type") != "clearing":
+        return conf, None
+    i = CONFIDENCE_STEPS.index(conf)
+    if band[0] == "flat" and i > 0:
+        return CONFIDENCE_STEPS[i - 1], "optical photos do not show vegetation loss here (the vegetation index did not fall)"
+    if band[0] == "fell" and i < 2:
+        saw = [s for s in change.get("sources") or [] if s.get("role") in ("detected", "late_start")]
+        if len(saw) == 1 and saw[0].get("kind") == "radar":
+            return CONFIDENCE_STEPS[i + 1], "optical photos confirm the vegetation loss (the vegetation index fell)"
+    return conf, None
 
 
 def apply_file(
@@ -571,7 +634,16 @@ def apply_file(
         surface = surface_record(path.parent, props)  # read after the lookups were counted: it is not a service
         if surface:
             records["surface"] = surface
+        ndvi = ndvi_record(path.parent, props)
+        if ndvi:
+            records["ndvi"] = ndvi
+        if "confidence_base" in props:  # undo an earlier run's NDVI step: the label rules see the exporter's confidence
+            props["confidence"] = props.pop("confidence_base")
+            props.pop("confidence_ndvi", None)
         props["verdict"], props["reasons"], props["explain"] = judge(props, records)
+        conf, why = ndvi_confidence(props, ndvi)
+        if why and conf != props.get("confidence"):
+            props["confidence_base"], props["confidence"], props["confidence_ndvi"] = props["confidence"], conf, why
         after[props["verdict"]] += 1
     if asked and sum(failed.values()) == asked and not allow_unchecked:
         raise SystemExit(
