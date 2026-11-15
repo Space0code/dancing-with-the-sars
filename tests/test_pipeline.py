@@ -595,14 +595,15 @@ def test_top_changes_keeps_the_largest_and_counts_low_confidence_at_half():
     assert pipeline.top_changes(changes, 10) is changes
 
 
-def _merged(side_deg, day, confidence="medium", role="detected"):
+def _merged(side_deg, day, confidence="medium", role="detected", kind="structure", delta=None, sensor="x"):
     from sarwatch.export import Merged
 
     ring = [[2.0, 41.0], [2.0 + side_deg, 41.0], [2.0 + side_deg, 41.0 + side_deg], [2.0, 41.0 + side_deg],
             [2.0, 41.0]]
-    return Merged(geometry={"type": "Polygon", "coordinates": [ring]}, type="structure", first_date=day,
-                  last_date=day, not_before=None, confidence=confidence, sensor="x", explain="",
-                  sources=[{"role": role}], run=0)
+    return Merged(geometry={"type": "Polygon", "coordinates": [ring]}, type=kind, first_date=day,
+                  last_date=day, not_before=None, confidence=confidence, sensor=sensor, explain="",
+                  sources=[{"role": role, "sensor": sensor}], run=0,
+                  signal=None if delta is None else {"metric": "VV_db", "delta": delta})
 
 
 def test_top_changes_recent_first_then_the_largest_older():
@@ -624,7 +625,7 @@ def test_top_changes_recent_first_then_the_largest_older():
 
 def test_top_changes_recent_filters_and_late_starts():
     recent_from = date(2024, 1, 1)
-    weak = _merged(0.0015, date(2025, 6, 1), confidence="low")      # ~2.8 ha counts 1.4: below 2 ha, low confidence
+    weak = _merged(0.0015, date(2025, 6, 1), confidence="low")      # ~2.8 ha, low confidence: under the 4 ha floor (the test uses the area itself)
     strong = _merged(0.0015, date(2025, 6, 1))
     big_low = _merged(0.003, date(2025, 6, 1), confidence="low")    # ~11 ha: kept
     late = _merged(0.004, date(2026, 6, 23), role="late_start")     # NISAR's first pass: not dated, so not recent
@@ -635,11 +636,39 @@ def test_top_changes_recent_filters_and_late_starts():
     assert pipeline.is_recent(strong, recent_from) and not pipeline.is_recent(late, recent_from)
 
 
+def test_top_changes_recent_min_ha_step_and_types():
+    rf = date(2024, 1, 1)
+    day = date(2025, 6, 1)
+    small, big = _merged(0.0010, day, delta=9.0), _merged(0.0015, day, delta=9.0)   # ~1.2 ha and ~2.8 ha
+    weak, strong = _merged(0.0015, day, delta=6.9), _merged(0.0015, day, delta=-7.0)
+    no_step = _merged(0.0015, day)
+    other, clearing = _merged(0.0015, day, kind="other", delta=9.0), _merged(0.0015, day, kind="clearing", delta=9.0)
+    old = _merged(0.0005, date(2019, 6, 1), kind="other", delta=1.0)   # the filters touch recent changes only
+    allm = [small, big, weak, strong, no_step, other, clearing, old]
+    assert pipeline.top_changes(allm, 20, rf) == allm
+    kept = pipeline.top_changes(allm, 20, rf, recent_min_ha=2.0)
+    assert small not in kept and big in kept and old in kept
+    kept = pipeline.top_changes(allm, 20, rf, recent_min_step_db=7.0)
+    assert weak not in kept and strong in kept and no_step in kept and old in kept
+    kept = pipeline.top_changes(allm, 20, rf, recent_drop_types=("other",))
+    assert other not in kept and clearing in kept and old in kept
+
+
+def test_is_recent_looks_at_the_source_that_set_the_date():
+    rf = date(2024, 1, 1)
+    m = _merged(0.002, date(2026, 6, 23), role="late_start", sensor="a")
+    m.sources.append({"role": "detected", "sensor": "b"})   # another sensor detected it; "a" set the date
+    assert not pipeline.is_recent(m, rf)
+    m.sensor = "b"
+    assert pipeline.is_recent(m, rf)
+
+
 def test_top_changes_defaults_are_unchanged_without_recent_from():
     changes = [_merged(0.003, date(2025, 6, 1)), _merged(0.010, date(2018, 6, 1)), _merged(0.006, date(2020, 6, 1))]
     assert pipeline.top_changes(changes, 2) == [changes[1], changes[2]]
     assert pipeline.top_changes(changes, 5) is changes
-    assert all(site.recent_from is None for sid, site in pipeline.SITES.items() if sid != "barcelona")
+    assert all(site.recent_from is None and site.recent_min_ha == 0 and site.recent_min_step_db == 0
+               and site.recent_drop_types == () for sid, site in pipeline.SITES.items() if sid != "barcelona")
 
 
 # ---- several sources: the optical alerts carry the clearing's parts, the radar is attached (Muhos)
