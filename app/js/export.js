@@ -9,6 +9,8 @@
 //           selection  {area, from, to}
 //           snapshot   () => Promise<PNG data URL> of the map as the user sees it (map.js)
 //           kindName   (type) => short readable kind, as in the list
+//           status     (text) => shows a short wait message in the dialog while run() works (cleared when it ends)
+//       `first: true` on the format puts it on top of the list, selected by default.
 //       Registering the same id again replaces the format. Formats appear in registration order.
 //   downloadBlob(filename, blob)   shared helper: starts a browser download
 //   createExport({getContext, buttons})   main.js only: getContext() -> ctx or null (no site open); buttons = the opener buttons
@@ -21,6 +23,7 @@ const formats = [];
 export function registerExportFormat(format) {
   const i = formats.findIndex((f) => f.id === format.id);
   if (i >= 0) formats[i] = format;
+  else if (format.first) formats.unshift(format); // `first: true` puts the format on top (and so selected by default)
   else formats.push(format);
 }
 
@@ -53,6 +56,7 @@ export function createExport({ getContext, buttons }) {
     opener = button;
     const n = ctx.changes.length;
     const what = `${n} ${n === 1 ? "change" : "changes"} · ${describeSelection() || "whole site · all dates"}`;
+    const status = h("p", { class: "export-what", role: "status" });
     const error = h("p", { class: "export-error", role: "alert", hidden: true });
     const go = h("button", { type: "submit", class: "primary" }, "Download");
     const form = h("form", { method: "dialog" },
@@ -62,6 +66,7 @@ export function createExport({ getContext, buttons }) {
           h("input", { type: "radio", name: "format", value: f.id, checked: i === 0 }),
           h("span", {}, h("span", { class: "format-name" }, f.label), h("span", { class: "format-note" }, f.note))))),
       h("p", { class: "export-what" }, what),
+      status,
       error,
       h("div", { class: "export-actions" }, h("button", { type: "button", onclick: close }, "Cancel"), go));
     form.addEventListener("submit", async (e) => {
@@ -70,12 +75,13 @@ export function createExport({ getContext, buttons }) {
       go.disabled = true;
       error.hidden = true;
       try {
-        await format.run(ctx);
+        await format.run({ ...ctx, status: (text) => (status.textContent = text ?? "") }); // run() may show a short wait message
         close();
       } catch (err) {
         error.textContent = `Could not make the ${format.label} file: ${err.message}`;
         error.hidden = false;
       } finally {
+        status.textContent = "";
         go.disabled = false;
       }
     });

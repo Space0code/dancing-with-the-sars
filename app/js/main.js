@@ -11,6 +11,7 @@ import { createTour } from "./tour.js";
 import { createRecords } from "./records.js";
 import { filterChanges, getSelection, isActive, clearSelection, onSelectionChange, describeSelection } from "./selection.js";
 import { createExport } from "./export.js";
+import "./report.js"; // registers the "PDF report" export format
 import { createBasemap } from "./basemap.js";
 
 const $ = (id) => document.getElementById(id);
