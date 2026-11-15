@@ -122,6 +122,15 @@ is in `.devcontainer/`.
 
 Every item with its licence, for the submission form: [kb/submission.md](kb/submission.md) §4.
 
+## Use of AI
+
+The idea and every design decision are the team's own. Claude (Anthropic, through Claude Code) was our programming
+and writing assistant: it wrote most of the code, tests and documentation in this repository under our direction,
+and its commits carry a `Co-Authored-By: Claude` line, and most files it wrote are marked "Written by Claude". The satellite
+results come from NASA and ESA data processed by our code, and the labels come from fixed rules, not from an AI model.
+At run time, only the optional summary in the PDF report uses AI (Google Gemini); the report labels it
+"AI-written summary (Google Gemini)". No AI-generated images, video or audio are used.
+
 ## Licence
 
 Code and text: [MIT](LICENSE). Data and imagery keep their providers' terms (table above).
