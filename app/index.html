@@ -72,11 +72,16 @@
           <button id="tab-overview" type="button" role="tab" aria-selected="false" aria-controls="overview-view">Overview</button>
           <button id="tab-inbox" type="button" role="tab" aria-selected="true" aria-controls="inbox">Changes <span id="inbox-count" class="n"></span></button>
         </div>
-        <div id="tools-filter"></div>
-        <p id="filter-line" class="filter-line" hidden><span id="filter-text"></span><button id="filter-clear" type="button">Clear</button></p>
+        <div id="filter" class="filter">
+          <div class="filter-row">
+            <button id="filter-toggle" type="button" class="filter-toggle" aria-expanded="false" aria-controls="tools-filter"><span class="filter-name">Filter</span><span id="filter-summary" class="filter-summary"></span></button>
+            <button id="filter-clear" type="button" class="link-btn" hidden>Clear</button>
+          </div>
+          <div id="tools-filter" hidden></div>
+        </div>
         <div id="overview-view" class="view" role="tabpanel" hidden><div id="overview" class="overview"></div></div>
         <section id="inbox" class="view inbox" role="tabpanel" aria-label="Changes at this site"></section>
-        <div id="card-view" class="view" hidden><div id="card" aria-live="polite"></div></div>
+        <div id="card-view" class="view" hidden><p id="card-note" class="card-note" hidden>Outside the active filter. <button id="card-note-clear" type="button" class="link-btn">Clear filter</button></p><div id="card" aria-live="polite"></div></div>
       </aside>
     </div>
   </main>

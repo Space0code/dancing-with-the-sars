@@ -10,12 +10,18 @@ export const validDate = (value) => (ISO.test(value ?? "") && !Number.isNaN(Date
 export function createTimeFrame(mount) {
   const from = h("input", { type: "date", id: "tf-from", "aria-label": "From date" });
   const to = h("input", { type: "date", id: "tf-to", "aria-label": "To date" });
+  const note = h("p", { class: "tool-msg", role: "status", hidden: true });
   mount.append(
     h("div", { class: "tool-row" },
       h("span", { class: "tool-label" }, "Dates"),
       h("label", { class: "date-field", for: "tf-from" }, "From", from),
-      h("label", { class: "date-field", for: "tf-to" }, "To", to))
+      h("label", { class: "date-field", for: "tf-to" }, "To", to)),
+    note
   );
+  const say = (text) => {
+    note.textContent = text ?? "";
+    note.hidden = !text;
+  };
 
   let range = null;
   const clamp = (value) => {
@@ -27,19 +33,21 @@ export function createTimeFrame(mount) {
   function show({ from: a, to: b }) {
     from.value = a ?? "";
     to.value = b ?? "";
-    from.max = to.value || range?.[1] || "";
-    to.min = from.value || range?.[0] || "";
+    say(null);
   }
 
-  function changed(source) {
+  function changed() {
     let a = clamp(from.value);
     let b = clamp(to.value);
-    if (a && b && a > b) (source === from ? (b = null) : (a = null)); // the field just edited wins
+    if (a && b && a > b) { // impossible range: keep what was typed, apply nothing yet
+      say("From is after To. Change one of the dates.");
+      return;
+    }
     setTimeFrame(a, b);
     show(getSelection()); // also writes the clamped values back
   }
-  from.addEventListener("change", () => changed(from));
-  to.addEventListener("change", () => changed(to));
+  from.addEventListener("change", () => changed());
+  to.addEventListener("change", () => changed());
   onSelectionChange(show);
 
   return {

@@ -65,7 +65,7 @@ registerExportFormat({
 });
 
 registerExportFormat({
-  id: "geotiff", label: "GeoTIFF", note: "Raster of about 10 m pixels. Values: 1 expected, 2 needs review, 3 high concern, 4 not labelled, 0 no change.",
+  id: "geotiff", label: "GeoTIFF", note: "Raster of about 10 m pixels. Values: 1 expected, 2 needs review, 3 high concern, 4 not labelled, 0 no change (also the file's no-data value, so GIS tools show it empty).",
   run: async (ctx) => {
     need(ctx);
     const GeoTIFF = await library("GeoTIFF");
