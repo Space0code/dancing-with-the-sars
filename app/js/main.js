@@ -253,7 +253,10 @@ async function main() {
   // Tour steps are the same for every site: they run on the open site, or on the first real one.
   const clearTourFocus = () => document.querySelectorAll(".tour-focus").forEach((el) => el.classList.remove("tour-focus"));
   const tour = createTour(tourData.steps ?? [], {
-    onEnd: clearTourFocus,
+    onEnd() {
+      clearTourFocus();
+      if (phone() && current) { leftPanel.set(false); writeHash(); } // on a phone the map gets its room back
+    },
     async runStep(step) {
       clearTourFocus();
       if (!current) await openSite((sites.find((s) => !s.fixture) ?? sites[0]).id);
@@ -277,7 +280,13 @@ async function main() {
       const target = step.focus && document.querySelector(step.focus);
       if (target) {
         target.classList.add("tour-focus"); // outline the control the step talks about
-        requestAnimationFrame(() => target.scrollIntoView({ block: "nearest", inline: "nearest" })); // inside a scrolled card on small screens
+        setTimeout(() => { // on small screens the left card scrolls: bring the outlined control into it, after the card slid in
+          const box = target.closest(".leftcard");
+          if (!box) return;
+          const t = target.getBoundingClientRect(), b = box.getBoundingClientRect();
+          if (t.bottom > b.bottom - 8) box.scrollTop += t.bottom - b.bottom + 8;
+          else if (t.top < b.top + 8) box.scrollTop -= b.top - t.top + 8;
+        }, 250);
       }
     },
   });
