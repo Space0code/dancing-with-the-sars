@@ -1,12 +1,13 @@
 """NDVI, snow and water share per change, from NASA's HLS (Harmonized Landsat Sentinel-2) product.
 
     python -m sarwatch.ndvi <site> [--cache <dir>] [--offline]
+    python -m sarwatch.ndvi <site> --recompute-summary   # only before / after, from the stored dates and values
 
 For every change of app/data/<site>/changes.geojson it reads small HLS windows (30 m, one granule per date), takes the
 **mean NDVI inside the change's polygon** on every clear date and writes two optional blocks into the change's series
 file (app/data/<site>/series/<id>.json); everything else in the file is left as it was:
 
-    "ndvi":    {"sensor": ..., "dates": [...], "values": [...], "before": 0.71, "after": 0.28}
+    "ndvi":    {"sensor": ..., "dates": [...], "values": [...], "before": 0.71, "after": 0.28}  (before / after: same-season medians or null)
     "surface": {"snow_share": 0.0-1.0 | null, "water_share": 0.0-1.0 | null, "dates_checked": [...]}
 
 NDVI = (NIR - red) / (NIR + red). HLS bands (reflectance x 10000, int16, -9999 = no data): red = B04 in both products;
@@ -19,7 +20,9 @@ bit 5 water - bits 6-7 aerosol level. Used here: "cloud-free" = has data and bit
 Rules (all shares are shares of the polygon's pixels inside the read window):
 - A date counts only if >= 60 % of the polygon's pixels are cloud-free. NDVI is the mean over the cloud-free pixels that
   are not snow / ice (snow would read as bare, low NDVI); the date also needs >= 60 % of the polygon to be such pixels.
-- before / after = median NDVI of the counted dates before first_date / after last_date, within 365 days (else null).
+- before / after = median NDVI of the counted dates **from the same time of year** (see ``same_season``): dates within
+  365 days before first_date / after last_date whose month is within one month of a month on the other side, at least
+  2 such dates per side, else null. The verdict's reason row uses the same function, so card and reason agree.
 - snow_share = largest snow / ice share (of the cloud-free pixels) on counted-cloud-free dates within 16 days of
   first_date; water_share = median water share (of the cloud-free pixels) on cloud-free dates after last_date, within 120 days.
 - Dates are preselected from the catalogue's scene cloud cover before any mask is read (at most --max-dates, spread over
@@ -55,6 +58,7 @@ CLOUD_BITS = (1, 2, 3)
 SNOW_BIT, WATER_BIT = 4, 5
 MIN_CLEAR = 0.6
 SNOW_DAYS, WATER_DAYS, NDVI_DAYS = 16, 120, 365
+MIN_SEASON_DATES = 2      # comparable clear dates needed on each side
 MAX_CLOUD = 60.0          # catalogue scene cloud cover (%) above which a date is not considered
 CLUSTER_DEG = 0.4         # windows are shared by changes that fit in a box this wide
 MARGIN_DEG = 0.001
@@ -162,6 +166,47 @@ def median(values: list):
     return float(np.median(values)) if values else None
 
 
+def _month_near(month: int, months: set) -> bool:
+    """Is ``month`` within one month (December and January are neighbours) of one of ``months``?"""
+    return any((month - m) % 12 in (0, 1, 11) for m in months)
+
+
+def same_season(dates, values, first: date, last: date) -> dict:
+    """Compare NDVI between photos from the same time of year (one definition for the card row and the verdict row).
+    Takes the clear dates of the year before ``first`` and of the year after ``last``, then keeps only dates whose month
+    is within one month of a month present on the other side. Returns ``{"state", "before", "after", "n_before",
+    "n_after", "months"}``: ``state`` is "nodata" (a side has no date at all), "few" (a side keeps fewer than
+    ``MIN_SEASON_DATES``; before / after are None) or "ok" (before / after = unrounded medians); ``n_*`` = dates kept
+    per side, ``months`` = sorted calendar months of the kept dates."""
+    rows = []
+    for d, v in zip(dates or [], values or []):
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            rows.append((d if isinstance(d, date) else date.fromisoformat(str(d)[:10]), float(v)))
+    year = timedelta(days=NDVI_DAYS)
+    before = [(d, v) for d, v in rows if first - year <= d < first]
+    after = [(d, v) for d, v in rows if last < d <= last + year]
+    out = {"state": "nodata", "before": None, "after": None, "n_before": 0, "n_after": 0, "months": []}
+    if not before or not after:
+        return out
+    b_months, a_months = {d.month for d, _ in before}, {d.month for d, _ in after}
+    before = [(d, v) for d, v in before if _month_near(d.month, a_months)]
+    after = [(d, v) for d, v in after if _month_near(d.month, b_months)]
+    out.update(state="few", n_before=len(before), n_after=len(after),
+               months=sorted({d.month for d, _ in before + after}))
+    if len(before) < MIN_SEASON_DATES or len(after) < MIN_SEASON_DATES:
+        return out
+    out.update(state="ok", before=median([v for _, v in before]), after=median([v for _, v in after]))
+    return out
+
+
+def season_summary(dates, values, first: date, last: date) -> tuple:
+    """(before, after) for the series file: same-season medians rounded to 2 decimals, or (None, None)."""
+    r = same_season(dates, values, first, last)
+    if r["state"] != "ok":
+        return None, None
+    return round(r["before"], 2), round(r["after"], 2)
+
+
 def build_blocks(change: dict, rows: list) -> tuple:
     """(ndvi block or None, surface block) for one change from its per-date measurements
     rows = [{"date": date, "clear": ., "snow": ., "water": ., "ndvi": . or None}]."""
@@ -170,12 +215,9 @@ def build_blocks(change: dict, rows: list) -> tuple:
     ok = [r for r in rows if r["ndvi"] is not None and r["clear"] >= MIN_CLEAR]
     block = None
     if ok:
-        before = [r["ndvi"] for r in ok if first - timedelta(days=NDVI_DAYS) <= r["date"] < first]
-        after = [r["ndvi"] for r in ok if last < r["date"] <= last + timedelta(days=NDVI_DAYS)]
-        block = {"sensor": SENSOR, "dates": [r["date"].isoformat() for r in ok],
-                 "values": [round(r["ndvi"], 2) for r in ok],
-                 "before": None if not before else round(median(before), 2),
-                 "after": None if not after else round(median(after), 2)}
+        dates, values = [r["date"].isoformat() for r in ok], [round(r["ndvi"], 2) for r in ok]
+        before, after = season_summary(dates, values, first, last)
+        block = {"sensor": SENSOR, "dates": dates, "values": values, "before": before, "after": after}
     free = [r for r in rows if r["clear"] >= MIN_CLEAR and r["snow"] is not None]
     near = [r for r in free if abs((r["date"] - first).days) <= SNOW_DAYS]
     later = [r for r in free if last < r["date"] <= last + timedelta(days=WATER_DAYS)]
@@ -183,6 +225,33 @@ def build_blocks(change: dict, rows: list) -> tuple:
                "water_share": None if not later else round(median([r["water"] for r in later]), 2),
                "dates_checked": sorted({r["date"].isoformat() for r in near + later})}
     return block, surface
+
+
+def recompute_summary(site: str, root: Path | None = None) -> int:
+    """Offline: rewrite only ``ndvi.before`` / ``ndvi.after`` of every series file of the site from its stored ``dates`` /
+    ``values`` (same-season medians). Nothing else in the files changes. Returns the number of changes with a pair."""
+    root = root or REPO_ROOT
+    site_dir = root / "app" / "data" / site
+    feats = json.loads((site_dir / "changes.geojson").read_text(encoding="utf-8"))["features"]
+    paired = 0
+    for f in feats:
+        p = f["properties"]
+        path = site_dir / "series" / f"{p['id']}.json"
+        if not path.is_file():
+            continue
+        raw = path.read_bytes().decode("utf-8")
+        data = json.loads(raw)
+        block = data.get("ndvi")
+        if not isinstance(block, dict):
+            continue
+        before, after = season_summary(block.get("dates"), block.get("values"),
+                                       date.fromisoformat(p["first_date"]), date.fromisoformat(p["last_date"]))
+        paired += before is not None
+        if (block.get("before"), block.get("after")) != (before, after):
+            block["before"], block["after"] = before, after
+            text = json.dumps(data, indent=1, ensure_ascii=False)
+            path.write_bytes((text.replace("\n", "\r\n") if "\r\n" in raw else text).encode("utf-8"))
+    return paired
 
 
 def write_blocks(path: Path, ndvi_block: dict | None, surface: dict) -> None:
@@ -395,6 +464,8 @@ def main(argv=None) -> None:
     ap.add_argument("site")
     ap.add_argument("--cache", type=Path, help="cache folder (default: <primary checkout>/data/hls/<site>/ndvi)")
     ap.add_argument("--offline", action="store_true", help="read only from the cache")
+    ap.add_argument("--recompute-summary", action="store_true",
+                    help="offline: rewrite only ndvi.before / ndvi.after from the dates and values already stored")
     ap.add_argument("--max-dates", type=int)
     ap.add_argument("--start", help="first day of the period searched (YYYY-MM-DD)")
     ap.add_argument("--first-from", help="only changes first seen on or after this date")
@@ -402,6 +473,9 @@ def main(argv=None) -> None:
     ap.add_argument("--max-minutes", type=float, default=40.0)
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+    if a.recompute_summary:
+        print(f"{recompute_summary(a.site)} changes with a same-season pair")
+        return
     out = run(a.site, a.cache, a.offline, a.max_dates, a.start, a.first_from, a.max_gb, a.max_minutes)
     print(f"{len(out['summary'])} changes, {len(out['dates'])} dates used, {out['bytes'] / 1e9:.2f} GB, "
           f"{out['seconds'] / 60:.1f} min")

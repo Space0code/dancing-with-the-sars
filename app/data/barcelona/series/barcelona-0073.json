@@ -349,8 +349,8 @@
    0.14,
    0.14
   ],
-  "before": 0.11,
-  "after": 0.16
+  "before": null,
+  "after": null
  },
  "surface": {
   "snow_share": null,

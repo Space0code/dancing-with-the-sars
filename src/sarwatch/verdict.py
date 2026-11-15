@@ -17,6 +17,8 @@ from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
 
+from .ndvi import same_season
+
 SCOPE_MAIN_SHARE = 0.5  # a change counts as part of the record's outline when at least this much of it lies inside
 BIG_HA = 5.0 # clearing / earthworks at least this big, on non-buildable land, with no record -> high concern
 MID_HA = 2.0  # at least this big with no matching record -> needs review
@@ -37,8 +39,6 @@ NDVI_SOURCE = "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS
 NDVI_FELL = 0.15      # a drop in NDVI (median before minus median after) of at least this confirms vegetation loss
 NDVI_FLAT = 0.05      # a drop below this (or a rise) means the photos show no vegetation loss; in between is "slightly"
 NDVI_BARE = 0.2       # a before-median under this: little vegetation to lose, NDVI cannot show the change
-NDVI_MIN_DATES = 2    # clear dates needed on each side, after matching the time of year
-NDVI_WINDOW_DAYS = 365
 NDVI_GREEN = 0.4      # before-value from which the ground counts as "was green" (a crop or field cycle is then plausible)
 CONFIDENCE_STEPS = ("low", "medium", "high")
 LATE_START_LEAD_YEARS = 3  # a late start may be this many years older than the sensor's first pass
@@ -588,46 +588,25 @@ def ndvi_record(site_dir: Path, props: dict) -> dict | None:
             "first_date": props.get("first_date"), "last_date": props.get("last_date"), "checked": True}
 
 
-def _month_near(month: int, months: set) -> bool:
-    """Is ``month`` within one month (December and January are neighbours) of one of ``months``?"""
-    return any((month - m) % 12 in (0, 1, 11) for m in months)
-
-
-def _median(values: list) -> float:
-    v = sorted(values)
-    n = len(v)
-    return float(v[n // 2]) if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2
-
-
 def ndvi_compare(ndvi) -> dict | None:
-    """Compare NDVI between photos from the same time of year. From an ``ndvi`` record (``dates``, ``values``,
-    ``first_date``, ``last_date``): the clear dates of the year before ``first_date`` and of the year after
-    ``last_date``; then only the dates whose month is within one month of a month present on the other side. Returns
-    None without a usable series, ``{"state": "nodata"}`` when a side has no date at all, ``{"state": "few"}`` when a
-    side keeps fewer than ``NDVI_MIN_DATES`` dates, else ``{"state": "ok", "kind": fell | slightly | flat | bare,
+    """Compare NDVI between photos from the same time of year, with ``ndvi.same_season`` (the same function writes the
+    card's ``before`` / ``after``). From an ``ndvi`` record (``dates``, ``values``, ``first_date``, ``last_date``).
+    Returns None without a usable series, ``{"state": "nodata"}`` when a side has no date at all, ``{"state": "few"}``
+    when a side keeps fewer than two dates, else ``{"state": "ok", "kind": fell | slightly | flat | bare,
     "before", "after" (medians), "n_before", "n_after"}``. ``bare``: the before median is under ``NDVI_BARE``."""
     if not _ok(ndvi):
         return None
     try:
         first, last = date.fromisoformat(str(ndvi["first_date"])[:10]), date.fromisoformat(str(ndvi["last_date"])[:10])
-        rows = [(date.fromisoformat(str(d)[:10]), float(v)) for d, v in zip(ndvi["dates"], ndvi["values"])
-                if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        r = same_season(ndvi["dates"], ndvi["values"], first, last)
     except (KeyError, TypeError, ValueError):
         return None
-    year = timedelta(days=NDVI_WINDOW_DAYS)
-    before = [(d, v) for d, v in rows if first - year <= d < first]
-    after = [(d, v) for d, v in rows if last < d <= last + year]
-    if not before or not after:
-        return {"state": "nodata"}
-    b_months, a_months = {d.month for d, _ in before}, {d.month for d, _ in after}
-    before = [v for d, v in before if _month_near(d.month, a_months)]
-    after = [v for d, v in after if _month_near(d.month, b_months)]
-    if len(before) < NDVI_MIN_DATES or len(after) < NDVI_MIN_DATES:
-        return {"state": "few"}
-    mb, ma = _median(before), _median(after)
+    if r["state"] != "ok":
+        return {"state": r["state"]}
+    mb, ma = r["before"], r["after"]
     drop = round(mb - ma, 4)  # 0.60 - 0.45 must count as 0.15, not 0.1499999
     kind = "bare" if mb < NDVI_BARE else "fell" if drop >= NDVI_FELL else "flat" if drop < NDVI_FLAT else "slightly"
-    return {"state": "ok", "kind": kind, "before": mb, "after": ma, "n_before": len(before), "n_after": len(after)}
+    return {"state": "ok", "kind": kind, "before": mb, "after": ma, "n_before": r["n_before"], "n_after": r["n_after"]}
 
 
 def _optical_saw(change: dict) -> bool:

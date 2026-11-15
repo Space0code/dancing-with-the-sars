@@ -144,6 +144,12 @@ def _write_series(copy, **blocks):
     path.write_text(json.dumps(doc), encoding="utf-8")
 
 
+def test_ndvi_summary_may_be_null_on_both_sides(copy):
+    _write_series(copy, ndvi={"sensor": "HLS", "dates": ["2025-06-12", "2025-07-01"], "values": [0.7, 0.3],
+                              "before": None, "after": None})
+    assert validate(copy) == []
+
+
 def test_valid_ndvi_and_surface_blocks_pass(copy):
     _write_series(copy, ndvi={"sensor": "HLS", "dates": ["2025-06-12", "2025-07-01"], "values": [0.7, 0.3],
                               "before": 0.7, "after": None},
