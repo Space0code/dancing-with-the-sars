@@ -22,7 +22,7 @@ def records(zone=None, built=0, inside=False, plants=(), fire=None, **over):
         "protected": ok(inside=inside, areas=[{"name": "Serra de Test", "kind": "PEIN"}] if inside else []),
         "cadastre": ok(buildings=built, built_since=built),
         "zoning": ok(zone=zone),
-        "solar": ok(plants=list(plants)),
+        "solar": ok(plants=[{**pl, "located": True} for pl in plants]),  # a list with map positions (see the tests at the end)
     }
     if fire:
         out["fire"] = ok(recorded=True)
@@ -779,30 +779,34 @@ def late(**kw):
     return {**change(**kw), "sources": [{"role": "late_start"}, {"role": "not_watching"}]}
 
 
-def test_a_late_start_counts_buildings_from_a_year_before_the_sensor_began_or_with_no_year():
+def test_a_late_start_counts_only_dated_buildings_from_three_years_before_the_sensor_began():
     old = {"cadastre": ok(buildings=3, built_since=0, undated=0)}  # three buildings, all older than that
     dated = judge(change(area=8), {**records(zone="urban"), **old})
     assert dated[0] == "review" and "No building registered since the change" in dated[1][0]["text"]
     none = judge(late(area=8), {**records(zone="urban"), **old})
     assert none[0] == "review" and none[1][0]["text"].startswith("No building registered here is from the years")
-    assert "since the change" not in none[1][0]["text"]
+    assert "since the change" not in none[1][0]["text"] and "cannot date this change" in none[1][0]["text"]
     recent = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=3, built_since=1, undated=0)})
     assert recent[0] == "expected" and codes(recent[1])[0] == "cadastre_building_found"
-    assert "date from 2025 or later" in recent[1][0]["text"]  # the change's first date is in 2026: one year of lead
+    assert "date from 2023 or later" in recent[1][0]["text"]  # first date in 2026: three years of lead
+    # a building with no year explains nothing: the label follows the remaining rules (here: no record, needs review)
     undated = judge(late(area=8), {**records(zone="urban"), "cadastre": ok(buildings=1, built_since=0, undated=1)})
-    assert undated[0] == "expected" and "have no year" in undated[1][0]["text"]
+    assert undated[0] == "review" and "cadastre_building_found" not in codes(undated[1])
+    # zoning and protected areas still apply to a late start
+    assert judge(late(area=8), {**records(zone="non_buildable"), **old})[1][0]["code"] == "zoning_non_buildable"
+    assert judge(late(area=8), {**records(inside=True), **old})[0] == "high_concern"
     # a source that detected the change dates it: not a late start, the plain rule applies
     dated_by_one = {**late(area=8), "sources": [{"role": "late_start"}, {"role": "detected"}]}
     assert judge(dated_by_one, {**records(zone="urban"), **old})[0] == "review"
 
 
-def test_late_start_lookups_get_a_one_year_lead(monkeypatch):
+def test_late_start_lookups_get_a_three_year_lead(monkeypatch):
     from sarwatch import verdict
 
     seen = {}
     monkeypatch.setattr("sarwatch.context.lookup_all", lambda g, since=None, until=None: seen.update(since=since, until=until) or {})
     verdict.run_lookups({"type": "Point", "coordinates": [0, 0]}, {**late(area=8), "first_date": "2016-06-05"})
-    assert seen == {"since": "2015-01-01", "until": "2016-06-05"}
+    assert seen == {"since": "2013-01-01", "until": "2016-06-05"}
     verdict.run_lookups({"type": "Point", "coordinates": [0, 0]}, {**change(area=8), "first_date": "2016-06-05"})
     assert seen == {"since": "2016-06-05", "until": "2016-06-05"}
 
@@ -822,3 +826,17 @@ def test_a_protected_area_is_named_once_and_a_missing_share_does_not_crash():
     assert judge(change(area=8), {**records(), **twin})[1][0]["text"].count("Delta del Llobregat") == 1
     nones = {"system": ok(system="port", shares={"port": None})}
     assert judge(change(area=8), {**records(zone="urban"), **nones})[0] == "review"
+
+
+# ---- a solar list without positions cannot explain a change (Catalan list: municipality only) ----
+
+
+def test_plants_without_a_location_add_no_reason_and_decide_nothing():
+    unlocated = {"solar": ok(plants=[{"name": "Solar X", "status": "Autoritzat", "ha": 17.3, "ha_in_municipality": 17.3},
+                                     {"name": "Solar Y", "status": "En tramitació", "ha": 9.0}])}
+    verdict, reasons, _ = judge(change(area=12), {**records(zone="urban"), **unlocated})
+    assert verdict == "review" and codes(reasons)[0] == "no_record_found"
+    assert not {"solar_plant_listed", "solar_application_pending", "solar_plant_other"} & set(codes(reasons))
+    # the same plants with a position behave as before
+    located = {"solar": ok(plants=[{"name": "Solar X", "status": "Autoritzat", "ha": 17.3, "located": True}])}
+    assert judge(change(area=12), {**records(zone="urban"), **located})[0] == "expected"

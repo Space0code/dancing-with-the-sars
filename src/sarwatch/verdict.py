@@ -29,6 +29,7 @@ SOLAR_PENDING = ("en tramitaci",)  # "En tramitació": an application still bein
 RECORD_TYPES = ("clearing", "earthworks", "structure")  # change types a solar-plant listing can explain
 FIRE_TYPES = ("fire", "clearing", "other")  # change types a recorded wildfire can explain
 KEYS = ("protected", "cadastre", "zoning", "solar", "fire", "official", "system")
+LATE_START_LEAD_YEARS = 3  # a late start may be this many years older than the sensor's first pass
 SYSTEM_SHARE = 0.8  # a change counts as on port or airport land when at least this much of it lies on it (the rest of
                     # it would otherwise skip the zoning rules)
 
@@ -154,7 +155,9 @@ def _solar(sol, area: float, ctype) -> tuple[list, list, list]:
     if not _ok(sol) or ctype not in RECORD_TYPES:
         return [], [], []
     good, pending, other = [], [], []
-    for plant in sol.get("plants") or []:
+    # A plant counts only when the list says WHERE it is (``located``: a map position). The Catalan list gives a
+    # municipality and no position, so it cannot say that a plant has anything to do with this change: no reason at all.
+    for plant in (p for p in sol.get("plants") or [] if p.get("located")):
         status = str(plant.get("status") or "").strip().lower()
         ha = _plant_ha(plant)
         fits = ha is not None and ha >= SOLAR_MIN_SHARE * area
@@ -202,9 +205,7 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     # a late start was already under way when the sensor began watching: the record cannot date it, so the registry is
     # asked for buildings of any year (undated) instead of "built since the change"
     late_start = _is_late_start(change)
-    built = int(cad.get("built_since") or 0) if _ok(cad) else 0
-    if late_start and _ok(cad):
-        built += int(cad.get("undated") or 0)  # a building with no year may well be the change itself
+    built = int(cad.get("built_since") or 0) if _ok(cad) else 0  # dated buildings only: no year, no explanation
     system_kind = None
     if _ok(sysl) and ctype in RECORD_TYPES:
         shares = {k: v for k, v in (sysl.get("shares") or {}).items() if isinstance(v, (int, float))}
@@ -302,8 +303,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if built > 0:
         facts["cadastre_building_found"] = _reason(
             "cadastre_building_found",
-            f"{built} building(s) registered here date from {int(change_year) - 1} or later or have no year (this change "
-            "was already under way when the sensor began watching)." if late_start and change_year
+            f"{built} building(s) registered here date from {int(change_year) - LATE_START_LEAD_YEARS} or later (this "
+            "change was already under way when the sensor began watching)." if late_start and change_year
             else f"{built} building(s) are registered here (this change was already under way when the sensor began "
             "watching)." if late_start
             else f"{built} building(s) registered here date from {change_year} or later, the year the change was first seen "
@@ -334,8 +335,8 @@ def judge(change: dict, records: dict) -> tuple[str, list[dict], str]:
     if not matching and _ok(cad):
         facts["no_record_found"] = _reason(
             "no_record_found",
-            ("No building registered here is from the years the change could have started in, and no authorised solar plant "
-             "or planned development area matches it."
+            ("No building registered here is from the years the change could have started in, and no planned development "
+             "area matches it. The record cannot date this change."
              if late_start else
              "No building registered since the change (the land registry often records new buildings months late), "
              "no authorised solar plant and no planned development area match this change."),
@@ -479,7 +480,7 @@ def run_lookups(geometry: dict, change: dict) -> dict:
         # the cadastre asks "built since the change"; the wildfire map asks "a fire by then, at most a year before"
         since = change["first_date"]
         if _is_late_start(change) and since[:4].isdigit():
-            since = f"{int(since[:4]) - 1}-01-01"  # under way before the sensor began: allow a year of lead
+            since = f"{int(since[:4]) - LATE_START_LEAD_YEARS}-01-01"  # under way before the sensor began: some years of lead
         return lookup_all(geometry, since=since, until=change["first_date"])
     except Exception as exc:  # lookups should never raise; if they do, record it instead of crashing the run
         return {k: {"source": v.capitalize(), "url": None, "checked": False, "error": str(exc)} for k, v in LABELS.items()}
