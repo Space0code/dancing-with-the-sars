@@ -1,7 +1,7 @@
 # Site: Barcelona and its region
 
 Which radar data the Barcelona site reads, what it costs, and how a window larger than one Sentinel-1 burst becomes
-one stack. Last updated 2026-11-14 (live ASF searches and timed reads; issue #44). Terms: [glossary.md](glossary.md).
+one stack. Last updated 2026-11-15 (live ASF searches and timed reads; recent-first selection; issue #44). Terms: [glossary.md](glossary.md).
 
 ## Window
 **lon 1.85 to 2.45, lat 41.25 to 41.60** (about 50 × 39 km, 1,950 km²): the city, the Llobregat delta (airport, port),
@@ -61,16 +61,38 @@ found by looking at quick-looks (`explore/barcelona/look.py`):
   October, and on the Llobregat delta and Maresme fields the "other" class was whole fields whose HV rose 5–7 dB (crops
   growing). 137 of 203 regions. `structure_db=6` turns weaker HH rises into "other" first. A year-to-year "churn" mask
   from the Sentinel-1 decade was tried and rejected: construction sites churn as much as fields (both ~1–1.5 dB).
-- **100 changes** (`max_changes`, after `exclude_points`): the largest merged changes, a low-confidence one counted at half its area.
-  Site pictures above 2 MB get a 256-colour palette (`layer_bytes`): the folder is 6.6 MB.
+- **150 changes, recent first** (`max_changes=150`, `recent_from=2024-01-01`, `max_recent=120`, `recent_low_conf_ha=2.0`;
+  generic `Site` settings, `pipeline.top_changes`). After `exclude_points`: (1) a change first seen from 2024 on that a
+  sensor watched start (not a late start) is "recent"; a **low-confidence recent change under 2 ha is dropped** (its
+  signal is 3.8-5 dB, which on small areas is mostly crops); (2) the largest recent ones are kept, up to 120 (a
+  low-confidence one counted at half its area); (3) the places left up to 150 go to the largest older changes.
+  A NISAR change "already under way" on 23 Jun 2026 is dated to that pass, says the record cannot date it, and is **not**
+  recent (it competes with the older ones by size). Without `recent_from` (Muhos, Agroparc, fixture) nothing changes.
+  Site pictures above 2 MB get a 256-colour palette (`layer_bytes`).
 
-## First result (14 Nov 2026)
-700 Sentinel-1 + 66 NISAR regions → 762 merged changes → the 100 largest: structure 75 = 515 ha, earthworks 14 =
-90 ha, clearing 9 = 47 ha, other 2 = 14 ha (666 ha). 97 from Sentinel-1, 3 from NISAR (2026). 10 Sentinel-1 and 2 NISAR
-changes are late starts (already under way when the sensor began watching): their date is that sensor's first pass and
-the card says the record cannot date them. One change, a moored ship at a port berth that NISAR read as earthworks, is
-left out by `exclude_points`. Zoning (MUC) counts from the first run (68 urban, 23 developable, 9 non-buildable) are
-not redone. Pictures and the list of
-what is still wrong: PR #110.
+## Measured before the cut (15 Nov 2026, offline, no `max_changes`)
+761 merged changes (696 Sentinel-1 + 65 NISAR regions). First year: 2016 19, 2017 150, 2018 105, 2019 74, 2020 77,
+2021 62, 2022 54, 2023 49, 2024 61, 2025 34, 2026 76. **171 from 2024 on** (8 of them NISAR late starts, not recent),
+163 recent: 1-2 ha 144 (Sentinel-1 97, NISAR 47), 2-5 ha 27 (Sentinel-1 9, NISAR 18), over 5 ha none. The old
+"100 largest" kept only 7 of them (2024: 3, 2025: 1, 2026: 3).
+**Real or not?** Judged by eye from the card pictures (24 random recent ones, no ground truth, no optical check): about
+half show a compact new bright spot or dark patch that fits a building, a clearing or earthworks; the rest sit in
+speckled field mosaics (Vallès, Maresme, Llobregat delta) and look like crops or machinery. The smallest (1.0-1.1 ha,
+72 of 163) are the least convincing. Treat the recent list as "places to look at", not as confirmed works.
+
+## Result with recent first (15 Nov 2026)
+150 changes: first year 2016 7, 2017 11, 2018 5, 2019 2, 2020 2, 2021 1, 2023 2, 2024 49, 2025 24, 2026 47 (120 recent,
+30 older; 536 ha, 198 ha of it recent). From 2024 on: structure 74, clearing 28, earthworks 9, other 9; 81 Sentinel-1,
+39 NISAR; 1-2 ha 97, 2-5 ha 23. Labels, all 150: expected 92, needs review 43, high concern 15; from 2024 on:
+expected 69, review 38, high concern 13 (the verdict rules of #46 and #132; Catalan lookups, none failed). Picture:
+`explore/barcelona/overview-recent.jpg`. Zoning (MUC) counts of the first run are not redone.
+
+## Still wrong
+- About half of the recent small changes are probably fields; no filter on the radar alone separated them (pass-to-pass
+  churn does not either, see above). A land-cover or optical check is the next step.
+- 1-2 ha is about 12-22 Sentinel-1 pixels: outlines are blocky and the area is +-30 %.
+- Ships and port yards: one berth is excluded by hand (`exclude_points`); others may remain in the port and the airport.
+- The place name (municipality) is not in the data; cards show coordinates only.
+- The 120 cap cuts the smallest recent ones (about 1.0-1.1 ha, 22 of the 142 that pass the filter).
 
 <sub>Written by Claude</sub>
