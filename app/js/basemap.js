@@ -11,7 +11,7 @@ export function createBasemap(map, box, { onChange } = {}) {
   let locked = false;
   const buttons = BASES.map(([id, label]) =>
     h("button", { type: "button", role: "radio", "aria-checked": "false", onclick: () => choose(id, true) }, label));
-  const hint = h("span", { class: "basemap-hint", hidden: true }, "The Satellite view shows this imagery");
+  const hint = h("span", { class: "basemap-hint", hidden: true }, "Fixed to imagery in Satellite view");
   box.replaceChildren(h("span", { class: "basemap-label" }, "Base map"), h("div", { class: "switch", role: "radiogroup", "aria-label": "Base map" }, ...buttons), hint);
 
   function show() {

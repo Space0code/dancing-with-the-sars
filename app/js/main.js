@@ -230,6 +230,7 @@ async function main() {
   $("filter-toggle").addEventListener("click", () => setFilterOpen($("tools-filter").hidden));
   const timeline = createTimeline({
     describe: (iso) => picture.position(iso),
+    pictured: () => Boolean(picture.stops()), // the Satellite imagery has no date: the slider steps through passes
     onDate(iso) {
       map.setDate(iso);
       picture.setDate(iso);
