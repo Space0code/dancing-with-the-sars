@@ -142,7 +142,11 @@ async function main() {
     drawer.close();
     e.preventDefault();
   });
-  const room = () => ({ bottom: tourRoom(), right: Math.min(480, $("map").clientWidth * 0.4) }); // the drawer covers the right side: keep the change clear of it
+  const phone = () => matchMedia("(max-width: 640px)").matches; // same breakpoint as css/style.css
+  // the drawer covers the right side (on a phone: the bottom two thirds, or all of the map during the tour): keep the change clear of it
+  const room = () => (phone()
+    ? { bottom: tour.active ? tourRoom() : Math.round($("map").clientHeight * 0.67), right: 0 }
+    : { bottom: tourRoom(), right: Math.min(480, $("map").clientWidth * 0.4) });
   $("changes-btn").addEventListener("click", () => (drawer.mode && drawer.mode !== "card" ? drawer.close() : (select(null), showSiteDrawer())));
   await map.ready;
   const records = createRecords(map.maplibre, $("records-box"));
@@ -249,7 +253,15 @@ async function main() {
   // Tour steps are the same for every site: they run on the open site, or on the first real one.
   const clearTourFocus = () => document.querySelectorAll(".tour-focus").forEach((el) => el.classList.remove("tour-focus"));
   const tour = createTour(tourData.steps ?? [], {
-    onEnd: clearTourFocus,
+    onEnd() {
+      clearTourFocus();
+      if (phone() && current) { // on a phone the map gets its room back: legend and Filter folded (step 5 unfolded it), and
+        setFilterOpen(false); // view() resets MapLibre's kept padding (the tour's bottom room), so tapping a change flies to it again
+        leftPanel.set(false);
+        map.view(current.site);
+        writeHash();
+      }
+    },
     async runStep(step) {
       clearTourFocus();
       if (!current) await openSite((sites.find((s) => !s.fixture) ?? sites[0]).id);
@@ -263,13 +275,24 @@ async function main() {
         map.focus(feature, room());
       } else {
         select(null);
-        if (step.show === "filter") showSiteDrawer("inbox"); // the Filter block lives above the list of changes
+        if (step.show === "filter") { showSiteDrawer("inbox"); if (phone()) setFilterOpen(true); } // the Filter block lives above the list of changes (on a phone: unfold it)
         else drawer.close();
         map.view(current.site, tourRoom());
       }
       if (step.focus === "#basemap-box" && picture.view === "photo" && !picture.photos) picture.setView("radar"); // the base map can only be switched outside the Satellite imagery
-      if (step.focus && document.querySelector(step.focus)?.closest("#leftpanel")) { leftPanel.set(true); writeHash(); } // a step about the left card opens it first
-      if (step.focus) document.querySelector(step.focus)?.classList.add("tour-focus"); // outline the control the step talks about
+      const inCard = Boolean(step.focus && document.querySelector(step.focus)?.closest("#leftpanel"));
+      if (inCard || phone()) { leftPanel.set(inCard); writeHash(); } // a step about the left card opens it first; on a phone, the others fold it away
+      const target = step.focus && document.querySelector(step.focus);
+      if (target) {
+        target.classList.add("tour-focus"); // outline the control the step talks about
+        setTimeout(() => { // on small screens the left card scrolls: bring the outlined control into it, after the card slid in
+          const box = target.closest(".leftcard");
+          if (!box) return;
+          const t = target.getBoundingClientRect(), b = box.getBoundingClientRect();
+          if (t.bottom > b.bottom - 8) box.scrollTop += t.bottom - b.bottom + 8;
+          else if (t.top < b.top + 8) box.scrollTop -= b.top - t.top + 8;
+        }, 250);
+      }
     },
   });
   $("tour-btn").addEventListener("click", () => tour.start());

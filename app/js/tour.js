@@ -6,6 +6,8 @@ export function createTour(steps, { runStep, onEnd }) {
   let list = [];
   let index = 0;
   let busy = false;
+  // --tour-h: the box's height, so the left card and the drawer can stop above it on phones (css/style.css)
+  new ResizeObserver(() => box.offsetHeight && document.documentElement.style.setProperty("--tour-h", `${box.offsetHeight}px`)).observe(box);
 
   function render() {
     const step = list[index];

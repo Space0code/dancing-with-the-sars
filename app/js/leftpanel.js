@@ -6,8 +6,8 @@ export function createLeftPanel({ onChange } = {}) {
   const panel = document.getElementById("leftpanel");
   const card = document.getElementById("leftcard");
   const handle = document.getElementById("panel-toggle");
-  let shown = true;
-  try { shown = sessionStorage.getItem(KEY) !== "0"; } catch {}
+  let shown = !matchMedia("(max-width: 640px)").matches; // on a phone the card would cover the map: it starts folded
+  try { const kept = sessionStorage.getItem(KEY); if (kept) shown = kept !== "0"; } catch {}
 
   function set(next, byUser = false) {
     shown = next;
