@@ -50,6 +50,19 @@ carries most of the score.
 | Relevance | NASA data is the core, not decoration | NISAR shows the block through cloud from late June; NASA's optical alerts (OPERA DIST-ALERT, HLS) date the spring; HLS gives the colour photos |
 | Presentation | clear, engaging story | one site, one time-lapse, one card; the main view is understood in ten seconds (#89) |
 
+## 0. Must-dos before 16:00 (checked 15 Nov 11:00; tick when done)
+Deck route, so these replace the 30 s video items below. Owner in brackets. **Order matters: 16:00 is the local cut-off, the form stays editable until 23:59.**
+- [ ] **Deck ≤ 7 slides, public link, no login** (Andrea, #9). Slide 1 shows project name, tagline, **team name, all members' names and the challenge** (rule). Sell the idea: problem and user, the Muhos case, the live app, why radar, limits stated, what's next. 1–2 clips ≤ 10 s. English only. No NASA logos; AI images watermarked (none planned). Test the link in a private window (a navigator claims Drive may be refused, forum #2216: **Google Slides "anyone with the link" or a PDF in the repo/Release is safest**).
+- [ ] **Pages app works with the final data** (Tomi + Tian). The #140 merge decision is still open (draft, conflicting with `main` at 11:00). The form text below depends on it: if it merges, the Gemini sentence in §5 and the extra licences in §4 apply; if not, drop them.
+- [ ] **Team page** (any human): rename team "4" to **Parallax** and replace "We will win (team 4 is the best)" by the tagline; all members on the **Members** tab and confirmed for Barcelona (`official-rules.md` §2, §3).
+- [ ] **Form filled and "Submit for Judging" pressed** (one human, edit **Lock** on): name, summary (§2), demo link = the deck, final-project link = the Pages app, description, **SI field (§5)**, NASA data (§4), references **with a licence per item** (§4), screenshots, both tick boxes. Then check the banner. Aim: submitted by 15:00, edit afterwards.
+- [ ] **Licences named** for every non-NASA material (T&Cs, forum #2001; "no licence documentation = not accepted"): done in §4, copy into the references field.
+- [ ] **SI field matches reality** (forum #1849, #2123): says Claude wrote code and docs, and names Gemini if the report summary ships.
+- [ ] **NISAR maturity** stated in the description (provisional product, from 17 Jun 2026): added to §2 below.
+- [ ] **Attribution "Contains modified Copernicus Sentinel data"** visible in the app (How it works or map credit).
+- [ ] **Confirm with the Local Lead**: pitch format and length at 16:30, 16:00 hard cut-off, screen / HDMI. Bring a PDF copy of the deck and the app offline fallback.
+- [ ] **Talk rehearsed twice, 2–3 min** (all). Script base: `demo-strategy.md` §4.
+
 ## 2. Name, summary, description
 
 **Name:** **Parallax** (decided by Tian on 14 Nov 2026; the Python package keeps its old name `sarwatch`). Earlier options, for reference:
@@ -125,10 +138,12 @@ urban-planning map, the land registry, the solar-plant register and recorded wil
 for any Catalan change (built and tested, `src/sarwatch/context/`). Then: run it continuously over a whole region,
 add ground motion from InSAR (EGMS, NISAR interferograms), and let inspectors mark a change as checked.
 
+*Data maturity.* NISAR GCOV is a provisional product (acquisitions from 17 Jun 2026, calibration still maturing), so every NISAR figure is read as early evidence, not a validated measurement.
+
 *Tools.* Python (numpy, h5py, rasterio, asf-search, earthaccess, shapely, pyproj), NASA Earthdata Login, GitHub
 Pages, MapLibre GL JS, plain HTML / CSS / JavaScript, Claude Code (see §5).
 
-## 3. Demo (video, ≤ 30 s): shot list on the new main view
+## 3. Clip material (the demo is now the deck; no 30 s video): shot list on the main view
 Wording follows `evidence-check.md`: no NISAR hectares, "through cloud" (never snow or winter), "called on to
 suspend" (not "ordered"), "as reported" for the 330 ha, no "nobody was looking". Strategy and the 3-minute pitch:
 [`demo-strategy.md`](demo-strategy.md) (its §3 storyboard predates the new main view; this list replaces it).
@@ -163,7 +178,11 @@ limits we state · next: Catalonia.
 | Copernicus Sentinel-2 (ESA; inside HLS and DIST-ALERT) | optical alerts and photos | free and open; same credit |
 | Finnish sources: Lupa- ja valvontavirasto press release (6 Oct 2026), Helsingin Sanomat via Kaleva (28 Sep 2026), Yle News (29 Oct 2026) | the reported steps on the timeline and the hand-entered record | cited, linked, not redistributed |
 | Esri World Imagery, OpenStreetMap | modern basemap | Esri terms (attribution shown) · ODbL |
-| MapLibre GL JS | map rendering | BSD-3-Clause |
+| MapLibre GL JS 4.7.1 | map rendering | BSD-3-Clause |
+| Our code (Python package `sarwatch`, web app) | everything | MIT, in the public repo |
+| Fonts (Funnel, self-hosted) | app text | SIL OFL 1.1 (check the licence file ships with the fonts) |
+| **Only if #140 ships:** EOX Sentinel-2 cloudless base map | second base map | CC BY-NC-SA 4.0 for 2018 on, not OSI: either drop the years after 2017 or state "non-commercial, attribution, share-alike" openly |
+| **Only if #140 ships:** ICGC orthophotos, jsPDF / jsPDF-autotable, NDVI helpers, Cloudflare worker, Gemini API | photos, PDF report, optional AI summary | name each licence from the shipped files (ICGC: open data, CC BY 4.0 per ICGC terms, check; jsPDF: MIT) |
 | Catalonia (next step, built but not in the demo): PEIN + Natura 2000, MUC zoning, solar-plant register, Spanish cadastre WFS, EFFIS wildfires, ICGC orthophotos | live record checks | see `data-sources.md` §3 (licences unverified) |
 
 ## 5. AI-use disclosure (for the "Use of SI" field and the README)
@@ -174,6 +193,8 @@ limits we state · next: Catalonia.
 > checked the results. Every file Claude wrote carries a "Written by Claude" note, and the git history shows who made
 > each change. The satellite results come from NASA and ESA data processed by our code, not from an AI model, and no
 > AI-generated images, video or audio are used.
+>
+> **Add only if #140 ships:** The optional report summary is written by Google's Gemini model through a small proxy; the app labels it "AI-written" and the rule-based summary is the default.
 
 Before submitting: confirm the last sentence still holds (an AI voice or generated pictures would need a watermark
 and a mention).
@@ -192,7 +213,7 @@ and a mention).
 ## 7. Open questions for the humans
 1. Team name on the Space Apps site: is it "[team name]"? (Needed for the title card and slides.)
 2. ~~Which project name~~ Decided: Parallax (Tian, 14 Nov 2026).
-3. Demo as a 30-second video? (Recommendation: yes; the timeline replay is the strongest moment and needs motion.)
+3. ~~Demo as a 30-second video~~ Decided 15 Nov: slide deck + 1–2 clips of ≤ 10 s.
 4. Narrate with our own voices (no AI voice), so no watermark is needed? (Recommendation: yes.)
 5. "Link to Final Project" = the GitHub Pages app, with the repo linked from its README? (Recommendation: yes.)
 
