@@ -7,6 +7,7 @@ import { registerExportFormat, downloadBlob } from "./export.js";
 import { describeSelection, getSelection } from "./selection.js";
 import { whenText } from "./seen.js";
 import { REPORT_API, REPORT_TIMEOUT_MS } from "./config.js";
+import { COPERNICUS_NOTICE } from "./map.js";
 
 const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 const AUTOTABLE = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js";
@@ -275,9 +276,11 @@ function viewText() {
 
 /** The map's own credit line (the base map shown), with the dated photos' source first when they are on. */
 function attributionText() {
-  const text = document.querySelector(".maplibregl-ctrl-attrib-inner")?.textContent.replace(/\s+/g, " ").trim();
+  // the map's line already carries the Copernicus notice; take it out so the PDF puts it first, once
+  const text = document.querySelector(".maplibregl-ctrl-attrib-inner")?.textContent.replace(COPERNICUS_NOTICE, "")
+    .replace(/\s+/g, " ").replace(/^[\s|·]+|[\s|·]+$/g, "").trim();
   const base = text || "Background map: Esri and contributors";
-  const notice = "Contains modified Copernicus Sentinel data (2016–2026)";
+  const notice = COPERNICUS_NOTICE;
   return hasPhotos() ? `Dated photo: NASA HLS (Landsat, Sentinel-2) · ${notice} · ${base}` : `${notice} · ${base}`;
 }
 

@@ -3,6 +3,9 @@
 // A site with stages.geojson draws its grouped changes as ONE area with one bold outline that grows with the date.
 import { VERDICTS } from "./format.js";
 
+// The changes and radar pictures come from Sentinel-1 (report.js reuses this line for the PDF).
+export const COPERNICUS_NOTICE = "Contains modified Copernicus Sentinel data (2016–2026)";
+
 const STYLE = {
   version: 8,
   sources: {
@@ -50,7 +53,7 @@ const byZoom = (atSite, close) => ["interpolate", ["linear"], ["zoom"], 12, atSi
 export function createChangeMap(container, { onSelect, bounds }) {
   // No rotation or tilt: the before/after divider is a vertical line on screen and on the picture alike.
   const map = new maplibregl.Map({
-    container, style: STYLE, bounds, fitBoundsOptions: { padding: 40 }, attributionControl: { compact: true },
+    container, style: STYLE, bounds, fitBoundsOptions: { padding: 40 }, attributionControl: { compact: true, customAttribution: COPERNICUS_NOTICE },
     dragRotate: false, pitchWithRotate: false, touchPitch: false,
   });
   map.touchZoomRotate.disableRotation();
