@@ -14,7 +14,7 @@ export function createLeftPanel({ onChange } = {}) {
     panel.dataset.shown = String(shown);
     card.inert = !shown; // a hidden card takes no clicks and no keyboard focus
     handle.setAttribute("aria-expanded", String(shown));
-    handle.setAttribute("aria-label", shown ? "Hide panel" : "Show panel");
+    handle.setAttribute("aria-label", shown ? "Hide legend" : "Show legend");
     try { sessionStorage.setItem(KEY, shown ? "1" : "0"); } catch {}
     if (byUser) onChange?.(shown);
   }

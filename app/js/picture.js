@@ -7,7 +7,7 @@ import { createSwipe } from "./swipe.js";
 
 const PRELOAD_AHEAD = 5;
 const NO_LABEL = { radar: "No radar picture", photo: "No photo" };
-const IMAGERY_LABEL = "Imagery · undated";
+const IMAGERY_LABEL = "Imagery · undated · may be older";
 
 /** `map`: from map.js. `mapWrap`: the element around the map (the swipe line goes there). `onView`: the view or Dated photos changed. */
 export function createPicture(map, mapWrap, { onView } = {}) {

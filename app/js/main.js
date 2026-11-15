@@ -92,7 +92,7 @@ async function main() {
       const params = new URLSearchParams({ site: current.site.id });
       if (lastDate) params.set("date", lastDate);
       if (picture.view !== "radar") params.set("view", "satellite");
-      if (picture.photos) params.set("photos", "1"); // Dated photos on (only possible on a site with photos)
+      if (picture.view !== "radar" && picture.photos) params.set("photos", "1"); // Dated photos on (only possible on a site with photos)
       if (selectedId) params.set("change", selectedId);
       if (basemap.value !== "satellite") params.set("base", basemap.value);
       if (!leftPanel.shown) params.set("panel", "0");
@@ -267,7 +267,8 @@ async function main() {
         else drawer.close();
         map.view(current.site, tourRoom());
       }
-      if (step.focus && document.querySelector(step.focus)?.closest("#leftpanel")) leftPanel.set(true); // a step about the left card opens it first
+      if (step.focus === "#basemap-box" && picture.view === "photo" && !picture.photos) picture.setView("radar"); // the base map can only be switched outside the Satellite imagery
+      if (step.focus && document.querySelector(step.focus)?.closest("#leftpanel")) { leftPanel.set(true); writeHash(); } // a step about the left card opens it first
       if (step.focus) document.querySelector(step.focus)?.classList.add("tour-focus"); // outline the control the step talks about
     },
   });

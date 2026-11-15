@@ -197,7 +197,7 @@ const hasPhotos = () => !isRadar() && $("photos-btn")?.getAttribute("aria-presse
 function viewText() {
   const date = $("date-label")?.textContent.split("·")[0].trim(); // "26 Oct 2026 · image 68 of 68" -> the date
   const upTo = date ? ` · changes shown up to ${date}` : "";
-  if (!isRadar() && !hasPhotos()) return `Imagery (undated)${upTo}`;
+  if (!isRadar() && !hasPhotos()) return `Imagery · undated · may be older${upTo}`;
   const kind = isRadar() ? "Radar" : "Satellite photo";
   const frame = $("frame-label")?.textContent.replace(/\s*·\s*/g, ", ").trim(); // "Landsat · 3 Sept 2026" -> "Landsat, 3 Sept 2026"
   const picture = !frame || /^No /i.test(frame) ? `${kind}, no picture for this date` : `${kind}, ${frame}`;
