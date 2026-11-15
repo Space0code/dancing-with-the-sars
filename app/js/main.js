@@ -292,7 +292,7 @@ async function main() {
     timeline.clear();
   }
 
-  async function openSite(id) {
+  async function openSite(id, { keepLink = false } = {}) { // keepLink: the address already says what to restore, so a reload while loading still finds it
     const site = openable.find((s) => s.id === id);
     if (!site) return;
     $("map-error").hidden = true;
@@ -304,8 +304,10 @@ async function main() {
     $("changes-btn").hidden = false;
     $("export-btn").hidden = false;
     drawer.close();
-    history.replaceState(null, "", `#site=${site.id}`);
-    try { sessionStorage.setItem("parallax-hash", location.hash); } catch {}
+    if (!keepLink) {
+      history.replaceState(null, "", `#site=${site.id}`);
+      try { sessionStorage.setItem("parallax-hash", location.hash); } catch {}
+    }
     clearTimeout(hashTimer); // a pending write still describes the old site: drop it, and write nothing while this one loads
     selectedId = null;
     lastDate = null;
@@ -343,7 +345,7 @@ async function main() {
     const date = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") ? params.get("date") : null; // anything else is ignored
     if (current?.site.id !== id) {
       tour.end();
-      await openSite(id);
+      await openSite(id, { keepLink: true });
     }
     const wantsChange = current.changes.features.some((f) => f.properties.id === params.get("change"));
     timeFrame.fromParams(params); // unknown or bad values are ignored
