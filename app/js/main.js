@@ -90,7 +90,8 @@ async function main() {
       if (!current || loading) return;
       const params = new URLSearchParams({ site: current.site.id });
       if (lastDate) params.set("date", lastDate);
-      if (picture.view !== "radar" && picture.stops()) params.set("view", "satellite"); // a site without photos stays in Radar
+      if (picture.view !== "radar") params.set("view", "satellite");
+      if (picture.photos) params.set("photos", "1"); // Dated photos on (only possible on a site with photos)
       if (selectedId) params.set("change", selectedId);
       if (basemap.value !== "satellite") params.set("base", basemap.value);
       timeFrame.toParams(params);
@@ -155,10 +156,12 @@ async function main() {
     room: () => Math.min(480, $("map").clientWidth * 0.4),
   });
 
-  // Play and the slider follow the open view: radar pictures in Radar, colour photos in Satellite.
+  // Play and the slider follow the open view: radar pictures in Radar, the site's passes in Satellite (the imagery has no
+  // date, so the slider moves the marked areas through time), the colour photos in Satellite with Dated photos on.
   const syncStops = () => {
     timeline.setStops(picture.view === "radar" ? null : picture.stops());
     $("legend-tint").hidden = picture.view !== "radar"; // the tint only exists on the radar pictures
+    basemap.lock(picture.view === "photo" && !picture.photos); // the Satellite view without photos is the imagery itself
     writeHash(); // the link carries the view
   };
   const picture = createPicture(map, document.querySelector(".map-wrap"), { onView: syncStops });
@@ -287,6 +290,7 @@ async function main() {
     $("intro").hidden = false;
     inbox.setSite([]);
     picture.setSite(null);
+    basemap.lock(false);
     records.setSite(null);
     map.showOverview(overview);
     timeline.clear();
@@ -352,6 +356,7 @@ async function main() {
     if (params.get("bbox")) aoi.fromParams(params, { zoom: !wantsChange });
     else if (getSelection().area) setArea(null);
     basemap.set(params.get("base")); // anything but "light" is the default satellite map
+    picture.setPhotos(params.get("photos") === "1"); // anything else is the default: off
     const view = params.get("view");
     if (view === "radar" || view === "satellite") picture.setView(view === "satellite" ? "photo" : "radar"); // anything else is ignored; before the date, so the slider has the view's stops
     if (date) timeline.goTo(date);

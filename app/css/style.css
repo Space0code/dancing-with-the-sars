@@ -182,12 +182,10 @@ main { display: grid; min-height: 0; }
 /* The view box: picture switch, compare, marked areas, one line on how to read the picture, the picture's date */
 .viewbox {
   top: var(--s-3); max-width: min(560px, calc(100% - 72px)); padding: var(--s-3);
-  display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: var(--s-2);
+  display: grid; grid-template-columns: auto auto auto 1fr; align-items: center; gap: var(--s-2);
 }
-.view-row { display: contents; }
-.view-row .switch { grid-column: 1; }
-.view-row .compare { grid-column: 2; }
-.view-row .toggle { grid-column: 3; justify-self: start; }
+.view-row { display: contents; } /* switch, Compare, Dated photos (Satellite only), Marked areas: placed in order */
+.view-row .toggle { justify-self: start; }
 .frame-label { grid-column: 1 / -1; margin: 0; font-size: var(--t-label); font-weight: 500; color: var(--muted); }
 
 .legend { bottom: 34px; padding: var(--s-2) var(--s-3); }
@@ -212,7 +210,8 @@ main { display: grid; min-height: 0; }
 .rec-swatch { flex: none; width: 14px; height: 10px; border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 35%, transparent); }
 .rec-swatch.hollow { background: transparent; }
 /* Base map switch (js/basemap.js): last row of the legend box */
-.basemap { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-2); padding-top: var(--s-2); border-top: 1px solid var(--line); }
+.basemap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px var(--s-3); margin-top: var(--s-2); padding-top: var(--s-2); border-top: 1px solid var(--line); }
+.basemap-hint { flex-basis: 100%; font-size: var(--t-label); color: var(--muted); } /* the Satellite view fixes the base to the imagery */
 .basemap-label { font-size: var(--t-label); font-weight: 600; color: var(--muted); }
 .basemap .switch button { height: 26px; padding: 0 var(--s-2); font-size: var(--t-label); }
 .maplibregl-popup { z-index: 3; } /* above the legend and view boxes (z-index 2) */
