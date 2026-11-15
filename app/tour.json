@@ -31,7 +31,7 @@
   },
   {
    "title": "Export",
-   "text": "Download the changes you see as CSV, GeoJSON, shapefile or GeoTIFF.",
+   "text": "Download the changes you see as data files, or make a PDF report with the map picture.",
    "date": "end",
    "focus": "#export-btn"
   },
