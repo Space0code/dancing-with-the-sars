@@ -87,7 +87,17 @@ function validate(b) {
   };
 }
 
-function buildPrompt(facts) {
+const WORDS = { high_concern: "high concern", review: "needs review", expected: "expected", none: "not labelled yet" };
+
+// Plain label names in the prompt copy of the facts (the request schema keeps the codes).
+function plainLabels(f) {
+  const by_label = {};
+  for (const l of LABELS) by_label[WORDS[l]] = f.totals.by_label[l];
+  return { ...f, totals: { ...f.totals, by_label }, top: f.top.map((r) => ({ ...r, label: WORDS[r.label] })) };
+}
+
+function buildPrompt(rawFacts) {
+  const facts = plainLabels(rawFacts);
   return [
     "You write a short summary of land-surface changes detected by radar satellites, for a manager at a public authority who is not a specialist.",
     "",
@@ -96,7 +106,8 @@ function buildPrompt(facts) {
     "- Write every number as digits exactly as given in the facts (19, 397.2 ha, 2026). Never spell numbers out. Do not read coordinates aloud.",
     "- Use only the facts in the JSON block below. Use no other knowledge.",
     "- Say what was detected, where and when, how much (hectares), and which changes to look at first.",
-    "- A label (expected, review, high_concern) is a prompt for a person to check. It is never a finding of wrongdoing.",
+    "- Use the label names exactly as written in the facts (high concern, needs review, expected, not labelled yet), never codes with underscores.",
+    "- A label (expected, needs review, high concern) is a prompt for a person to check. It is never a finding of wrongdoing.",
     "- Do not guess who did it or why. Do not name companies or people.",
     '- Never use the words "illegal" or "unlawful".',
     "- No headings, no lists, no markdown.",
