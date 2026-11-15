@@ -1,7 +1,7 @@
 // Written by Claude. Review inbox: a sortable, filterable list of the open site's changes (the "Changes" tab in the drawer).
 // Filtering on the map is a MapLibre expression (mapFilter), so the map never loops over features in JS. Rows render in chunks.
 import { h, VERDICTS, verdictKey, changeLabel, confidenceLabel, formatArea } from "./format.js";
-import { whenText } from "./seen.js";
+import { whenText, seenCount } from "./seen.js";
 
 const CHUNK = 80; // rows per render step; more load as the list is scrolled
 const CONCERN_ORDER = ["high_concern", "review", "none", "expected"]; // what a regulator should look at first
@@ -30,6 +30,7 @@ export function createInbox({ onOpen, onFilters, onExport }) {
   let date = "9999-12-31";
   let verdicts = new Set(); // empty set = no filter
   let kinds = new Set();
+  let twoSources = false; // chip "Seen by 2+ sources"
   let minHa = 0; // "smallest change" slider; 0 = any size
   let sizeSteps = [0]; // the slider's stops, in hectares (set per site)
   let sortKey = "concern";
@@ -43,7 +44,7 @@ export function createInbox({ onOpen, onFilters, onExport }) {
   const kindChips = h("div", { class: "chips", role: "group", "aria-label": "Filter by kind of change" });
   const sortSelect = h("select", { id: "inbox-sort", "aria-label": "Sort changes by", onchange: (e) => { sortKey = e.target.value; sorted = null; stale = true; render(); } },
     Object.entries(SORTS).map(([key, s]) => h("option", { value: key }, s.label)));
-  const clearBtn = h("button", { type: "button", class: "clear-filters", hidden: true, onclick: () => { verdicts.clear(); kinds.clear(); setMinHa(0); filtersChanged(); } }, "Clear filters");
+  const clearBtn = h("button", { type: "button", class: "clear-filters", hidden: true, onclick: () => { verdicts.clear(); kinds.clear(); twoSources = false; setMinHa(0); filtersChanged(); } }, "Clear filters");
   const exportBtn = h("button", { type: "button", class: "export-open", onclick: (e) => onExport(e.currentTarget) }, "Export");
   const sizeValue = h("span", { class: "size-value" }, "any size");
   const sizeSlider = h("input", { type: "range", min: "0", max: "0", step: "1", value: "0", "aria-label": "Smallest change to show",
@@ -79,14 +80,15 @@ export function createInbox({ onOpen, onFilters, onExport }) {
     f.properties.first_date <= date &&
     f.properties.area_ha >= minHa &&
     (!verdicts.size || verdicts.has(verdictOf(f))) &&
-    (!kinds.size || kinds.has(f.properties.type));
+    (!kinds.size || kinds.has(f.properties.type)) &&
+    (!twoSources || seenCount(f.properties) >= 2);
 
   function recompute() {
     matching = all.filter(passes);
     sorted = null;
     stale = true;
     $("inbox-count").textContent = String(matching.length);
-    clearBtn.hidden = !(verdicts.size || kinds.size || minHa);
+    clearBtn.hidden = !(verdicts.size || kinds.size || minHa || twoSources);
   }
 
   function filtersChanged() {
@@ -109,6 +111,11 @@ export function createInbox({ onOpen, onFilters, onExport }) {
     const types = [...new Set(all.map((f) => f.properties.type))];
     kindChips.replaceChildren(...types.map((type) =>
       chip(kindName(type), count((f) => f.properties.type === type), null, kinds.has(type), toggle(kinds, type))));
+    // Only for data with `sources`; kept visible while on, so it can be switched off again.
+    const multi = all.some((f) => seenCount(f.properties) >= 1);
+    if (multi || twoSources) {
+      kindChips.append(chip("Seen by 2+ sources", count((f) => seenCount(f.properties) >= 2), null, twoSources, () => { twoSources = !twoSources; filtersChanged(); }));
+    }
   }
 
   // --- rendering (chunked) ---
@@ -163,6 +170,7 @@ export function createInbox({ onOpen, onFilters, onExport }) {
       all = features;
       verdicts.clear();
       kinds.clear();
+      twoSources = false;
       selectedId = null;
       setSizeSteps();
       syncChips();
@@ -194,6 +202,7 @@ export function createInbox({ onOpen, onFilters, onExport }) {
       if (verdicts.size) parts.push(["in", JUDGED_KEY, ["literal", [...verdicts]]]);
       if (kinds.size) parts.push(["in", ["get", "type"], ["literal", [...kinds]]]);
       if (minHa) parts.push([">=", ["get", "area_ha"], minHa]);
+      if (twoSources) parts.push([">=", ["get", "seen_by"], 2]);
       return parts.length ? ["all", ...parts] : null;
     },
     /** Count and total area of the changes passing date + filters. */

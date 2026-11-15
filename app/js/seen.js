@@ -22,7 +22,10 @@ function shortName(sensor) {
 }
 
 const hasSources = (p) => Array.isArray(p.sources) && p.sources.length > 0;
-const kindOf = (s) => s.kind ?? (/nisar|sentinel-1/i.test(s.sensor) ? "radar" : "optical");
+/** How many sources saw the change itself (detected it, or were already watching it as it began): 0 without `sources`. */
+export const seenCount = (p) => (p.sources ?? []).filter((s) => s.role === "detected" || s.role === "late_start").length;
+
+const kindOf =(s) => s.kind ?? (/nisar|sentinel-1/i.test(s.sensor) ? "radar" : "optical");
 
 /** When it happened, as a window. `short`: the one-line form for the list rows. */
 export function whenText(p, { short = false } = {}) {

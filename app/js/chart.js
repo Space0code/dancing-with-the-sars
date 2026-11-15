@@ -49,8 +49,8 @@ function monthTicks(startDay, endDay) {
  * Draw the usable series of a series file. Options: `mark` = a date to flag as "Change first seen" (or null),
  * `zero` = the y-axis starts at 0, `axis` = the y-axis label. Returns {svg, lines, setCursor(iso|null)}.
  */
-function draw(series, data, { mark = null, zero = false, axis }) {
-  const days = series.flatMap((s) => s.dates.map(toDay)).concat(mark ? [toDay(mark)] : []);
+function draw(series, data, { mark = null, marks = [], zero = false, axis }) {
+  const days = series.flatMap((s) => s.dates.map(toDay)).concat(mark ? [toDay(mark)] : [], marks.map((m) => toDay(m.date)));
   const startDay = Math.min(...days), endDay = Math.max(...days);
   const values = series.flatMap((s) => s.values).filter((v) => v != null);
   const vMin = zero ? 0 : Math.min(...values), vMax = Math.max(...values);
@@ -90,6 +90,14 @@ function draw(series, data, { mark = null, zero = false, axis }) {
       el("line", { x1: changeX, x2: changeX, y1: M.t - 4, y2: H - M.b, stroke: "#B3261E", "stroke-width": 1.6, "stroke-dasharray": "5 3" }),
       el("text", { x: changeX + (changeX > W * 0.6 ? -4 : 4), y: M.t - 8, "text-anchor": changeX > W * 0.6 ? "end" : "start", class: "chart-flag" }, "Change first seen"),
     ] : []),
+    // First sighting of each source: a small labelled tick on the axis (staggered, so close dates don't print over each other)
+    ...marks.flatMap((m, i) => {
+      const mx = x(toDay(m.date)), right = mx > W * 0.65, ly = H - M.b - 10 - (i % 2) * 11;
+      return [
+        el("line", { x1: mx, x2: mx, y1: H - M.b, y2: ly + 2, stroke: m.color, "stroke-width": 2 }),
+        el("text", { x: mx + (right ? -3 : 3), y: ly, "text-anchor": right ? "end" : "start", class: "chart-tick", fill: m.color }, m.label),
+      ];
+    }),
     ...lines.map((l) => el("path", { d: l.path, fill: "none", stroke: l.color, "stroke-width": 2, "stroke-dasharray": l.dash || null, "stroke-linejoin": "round" })),
     // Few satellite passes (e.g. 2): show each measurement as a dot, so a straight line is not read as a continuous trend.
     ...lines.filter((l) => l.s.dates.length <= DOT_MAX && !l.s.color).flatMap((l) =>
@@ -123,7 +131,12 @@ const usable = (data) => (data?.series ?? []).filter((s) => s.dates?.length);
 export function buildChart(data, change) {
   const series = usable(data);
   if (!series.length) return h("p", { class: "note" }, "No signal history for this change yet.");
-  const { svg, lines } = draw(series, data, { mark: change.first_date, axis: `Signal strength (${series[0].unit})` });
+  // each source's first sighting of the change ("NISAR saw it"); none for data without `sources`
+  const marks = (change.sources ?? []).filter((s) => s.first_date).sort((a, b) => a.first_date.localeCompare(b.first_date)).map((s) => {
+    const key = sensorKey(s.sensor);
+    return { date: s.first_date, color: SENSOR_COLORS[key], label: `${key === "nisar" ? "NISAR" : key === "sentinel" ? "Sentinel-1" : key === "optical" ? "Optical" : s.sensor} first saw it` };
+  });
+  const { svg, lines } = draw(series, data, { mark: change.first_date, marks, axis: `Signal strength (${series[0].unit})` });
   return h("div", {}, svg, legendFor(lines, (s) => `${s.name} · ${sensorLabel(s.sensor)}`),
     h("p", { class: "note" }, HINT));
 }
