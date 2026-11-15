@@ -86,3 +86,9 @@ def test_agroparc_and_catalonia_are_hidden():
     assert sites["agroparc"]["hidden"] is True and sites["catalonia"]["hidden"] is True
     assert sites["agroparc"]["ready"]
     assert not sites["muhos"].get("hidden") and not sites["fixture"].get("hidden")
+
+
+def test_barcelona_is_visible_and_listed_second():
+    sites = json.loads((DATA / "sites.json").read_text(encoding="utf-8"))["sites"]
+    shown = [s["id"] for s in sites if s["ready"] and not s.get("hidden")]
+    assert shown == ["muhos", "barcelona", "fixture"]
