@@ -135,3 +135,30 @@ def test_bad_series_note_is_rejected(copy, note):
     doc["series"][0]["note"] = note
     path.write_text(json.dumps(doc), encoding="utf-8")
     assert any("note" in e for e in validate(copy))
+
+
+def _write_series(copy, **blocks):
+    path = next((copy / "fixture").glob("series/*.json"))
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    doc.update(blocks)
+    path.write_text(json.dumps(doc), encoding="utf-8")
+
+
+def test_valid_ndvi_and_surface_blocks_pass(copy):
+    _write_series(copy, ndvi={"sensor": "HLS", "dates": ["2025-06-12", "2025-07-01"], "values": [0.7, 0.3],
+                              "before": 0.7, "after": None},
+                  surface={"snow_share": 0.0, "water_share": None, "dates_checked": ["2025-06-12"]})
+    assert validate(copy) == []
+
+
+@pytest.mark.parametrize("blocks,message", [
+    ({"ndvi": {"sensor": "HLS", "dates": ["2025-06-12"], "values": [0.7, 0.3], "before": None, "after": None}}, "ndvi"),
+    ({"ndvi": {"sensor": "HLS", "dates": ["2025-06-12"], "values": [1.4], "before": None, "after": None}}, "ndvi"),
+    ({"ndvi": {"sensor": "HLS", "dates": ["2025-06-12"], "values": [0.5], "before": 2, "after": None}}, "before"),
+    ({"surface": {"snow_share": 1.2, "water_share": None, "dates_checked": []}}, "snow_share"),
+    ({"surface": {"snow_share": None, "water_share": -0.1, "dates_checked": []}}, "water_share"),
+    ({"surface": {"snow_share": None, "water_share": None, "dates_checked": ["nope"]}}, "dates_checked"),
+])
+def test_bad_ndvi_or_surface_is_rejected(copy, blocks, message):
+    _write_series(copy, **blocks)
+    assert any(message in e for e in validate(copy))

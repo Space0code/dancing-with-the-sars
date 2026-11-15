@@ -72,6 +72,8 @@ is in `.devcontainer/`.
 | NISAR L-band radar (GCOV) | NASA / ISRO, via the [ASF DAAC](https://asf.alaska.edu) | open NASA data |
 | OPERA RTC-S1 (Sentinel-1 radar backscatter) | NASA JPL, via ASF | open NASA data |
 | Sentinel-1 / Sentinel-2 | [Copernicus](https://www.copernicus.eu) programme (ESA / European Commission) | free, full and open |
+| Landsat 8 / 9 | NASA and USGS | open data |
+| OPERA DIST-ALERT-HLS (optical alerts) and HLS colour photos | NASA, made from Landsat (NASA / USGS) and Sentinel-2 (ESA), via NASA LP DAAC | open NASA data |
 | Year photos in Catalonia | [ICGC](https://www.icgc.cat) aerial orthophotos (WMS) | attribution shown in the map; see ICGC's terms |
 | Year photos elsewhere | [EOX](https://cloudless.eox.at) Sentinel-2 cloudless, "Contains modified Copernicus Sentinel data" | CC BY 4.0 (2017), CC BY-NC-SA 4.0 (2018 on) |
 | Background maps | Esri World Imagery; © OpenStreetMap contributors | see each provider's terms |

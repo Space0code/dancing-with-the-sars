@@ -44,5 +44,7 @@ One line each: `date · decision · why · issue`. Newest at the bottom.
 - 2026-11-14 · Barcelona site (50 × 39 km): Sentinel-1 reads the three IW2 bursts of track 132 as one mosaic per date (one 30 m lattice, no resampling) instead of tiles; NISAR 130 / 22 covers it whole · one stack = one detection, no seams; same track as Agroparc · #44, PR #110
 - 2026-11-14 · The product name is Parallax (was the working title SARwatch) · decided by Tian; the Python package, folders and commands keep `sarwatch` · #112
 - 2026-11-14 · The tool is place-agnostic and carries no hand-written site history: `story.json` and `story_series.json` leave the data format, real-world `events` lists are not required, and `sites.json` gets optional neutral `notes` (≤ 4 × 140 characters) · Tian; the real-world story is told in the video · #112
+- 2026-11-15 · "Light" base map is Esri Light Gray Canvas (no key), not CARTO Positron · CARTO's free raster tiles now return an "API KEY REQUIRED" watermark on every tile; Esri's detail ends at zoom 16 and it has no place names · #120, PR #124
+- 2026-11-15 · Shapefile download: `shp-write` writes only the .shp / .shx; the .dbf (UTF-8 + .cpg) and the zip are made in `app/js/geofiles.js` · `shp-write`'s own .dbf keeps one byte per character (garbles accents, dashes) and its zip step overwrites the Polygon layer with the MultiPolygon one; every shape goes in as a MultiPolygon, outer rings clockwise · #120
 
 <sub>Written by Claude</sub>

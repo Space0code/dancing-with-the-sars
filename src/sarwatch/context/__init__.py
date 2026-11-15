@@ -4,11 +4,11 @@ Every module exposes ``lookup(geometry: dict, **options) -> dict``: ``geometry``
 MultiPolygon in EPSG:4326; the result always has ``source``, ``url``, ``checked`` and, on failure, ``error``; it never
 raises. Services, layers and limits: ``kb/data-sources.md`` §3.
 """
-from . import cadastre, fire, protected, solar, zoning
+from . import cadastre, fire, protected, solar, system, zoning
 
 LOOKUPS = {
     "protected": protected.lookup, "cadastre": cadastre.lookup, "zoning": zoning.lookup, "solar": solar.lookup,
-    "fire": fire.lookup,
+    "fire": fire.lookup, "system": system.lookup,
 }
 
 

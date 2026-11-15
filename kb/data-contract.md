@@ -84,6 +84,16 @@ members exist. Written by the pipeline (`pipeline.write_stages`); the verdict st
 already plain language (e.g. "Vegetation echo (HV)"). Optional `note` (non-empty string) per series: the caveats
 that are too long for the legend; the app shows each one as a line of small text under the chart.
 
+Two more optional blocks, written by `python -m sarwatch.ndvi <site>` (NASA HLS optical product, 30 m; see
+`kb/data-sources.md`), next to `series`:
+- `ndvi`: `{"sensor": "HLS (Landsat, Sentinel-2)", "dates": ["2025-06-12", …], "values": [0.71, …], "before": 0.71, "after": 0.28}`.
+  Mean NDVI (vegetation index, -1..1, about 0.8 dense green, below 0.2 bare ground) inside the change's polygon on
+  cloud-free dates; `before` / `after` = median of the dates before `first_date` / after `last_date`, within a year (else null).
+- `surface`: `{"snow_share": 0.0–1.0 | null, "water_share": 0.0–1.0 | null, "dates_checked": ["2026-04-03", …]}`.
+  `snow_share` = largest share of the polygon flagged snow / ice on cloud-free dates within 16 days of `first_date`;
+  `water_share` = median share flagged water on cloud-free dates within 120 days after `last_date`; null = no usable date.
+  A high snow share means a radar change may be snow melt; a high water share means flooding may be the cause.
+
 
 ## `context/` (optional): what the records say
 `context/index.json` = `{"layers": [{id, title, kind, file, source, url, checked, note}]}`: `kind` is `protected` ·

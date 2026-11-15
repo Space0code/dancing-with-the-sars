@@ -13,6 +13,7 @@ import { filterChanges, getSelection, isActive, clearSelection, setArea, onSelec
 import { createTimeFrame } from "./timeframe.js";
 import { createAoi } from "./aoi.js";
 import { createExport } from "./export.js";
+import "./download.js"; // registers the GeoJSON, Shapefile and GeoTIFF formats
 import { createBasemap } from "./basemap.js";
 
 const $ = (id) => document.getElementById(id);

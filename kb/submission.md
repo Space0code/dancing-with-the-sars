@@ -8,8 +8,10 @@ Last updated 2026-11-14 (#49; rewritten around Finland per Tian's 17:24 note on 
 Sources: [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) ·
 [Judging & Awards Guide](https://www.spaceappschallenge.org/resources/judging-awards-guide/) (both dated 13 Nov 2026).
 
-**Deadline:** click "Submit for Judging" before **Sun 15 Nov, 23:59 local time** of our Local Event (Barcelona).
-Our own target stays Sun 22:00 (`plan.md`). Resubmitting is allowed until the deadline; the last save counts.
+**Deadline:** the global form closes **Sun 15 Nov, 23:59** Barcelona time, but **Barcelona wants projects and
+presentations by Sun 16:00**, with live pitches to the local jury at 16:30 (Local Lead's email, 12 Nov; details and
+sources in [`official-rules.md`](official-rules.md)). The local jury picks the Global Nominees, so submit before 16:00.
+Resubmitting is allowed until 23:59; the last save counts.
 Where: profile icon → My Team → **Project** tab → Edit. Turn the edit **Lock** on; only one person edits at a time.
 
 Form fields (all required ones must be filled, all in **English**):

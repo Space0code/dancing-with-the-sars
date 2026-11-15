@@ -71,6 +71,11 @@ All Catalan / Spanish services answer in **EPSG:25831** (ETRS89 / UTM 31N, metre
   `CODI_CLAS_MUC` has 5 values across Catalonia: SUC / SNC (urban), SUD / SND (developable), SNU (non-buildable).
   Polygons can be big (a municipality's whole SNU area: ~200 kB for a 500 m box). Same server: WMS
   `…/PLANEJAMENT/wms` and other layers (qualifications, sectors, municipal boundaries).
+- **Port and airport land** (`system.py`, verified 15 Nov 2026): same server, layer `PLANEJAMENT:MUC_QUALIFICACIONS`
+  (what each piece of land is for). `CODI_QUAL_MUC` `SP` = "Sistemes, Portuari", `SA` = "Sistemes, Aeroportuari"
+  (others seen: `A1` industrial, `A3` logistics, `SX1` / `SX2` roads, `SV` open spaces, `N2` / `N3` non-urbanisable
+  protection). The port is often classed SNU in the classification layer above, so the plain zoning rule would flag its
+  yards and terminals; the verdict step reads this layer instead.
 - **Wildfires** (`fire.py`, verified 14 Nov 2026): EFFIS WFS 2.0.0 `maps.effis.emergency.copernicus.eu/effis`, layer
   `ms:modis.ba.poly` (burnt areas from MODIS, 2016 → a few days ago; yearly layers `…ba.poly.2016`…`.2025` exist too).
   Fields: `FIREDATE` / `FINALDATE` (`YYYY-MM-DD HH:MM:SS`, FINALDATE can be null), `AREA_HA` (a whole number *as a
@@ -193,6 +198,15 @@ Feb 2024), the [ATBD](https://lpdaac.usgs.gov/documents/1835/OPERA_DIST_ATBD__V1
   date; ~3 s per layer, mostly the redirect and the GDAL open). Muhos, 10 monthly states: 0.69 MB, 16 s with 4 states
   in parallel; Agroparc, 47 monthly states 2023→: 3.5 MB, 63 s. CMR search: 3–5 s (461 granules) to 12–17 s (3,686).
 - Tests: `python -m pytest tests/test_distalert.py`; live `SARWATCH_LIVE=1 python -m pytest tests/test_distalert.py -k live -s`.
+
+## HLS: NDVI, snow and water per change (`src/sarwatch/ndvi.py`)
+HLS (Harmonized Landsat Sentinel-2, 30 m, every 2-3 days) is a NASA product (LP DAAC) that corrects and aligns Landsat 8/9
+(NASA/USGS, product HLSL30) and Sentinel-2 (ESA, HLSS30) onto one grid. NDVI = (NIR - red) / (NIR + red) with red B04 in both
+and NIR B8A (S30) / B05 (L30). Quality layer Fmask (HLS User Guide v2.0): bit 1 cloud, 2 adjacent to cloud / shadow, 3 cloud
+shadow, 4 snow / ice, 5 water (255 = no data). We count a date only when >= 60 % of the polygon is cloud-free; snow pixels are
+left out of NDVI and give `snow_share`, water pixels give `water_share` (details in the module docstring). Both are caution
+flags only: Fmask confuses thin snow, wet fields and shadows. Read cost: 0.02 GB for Muhos (24 dates, 19 changes), 0.05 GB for
+Barcelona (2 areas, 20 dates each); run: `python -m sarwatch.ndvi <site> [--offline]`, cache in `data/hls/<site>/ndvi/`.
 
 ## Where processing runs
 The team is on mobile data: **never download NISAR to a laptop.** Radar processing runs in a GitHub Codespace

@@ -197,3 +197,90 @@ def test_radar_set_is_sentinel1_until_the_first_nisar_pass_then_nisar(tmp_path):
     assert [d for d, s in sensors if s == "Sentinel-1"][-1] == "2026-06-19"
     assert not any("caption" in f for f in listed)      # the app shows the sensor name; no per-picture text
     assert sorted(p.name for p in out.glob("*.jpg")) == sorted(Path(f["url"]).name for f in listed)
+
+
+# ---------------------------------------------------------------- a busier site (Barcelona's settings, on the Muhos fake grid)
+
+
+def _fake_city(root, days):
+    """Sentinel-1 cache: a sea (dark in VV, VH wind-lifted on odd dates), farmland, and a new building from 2026 on."""
+    from rasterio.transform import from_bounds
+    from rasterio.warp import transform_bounds
+
+    x0, y0, x1, y1 = transform_bounds("EPSG:4326", "EPSG:32635", *WINDOW)
+    n = 60
+    transform = from_bounds(x0, y0, x1, y1, n, n)
+    for i, day in enumerate(days):
+        vh = np.full((n, n), 0.04, np.float32)
+        vv = vh * 3
+        vv[:15, :] = 0.005                                  # sea: VV -23 dB, the pipeline's water mask
+        vh[:15, :] = 0.02 if i % 2 else 0.001               # its VH flickers with the wind
+        if day.year >= 2026:
+            vh[25:45, 25:45] *= 8.0                         # new building: echo up 9 dB
+        pipeline.save_frame(pipeline.cache_path(root / "muhos" / "s1", day), pipeline.Frame(
+            day=day, data={"VV": vv, "VH": vh}, transform=tuple(transform)[:6], epsg=32635, bbox=WINDOW,
+            source="fake", mb=None, seconds=0.0))
+
+
+def _city_frames(tmp_path, **kw):
+    from PIL import Image
+
+    days = [date(2025, 6, 1) + timedelta(6 * i) for i in range(8)] + [date(2026, 6, 1) + timedelta(6 * i) for i in range(2)]
+    _fake_city(tmp_path / "stacks", days)
+    cfg = frames.FrameSite(WINDOW, (), **kw)
+    out = tmp_path / "radar"
+    listed = frames.radar_frames("muhos", tmp_path / "stacks", out, WINDOW, [], None, cfg)
+    return listed, {f["date"]: np.asarray(Image.open(out / f"{f['date']}.jpg").convert("RGB"), float) for f in listed}
+
+
+def test_a_busy_site_tints_echo_that_rose_and_keeps_the_sea_black_and_the_baseline_clean(tmp_path):
+    listed, imgs = _city_frames(tmp_path, width=300, baseline_first=4, tint_rise=True, water_mask=True,
+                                tint_db=(4.0, 8.0), min_patch_ha=0.5)
+    h, w, _ = imgs[listed[0]["date"]].shape
+    assert w == 300
+    sea = (slice(2, h // 5 - 6), slice(10, w - 10))
+    building = (slice(h // 2 - 8, h // 2 + 8), slice(w // 2 - 8, w // 2 + 8))
+    early, late = imgs["2025-06-07"], imgs["2026-06-07"]
+    assert all(img[sea].max() < 8 for img in imgs.values())                            # black, flicker-free
+    assert np.abs(late[building][..., 0] - late[building][..., 1]).mean() > 60          # pink where the echo rose
+    assert np.abs(early[building][..., 0] - early[building][..., 2]).max() < 8          # not before
+    _, plain_imgs = _city_frames(tmp_path / "b", width=300, tint_rise=False, water_mask=True)
+    late_plain = plain_imgs["2026-06-07"]
+    assert np.abs(late_plain[building][..., 0] - late_plain[building][..., 2]).max() < 8   # Muhos' rule: falls only
+
+
+def test_persist_tints_only_a_change_that_holds_to_the_end_of_the_record(tmp_path):
+    change = np.array([8.0, 8.0, -8.0, 1.0])
+    end = np.array([8.0, 0.5, 8.0, 8.0])        # holds, gone again, opposite sign, holds (size is lost_alpha's test)
+    assert frames.persists(change, end, 4.0).tolist() == [True, False, False, True]
+    # NISAR: a field that rose in summer and fell back is not tinted; a rise that stays is; a fall never is
+    base = np.zeros((40, 40), np.float32)
+    dbs = [base.copy() for _ in range(4)]
+    for k in (1, 2, 3):
+        dbs[k][:, :10] = 9.0                                  # rises and stays
+        dbs[k][:, 10:20] = 9.0 if k == 1 else 0.0              # rises, gone by the end
+        dbs[k][:, 20:30] = -9.0                               # falls and stays
+    water = np.zeros((40, 40), bool)
+    alpha = frames.nisar_alphas(dbs, water, 1.0, rise=True, min_ha=0.0, persist=True)[1]
+    assert alpha[:, :10].min() > 0 and alpha[:, 10:30].max() == 0
+
+
+def test_baseline_passes_get_no_tint_even_when_they_differ(tmp_path):
+    listed, imgs = _city_frames(tmp_path, width=200, baseline_first=3, tint_rise=True, tint_db=(0.5, 1.0),
+                                min_patch_ha=0.0)
+    for f in listed[:3]:
+        im = imgs[f["date"]]
+        assert np.abs(im[..., 0] - im[..., 2]).max() < 1
+
+
+def test_pick_yearly_takes_the_clearest_per_year_then_spreads_extras_over_the_last_year():
+    cand = [(date(2016, 7, 1), 0.95, "a"), (date(2016, 7, 20), 0.95, "b"), (date(2016, 8, 1), 0.99, "c"),
+            (date(2017, 6, 3), 0.91, "d"), (date(2018, 7, 14), 1.0, "e"),
+            (date(2018, 7, 20), 1.0, "f"), (date(2018, 9, 20), 0.96, "g"), (date(2018, 6, 2), 0.97, "h"),
+            (date(2018, 8, 12), 0.94, "i")]
+    assert [(d.year, p) for d, _, p in frames.pick_yearly(cand)] == [(2016, "c"), (2017, "d"), (2018, "e")]
+    kept = frames.pick_yearly(cand, extra=2)
+    days = [d for d, _, _ in kept if d.year == 2018]
+    assert len(kept) == 5 and len(days) == 3 and date(2018, 7, 14) in days and date(2018, 7, 20) not in days   # f is 6 days from e
+    assert all(abs((a - b).days) >= 20 for a in days for b in days if a != b)
+    assert [d for d, _, _ in kept] == sorted(d for d, _, _ in kept)
