@@ -8990,7 +8990,7 @@
      "after": -16.8,
      "delta": -9.2
     },
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -9063,9 +9063,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
+    ]
    }
   },
   {
@@ -9127,7 +9125,7 @@
      "after": -11.4,
      "delta": -9.1
     },
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "expected",
     "reasons": [
      {
@@ -9200,9 +9198,7 @@
       "share": null,
       "note": "NISAR L-band was not flying yet."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
+    ]
    }
   },
   {
@@ -13171,7 +13167,7 @@
      "after": -13.9,
      "delta": -12.4
     },
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "review",
     "reasons": [
      {
@@ -13237,9 +13233,7 @@
       "share": null,
       "note": "Sentinel-1 C-band did not flag it."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
+    ]
    }
   },
   {
@@ -13574,7 +13568,7 @@
      "after": -20.8,
      "delta": -8.0
     },
-    "confidence": "low",
+    "confidence": "medium",
     "verdict": "review",
     "reasons": [
      {
@@ -13647,9 +13641,7 @@
       "share": null,
       "note": "Sentinel-1 C-band did not flag it."
      }
-    ],
-    "confidence_base": "medium",
-    "confidence_ndvi": "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
+    ]
    }
   },
   {

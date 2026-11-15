@@ -616,10 +616,13 @@ def _optical_saw(change: dict) -> bool:
 
 def ndvi_confidence(change: dict, ndvi) -> tuple[str, str | None]:
     """The confidence after the NDVI check and the sentence that says why (None when it did not move). Only a
-    clearing seen by radar alone moves, one step: up when the vegetation index fell and exactly one radar sensor saw
-    it (a second, independent kind of satellite agrees; two radars already got their step from the exporter), down
-    when the ground was bare before (nothing green to clear). Never lowered when an optical source saw the change:
-    NDVI and the optical alert come from the same photos, so NDVI is no independent check.
+    clearing seen by radar alone moves, and only up one step: when the vegetation index fell and exactly one radar
+    sensor saw it (a second, independent kind of satellite agrees; two radars already got their step from the exporter),
+    except low to medium under ``MID_HA`` (the label rules, which see the original confidence, treat a small low-confidence
+    change differently, so the card would show a confidence that does not fit its label).
+    Bare ground before (``bare``) moves nothing: the index cannot show a change there, which is no evidence against it,
+    and a step down would show a confidence the label rules never saw. Never lowered when an optical source saw the
+    change: NDVI and the optical alert come from the same photos, so NDVI is no independent check.
     ``change["confidence"]`` must be the one from the exporter, not an adjusted one."""
     conf = change.get("confidence")
     cmp_ = ndvi_compare(ndvi)
@@ -629,8 +632,8 @@ def ndvi_confidence(change: dict, ndvi) -> tuple[str, str | None]:
         return conf, None
     i = CONFIDENCE_STEPS.index(conf)
     saw = [s for s in change.get("sources") or [] if s.get("role") in ("detected", "late_start")]
-    if cmp_["kind"] == "bare" and i > 0:
-        return CONFIDENCE_STEPS[i - 1], "the ground had little vegetation before (NDVI under 0.2), so the vegetation index cannot confirm a clearing"
+    if conf == "low" and (change.get("area_ha") or 0) < MID_HA:
+        return conf, None  # the rules treat a small low-confidence change differently (row 9): a step up would contradict the label
     if cmp_["kind"] == "fell" and i < 2 and len(saw) == 1 and saw[0].get("kind") == "radar":
         return CONFIDENCE_STEPS[i + 1], "photos from the same time of year show the vegetation index falling"
     return conf, None

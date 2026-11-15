@@ -1033,15 +1033,21 @@ def clearing(conf, *kinds):
     return {**change(area=8, confidence=conf), "sources": [{"role": "detected", "kind": k} for k in kinds]}
 
 
+def test_ndvi_confidence_never_steps_up_low_to_medium_under_2_ha():
+    fell = same_season(0.8, 0.4)["ndvi"]
+    small, big = {**clearing("low", "radar"), "area_ha": 1.9}, {**clearing("low", "radar"), "area_ha": 2.0}
+    assert ndvi_confidence(small, fell) == ("low", None)  # the label rules saw "low" (row 9)
+    assert ndvi_confidence(big, fell)[0] == "medium"
+
+
 def test_ndvi_confidence_steps_only_for_radar_only_clearings():
     fell, bare, flat, slight = (same_season(*p)["ndvi"] for p in ((0.8, 0.4), (0.1, 0.1), (0.5, 0.5), (0.5, 0.43)))
     assert ndvi_confidence(clearing("medium", "radar"), fell)[0] == "high"  # fell, one radar sensor: up one
     assert ndvi_confidence(clearing("high", "radar"), fell) == ("high", None)
     assert ndvi_confidence(clearing("medium", "radar", "radar"), fell) == ("medium", None)  # two radars already got their step
-    assert ndvi_confidence(clearing("medium", "radar"), bare)[0] == "low"
-    assert "little vegetation" in ndvi_confidence(clearing("high", "radar"), bare)[1]
-    assert ndvi_confidence(clearing("low", "radar"), bare) == ("low", None)  # already at the bottom
-    assert ndvi_confidence(clearing("medium", "radar", "radar"), bare)[0] == "low"  # bare lowers radar-only, any number of radars
+    for conf in ("low", "medium", "high"):  # bare ground moves nothing: the label rules saw this confidence
+        assert ndvi_confidence(clearing(conf, "radar"), bare) == (conf, None)
+        assert ndvi_confidence(clearing(conf, "radar", "radar"), bare) == (conf, None)
     # an optical source that saw the change protects the confidence in every case
     for opt in (("optical",), ("radar", "optical")):
         for rec in (fell, bare, flat, slight):
@@ -1061,7 +1067,7 @@ def test_apply_file_adjusts_confidence_once_and_the_label_never_moves(tmp_path):
 
     def feature(i, conf):
         return {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [0, 0]]]},
-                "properties": {"id": f"s-000{i}", "type": "clearing", "area_ha": 1.0, "first_date": "2026-03-01",
+                "properties": {"id": f"s-000{i}", "type": "clearing", "area_ha": 3.0, "first_date": "2026-03-01",
                                "last_date": "2026-03-01", "explain": "Radar saw it.", "confidence": conf,
                                "sources": [{"role": "detected", "kind": "radar"}]}}
 
@@ -1076,9 +1082,9 @@ def test_apply_file_adjusts_confidence_once_and_the_label_never_moves(tmp_path):
     once = (site / "changes.geojson").read_text()
     out = {f["properties"]["id"]: f["properties"] for f in json.loads(once)["features"]}
     assert out["s-0001"]["confidence"] == "medium" and out["s-0001"]["confidence_base"] == "low"
-    assert out["s-0002"]["confidence"] == "medium" and "little vegetation" in out["s-0002"]["confidence_ndvi"]
+    assert out["s-0002"]["confidence"] == "high" and "confidence_base" not in out["s-0002"]  # bare ground moves nothing
     assert out["s-0003"]["confidence"] == "high"
-    assert out["s-0001"]["verdict"] == "expected" and "too uncertain" in out["s-0001"]["reasons"][0]["text"]  # rules saw "low"
+    assert out["s-0001"]["verdict"] == "review"
     assert next(r for r in out["s-0001"]["reasons"] if r["code"].startswith("ndvi_"))["code"] == "ndvi_fell"
     apply_file(site / "changes.geojson")  # a second run gives the same file (no second step)
     assert (site / "changes.geojson").read_text() == once
