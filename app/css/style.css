@@ -489,3 +489,28 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .export-actions { display: flex; justify-content: flex-end; gap: var(--s-2); margin-top: var(--s-4); }
 .export-actions button { height: var(--ctl-h); padding: 0 var(--s-4); border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--raised); font-weight: 500; }
 .export-actions button.primary { background: var(--action); border-color: var(--action); color: var(--action-ink); }
+
+/* ---------- Filter block: time frame and area (js/timeframe.js, js/aoi.js) ---------- */
+#tools-filter { flex: none; display: grid; gap: var(--s-2); margin: 0 var(--s-4) var(--s-3); padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); }
+#tools-filter:empty { display: none; }
+.tool-row { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.tool-label { flex: none; width: 48px; color: var(--muted); font-size: var(--t-small); font-weight: 500; }
+.date-field { flex: 1; min-width: 0; white-space: nowrap; display: flex; align-items: center; gap: var(--s-2); color: var(--muted); font-size: var(--t-label); }
+.date-field input, .bbox-form input[type="text"] { min-width: 0; height: 32px; padding: 0 var(--s-2); border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--raised); font-size: var(--t-small); color: var(--ink); }
+.date-field input { flex: 1; min-width: 112px; padding: 0 var(--s-1) 0 var(--s-2); font-size: var(--t-label); }
+.tool-buttons { flex: 1; display: flex; gap: var(--s-1); min-width: 0; }
+.tool-btn { flex: 1; height: 32px; padding: 0 var(--s-2); border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--raised); color: var(--ink); font-size: var(--t-small); font-weight: 500; white-space: nowrap; }
+.tool-btn.primary, .tool-btn[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.tool-btn.primary { flex: none; background: var(--action); border-color: var(--action); }
+@media (hover: hover) and (pointer: fine) { .tool-btn:not(.primary):hover { background: #f1f1f1; border-color: #8c8c8c; } }
+.tool-hint { margin: 0 0 0 calc(48px + var(--s-2)); font-size: var(--t-label); color: var(--muted); }
+.bbox-form { display: flex; gap: var(--s-1); }
+.bbox-form[hidden], .area-status[hidden], .tool-msg[hidden], .draw-hint[hidden] { display: none; }
+.bbox-form input[type="text"] { flex: 1; }
+.area-status { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); margin: 0; font-size: var(--t-small); font-weight: 500; }
+.area-status-text { min-width: 0; overflow-wrap: anywhere; }
+.link-btn { flex: none; border: 0; background: none; padding: 0; color: var(--action); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.tool-msg { margin: 0; font-size: var(--t-small); color: var(--error); }
+.tool-msg.info { color: var(--muted); }
+#map.drawing, #map.drawing .maplibregl-canvas-container, #map.drawing .maplibregl-canvas { cursor: crosshair !important; }
+.draw-hint { position: absolute; left: 50%; top: var(--s-4); z-index: 3; transform: translateX(-50%); padding: var(--s-2) var(--s-4); border-radius: var(--r-md); background: var(--raised); box-shadow: var(--shadow-2); font-size: var(--t-small); font-weight: 500; }
