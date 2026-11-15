@@ -29,6 +29,13 @@ export function createTimeFrame(mount) {
     if (!v || !range) return v;
     return v < range[0] ? range[0] : v > range[1] ? range[1] : v;
   };
+  /** One line when the dates lie wholly outside the site's range: nothing is applied, so an empty list is never unexplained. */
+  const outside = (a, b) => {
+    if (!range) return null;
+    if (b && b < range[0]) return `No changes before ${range[0]}. Change the To date.`;
+    if (a && a > range[1]) return `No changes after ${range[1]}. Change the From date.`;
+    return null;
+  };
 
   function show({ from: a, to: b }) {
     from.value = a ?? "";
@@ -37,14 +44,21 @@ export function createTimeFrame(mount) {
   }
 
   function changed() {
-    let a = clamp(from.value);
-    let b = clamp(to.value);
+    const typed = outside(validDate(from.value), validDate(to.value));
+    if (typed) { // keep what was typed, apply nothing (the earlier filter stays), say why
+      say(typed);
+      return;
+    }
+    const a = clamp(from.value);
+    const b = clamp(to.value);
+    const moved = (validDate(from.value) && a !== from.value) || (validDate(to.value) && b !== to.value);
     if (a && b && a > b) { // impossible range: keep what was typed, apply nothing yet
       say("From is after To. Change one of the dates.");
       return;
     }
     setTimeFrame(a, b);
     show(getSelection()); // also writes the clamped values back
+    if (moved) say(`A date outside the site's range (${range[0]} to ${range[1]}) was moved to its nearest end.`);
   }
   from.addEventListener("change", () => changed());
   to.addEventListener("change", () => changed());
@@ -64,12 +78,19 @@ export function createTimeFrame(mount) {
       if (a) params.set("from", a);
       if (b) params.set("to", b);
     },
-    /** From a link: both ends are ignored unless every given value is a valid date and from <= to. */
+    /** From a link: both ends are ignored unless every given value is a valid date and from <= to. A pair wholly outside
+     * the site's range is shown with the one-line message and filters nothing. */
     fromParams(params) {
       const a = validDate(params.get("from"));
       const b = validDate(params.get("to"));
       const bad = (params.get("from") && !a) || (params.get("to") && !b) || (a && b && a > b);
-      setTimeFrame(bad ? null : clamp(a), bad ? null : clamp(b));
+      const why = bad ? null : outside(a, b);
+      setTimeFrame(bad || why ? null : clamp(a), bad || why ? null : clamp(b));
+      if (why) {
+        from.value = a ?? "";
+        to.value = b ?? "";
+        say(why);
+      }
     },
   };
 }

@@ -7733,6 +7733,13 @@
       "source": "Mapa urbanístic de Catalunya (MUC), Generalitat de Catalunya",
       "url": "https://dtes.gencat.cat/muc-visor/AppJava/home.do",
       "effect": "lowers"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 12 dB between 14 Sep 2022 and 5 Jun 2023, the pattern of new walls, roofs or metal structures. 8 building(s) registered here date from 2023 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
@@ -7918,6 +7925,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.10 in photos from the same time of year), so the vegetation index cannot show this change.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 14 dB between 29 Jun and 23 Jul 2023, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2023 or later, the year the change was first seen (the registry gives construction years only). The land is inside a planned development area.",
@@ -8093,6 +8107,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -8295,6 +8316,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_fell",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.42 to 0.25, which fits vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 6 dB between 16 Aug and 9 Sep 2023, the pattern of new walls, roofs or metal structures. The place lies inside a protected area (Delta del Llobregat). The land is zoned as non-buildable.",
@@ -8448,6 +8476,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_fell",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell from 0.38 to 0.18, which fits vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 10 dB between 9 Sep 2023 and 11 Jun 2024, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only). The land is zoned as urban.",
@@ -8593,6 +8628,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.21 → 0.23). This does not confirm vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 10 dB between 9 Sep 2023 and 11 Jun 2024, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only). About 75 % of the place is inside a planned development area.",
@@ -8728,6 +8770,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -8971,6 +9020,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.08 in photos from the same time of year), so the vegetation index cannot show a clearing.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the vegetation echo drop by 9 dB between 9 Sep 2023 and 11 Jun 2024, the pattern left when trees are removed. The change is small (1.71 ha). The land is zoned as urban.",
@@ -9097,6 +9153,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.15 in photos from the same time of year), so the vegetation index cannot show a clearing.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -9227,6 +9290,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.17 in photos from the same time of year), so the vegetation index cannot show this change.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 8 dB between 9 Sep 2023 and 11 Jun 2024, the pattern of new walls, roofs or metal structures. 2 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only). The land is zoned as urban.",
@@ -9337,6 +9407,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -9562,6 +9639,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_slightly",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) fell slightly (0.49 → 0.42), not enough on its own to show vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -9791,6 +9875,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 9 dB between 11 Jun and 5 Jul 2024, the pattern of new walls, roofs or metal structures. About 83 % of the place is inside a planned development area.",
@@ -9909,6 +10000,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -10031,6 +10129,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the vegetation echo drop by 10 dB between 5 and 29 Jul 2024, the pattern left when trees are removed. The change is small (1.35 ha). The land is zoned as urban.",
@@ -10144,6 +10249,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 9 dB between 5 and 29 Jul 2024, the pattern of new walls, roofs or metal structures. The land is inside a planned development area.",
@@ -10255,6 +10367,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -10377,6 +10496,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 9 dB between 29 Jul and 22 Aug 2024, the pattern of new walls, roofs or metal structures. 1 building(s) registered here date from 2024 or later, the year the change was first seen (the registry gives construction years only). The land is zoned as urban.",
@@ -10495,6 +10621,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -10755,6 +10888,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the vegetation echo drop by 7 dB between 22 Aug and 15 Sep 2024, the pattern left when trees are removed. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
@@ -10866,6 +11006,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -10986,6 +11133,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.11 in photos from the same time of year), so the vegetation index cannot show this change.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -11246,6 +11400,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.14 in photos from the same time of year), so the vegetation index cannot show this change.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 16 dB between 15 Sep 2024 and 6 Jun 2025, the pattern of new walls, roofs or metal structures. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
@@ -11366,6 +11527,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 8 dB between 15 Sep 2024 and 6 Jun 2025, the pattern of new walls, roofs or metal structures. The change is small (1.62 ha). The land is zoned as urban.",
@@ -11476,6 +11644,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -11615,6 +11790,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the vegetation echo drop by 10 dB between 6 and 30 Jun 2025, the pattern left when trees are removed. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
@@ -11733,6 +11915,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.46 → 0.42). This does not confirm vegetation loss. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -11855,6 +12044,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 12 dB between 30 Jun and 24 Jul 2025, the pattern of new walls, roofs or metal structures. The change is small (1.35 ha). The land is zoned as urban.",
@@ -11975,6 +12171,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 9 dB between 30 Jun and 24 Jul 2025, the pattern of new walls, roofs or metal structures. The place lies inside a protected area (Serra de Collserola, Parc Natural de la Serra de Collserola). The land is zoned as non-buildable.",
@@ -12085,6 +12288,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.41 → 0.36). This does not confirm vegetation loss. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -12207,6 +12417,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 11 dB between 17 Aug and 10 Sep 2025, the pattern of new walls, roofs or metal structures. The change is small (1.71 ha). The land is zoned as urban.",
@@ -12317,6 +12534,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -12439,6 +12663,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.23 → 0.18). This does not confirm vegetation loss.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "Sentinel-1 radar saw the surface echo rise by 12 dB between 17 Aug and 10 Sep 2025, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
@@ -12550,6 +12781,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -12670,6 +12908,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -12817,6 +13062,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_flat",
+      "text": "Between photos from the same time of year, the vegetation index (NDVI) did not fall (0.41 → 0.38). This does not confirm vegetation loss. The ground was green before, so the radar signal may come from a crop or field cycle.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "NISAR radar saw the surface echo rise by 7 dB between 17 Jul and 10 Aug 2026, the pattern of new walls, roofs or metal structures. The land is zoned as non-buildable. No building registered since the change (the land registry often records new buildings months late), no authorised solar plant and no planned development area match this change.",
@@ -12936,6 +13188,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.14 in photos from the same time of year), so the vegetation index cannot show a clearing.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -13196,6 +13455,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "NISAR radar saw the surface echo rise by 8 dB between 17 Jul and 10 Aug 2026, the pattern of new walls, roofs or metal structures. The place lies inside a protected area (Serra de Collserola, Parc Natural de la Serra de Collserola). The land is zoned as non-buildable.",
@@ -13330,6 +13596,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_bare",
+      "text": "There was little vegetation here before the change (NDVI 0.09 in photos from the same time of year), so the vegetation index cannot show a clearing.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -13473,6 +13746,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -13880,6 +14160,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "NISAR radar saw the surface echo rise by 8 dB between 10 and 22 Aug 2026, the pattern of new walls, roofs or metal structures. The land is inside a planned development area.",
@@ -14022,6 +14309,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -14174,6 +14468,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -14336,6 +14637,13 @@
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
      }
     ],
     "explain": "NISAR radar saw the surface echo rise by 8 dB between 22 Aug and 3 Sep 2026, the pattern of new walls, roofs or metal structures. The place lies inside a protected area (Delta del Llobregat, Aiguamolls del Delta del Llobregat). The land is zoned as non-buildable.",
@@ -14478,6 +14786,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }
@@ -14743,6 +15058,13 @@
       "code": "surface_clear",
       "text": "Clear scenes around its dates show no snow and no standing water over the area.",
       "source": "NASA HLS quality mask (Landsat and Sentinel-2)",
+      "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
+      "effect": "neutral"
+     },
+     {
+      "code": "ndvi_few",
+      "text": "Not enough comparable clear photos to compare the vegetation index.",
+      "source": "NASA HLS (Harmonized Landsat and Sentinel-2; Landsat by NASA/USGS, Sentinel-2 by ESA)",
       "url": "https://lpdaac.usgs.gov/products/hlss30v002/",
       "effect": "neutral"
      }

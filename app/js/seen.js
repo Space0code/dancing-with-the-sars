@@ -74,7 +74,7 @@ export function confidenceNote(p, siteSources = []) {
 
 /** The card's Confidence line. */
 export const confidenceText = (p, siteSources) => {
-  const note = confidenceNote(p, siteSources);
+  const note = [confidenceNote(p, siteSources), p.confidence_ndvi].filter(Boolean).join("; ");
   return note ? `${confidenceLabel(p.confidence)} · ${note}` : confidenceLabel(p.confidence);
 };
 

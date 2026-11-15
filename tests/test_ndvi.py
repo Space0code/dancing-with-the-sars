@@ -52,7 +52,7 @@ def test_build_blocks_before_after_snow_water():
     change = {"first_date": "2026-01-15", "last_date": "2026-01-15"}
     block, surface = ndvi.build_blocks(change, _rows())
     assert block["dates"] == ["2025-06-01", "2025-07-01", "2026-02-10", "2026-03-10"]
-    assert block["before"] == 0.7 and block["after"] == 0.25
+    assert block["before"] is None and block["after"] is None   # June / July against February / March: not comparable
     assert surface["snow_share"] == 0.9 and surface["water_share"] == 0.3
     assert surface["dates_checked"] == ["2026-01-10", "2026-02-10", "2026-03-10"]
 
@@ -83,3 +83,58 @@ def test_write_blocks_keeps_the_rest_and_replaces_on_rerun(tmp_path):
     ndvi.write_blocks(path, None, surface)
     doc = json.loads(path.read_text(encoding="utf-8"))
     assert list(doc) == ["series", "events", "surface"] and doc["series"] == [{"name": "a"}]
+
+
+def _d(s):
+    return date.fromisoformat(s)
+
+
+def test_same_season_keeps_only_months_near_the_other_side():
+    dates = ["2025-06-05", "2025-06-25", "2025-10-01", "2026-06-10", "2026-07-02", "2026-12-01"]
+    values = [0.8, 0.7, 0.2, 0.4, 0.5, 0.9]
+    r = ndvi.same_season(dates, values, _d("2026-03-01"), _d("2026-03-05"))
+    assert r["state"] == "ok"
+    assert (r["n_before"], r["n_after"]) == (2, 2)   # October has no partner in June / July, December none either
+    assert r["months"] == [6, 7]
+    assert r["before"] == 0.75 and abs(r["after"] - 0.45) < 1e-9
+
+
+def test_same_season_matches_across_the_year_boundary():
+    dates = ["2025-12-10", "2025-12-28", "2026-01-30", "2026-02-12", "2026-03-20"]
+    values = [0.5, 0.6, 0.3, 0.2, 0.9]
+    # before = December (x2); after = January and February: January is next to December, February is not
+    r = ndvi.same_season(dates, values, _d("2026-01-05"), _d("2026-01-10"))
+    assert r["state"] == "few" and (r["n_before"], r["n_after"]) == (2, 1)
+    assert r["before"] is None and r["after"] is None
+    assert ndvi.season_summary(dates, values, _d("2026-01-05"), _d("2026-01-10")) == (None, None)
+
+
+def test_same_season_needs_two_dates_per_side_and_a_date_on_each_side():
+    assert ndvi.same_season(["2025-06-01"], [0.5], _d("2026-06-01"), _d("2026-06-02"))["state"] == "nodata"
+    assert ndvi.same_season([], [], _d("2026-06-01"), _d("2026-06-02"))["state"] == "nodata"
+    assert ndvi.same_season(None, None, _d("2026-06-01"), _d("2026-06-02"))["state"] == "nodata"
+    r = ndvi.same_season(["2025-06-01", "2026-07-01"], [0.5, 0.4], _d("2026-06-01"), _d("2026-06-02"))
+    assert r["state"] == "few" and r["before"] is None
+
+
+def test_season_summary_rounds_and_ignores_dates_outside_the_year():
+    dates = ["2024-06-01", "2025-06-01", "2025-06-20", "2026-06-10", "2026-06-20", "2027-06-15"]
+    values = [0.1, 0.801, 0.8, 0.5, 0.52, 0.0]
+    assert ndvi.season_summary(dates, values, _d("2026-06-01"), _d("2026-06-05")) == (0.8, 0.51)
+
+
+def test_recompute_summary_touches_only_before_and_after(tmp_path):
+    site = tmp_path / "app" / "data" / "x"
+    (site / "series").mkdir(parents=True)
+    (site / "changes.geojson").write_text(json.dumps({"features": [
+        {"properties": {"id": "x-1", "first_date": "2026-06-01", "last_date": "2026-06-05"}}]}), encoding="utf-8")
+    block = {"sensor": "HLS", "dates": ["2025-06-01", "2025-06-20", "2026-06-10", "2026-06-20"],
+             "values": [0.8, 0.7, 0.5, 0.4], "before": 0.1, "after": 0.1}
+    path = site / "series" / "x-1.json"
+    path.write_bytes(json.dumps({"signal": [1], "ndvi": block}, indent=1).replace("\n", "\r\n").encode())
+    assert ndvi.recompute_summary("x", root=tmp_path) == 1
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data["ndvi"]["before"] == 0.75 and data["ndvi"]["after"] == 0.45
+    assert data["ndvi"]["dates"] == block["dates"] and data["ndvi"]["values"] == block["values"]
+    assert b"\r\n" in path.read_bytes()
+    assert ndvi.recompute_summary("x", root=tmp_path) == 1   # a second run changes nothing

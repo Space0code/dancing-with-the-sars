@@ -6,13 +6,13 @@ import { drawChart, legendFor } from "./chart.js";
 const EXPLAIN = "NDVI: how green the ground is, from 0 (bare ground) to 1 (dense vegetation).";
 const num = (v) => (typeof v === "number" && Number.isFinite(v) && v >= -1 && v <= 1 ? v : null);
 
-/** "NDVI 0.81 → 0.49" (or just one side when the other is missing), or null when there is no before / after. */
+const SAME_SEASON = "Medians of clear photos from the same time of year before and after the change (the same comparison as in \"Why this label?\").";
+
+/** "NDVI 0.81 → 0.49": the same-season pair, or "not enough comparable photos" when `before` / `after` are null. */
 export function ndviLine(ndvi) {
   const before = num(ndvi?.before), after = num(ndvi?.after);
   if (before != null && after != null) return `NDVI ${before.toFixed(2)} → ${after.toFixed(2)}`;
-  if (before != null) return `NDVI ${before.toFixed(2)} before`;
-  if (after != null) return `NDVI ${after.toFixed(2)} after`;
-  return null;
+  return "not enough comparable photos";
 }
 
 /** The measurements that can be drawn: parallel `dates` / `values` lists, entries without a valid value dropped. */
@@ -31,11 +31,10 @@ export function renderNdvi(data, change, { dt, dd, slot }) {
   const ndvi = data?.ndvi;
   if (!ndvi || typeof ndvi !== "object") return;
   const line = ndviLine(ndvi);
-  if (line) {
-    dd.textContent = line;
-    dd.title = EXPLAIN;
-    dt.hidden = dd.hidden = false;
-  }
+  const paired = line.startsWith("NDVI");
+  dd.replaceChildren(line, ...(paired ? [h("span", { class: "note" }, " (same time of year)")] : []));
+  dd.title = paired ? `${EXPLAIN} ${SAME_SEASON}` : `${EXPLAIN} Fewer than two clear photos from the same time of year on one side of the change.`;
+  dt.hidden = dd.hidden = false;
   const { dates, values } = points(ndvi);
   if (dates.length < 2) return;
   const sensor = typeof ndvi.sensor === "string" && ndvi.sensor ? ndvi.sensor : "HLS";

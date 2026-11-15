@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from sarwatch.contract import validate
-from sarwatch.verdict import apply_file, judge, load_records_file, records_for
+from sarwatch.verdict import apply_file, judge, load_records_file, ndvi_compare, ndvi_confidence, ndvi_record, records_for
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "app" / "data"
@@ -917,3 +917,194 @@ def test_plants_without_a_location_add_no_reason_and_decide_nothing():
     # the same plants with a position behave as before
     located = {"solar": ok(plants=[{"name": "Solar X", "status": "Autoritzat", "ha": 17.3, "located": True}])}
     assert judge(change(area=12), {**records(zone="urban"), **located})[0] == "expected"
+
+
+# ---- the vegetation index (the series file's `ndvi` block, NASA HLS): a note, never a label ----
+# change() has first_date 2026-03-01 (last_date defaults to it): "before" = Mar 2025..Feb 2026, "after" = Mar 2026 on.
+
+
+def series(before, after, first="2026-03-01", last=None):
+    """An ``ndvi`` record from ``[(date, value)]`` lists of the two sides."""
+    rows = list(before) + list(after)
+    return {"ndvi": ok(dates=[d for d, _ in rows], values=[v for _, v in rows], first_date=first, last_date=last or first,
+                       source="NASA HLS (test)", url="https://example.org/hls")}
+
+
+def same_season(b, a):
+    """Two dates on each side in the same months (June/July), with the given medians."""
+    return series([("2025-06-10", b), ("2025-07-10", b)], [("2026-06-10", a), ("2026-07-10", a)])
+
+
+def ndvi_row(reasons):
+    return next((r for r in reasons if r["code"].startswith("ndvi_")), None)
+
+
+def run(ctype="clearing", rec=None, **kw):
+    return judge({**change(area=8, ctype=ctype), **kw}, {**records(zone="urban"), **(rec or {})})
+
+
+@pytest.mark.parametrize("ctype", ["clearing", "structure", "earthworks", "fire", "ground_motion", "other"])
+@pytest.mark.parametrize("before, after, code", [
+    (0.81, 0.49, "ndvi_fell"), (0.60, 0.45, "ndvi_fell"),  # a drop of 0.15 counts (inclusive)
+    (0.51, 0.43, "ndvi_slightly"), (0.60, 0.4501, "ndvi_slightly"), (0.50, 0.45, "ndvi_slightly"),
+    (0.51, 0.50, "ndvi_flat"), (0.50, 0.4501, "ndvi_flat"), (0.30, 0.55, "ndvi_flat"),  # a rise is flat too
+    (0.19, 0.0, "ndvi_bare"), (0.10, 0.10, "ndvi_bare"), (0.20, 0.0, "ndvi_fell"),  # bare: before median under 0.2
+])
+def test_ndvi_band_row_and_the_label_never_moves(ctype, before, after, code):
+    base = run(ctype)
+    verdict, reasons, explain = run(ctype, same_season(before, after))
+    assert verdict == base[0] and codes(reasons)[0] == codes(base[1])[0]  # same label, never the deciding reason
+    row = ndvi_row(reasons)
+    assert row["code"] == code and row["effect"] == "neutral" and row["source"] == "NASA HLS (test)"
+    assert "vegetation index" in row["text"] and "vegetation index" not in explain
+
+
+def test_ndvi_texts():
+    text = lambda b, a, **kw: ndvi_row(run(rec=same_season(b, a), **kw)[1])["text"]  # noqa: E731
+    head = "Between photos from the same time of year, the vegetation index (NDVI)"
+    assert text(0.81, 0.49) == f"{head} fell from 0.81 to 0.49, which fits vegetation loss."
+    assert text(0.51, 0.43) == f"{head} fell slightly (0.51 → 0.43), not enough on its own to show vegetation loss."
+    assert text(0.51, 0.50) == f"{head} did not fall (0.51 → 0.50). This does not confirm vegetation loss."
+    assert text(0.09, 0.05) == ("There was little vegetation here before the change (NDVI 0.09 in photos from the same time "
+                                "of year), so the vegetation index cannot show a clearing.")
+    assert text(0.09, 0.05, ctype="structure").endswith("cannot show this change.")
+
+
+def test_ndvi_not_falling_next_to_an_optical_alert_says_it_does_not_contradict_it():
+    optical = [{"role": "detected", "kind": "optical"}, {"role": "detected", "kind": "radar"}]
+    for b, a in ((0.51, 0.50), (0.51, 0.43)):
+        text = ndvi_row(run(rec=same_season(b, a), sources=optical)[1])["text"]
+        assert text.endswith("so this does not contradict the optical alert.") and "does not confirm" not in text
+    assert "optical alert" not in ndvi_row(run(rec=same_season(0.81, 0.49), sources=optical)[1])["text"]
+    seen_by_radar = [{"role": "detected", "kind": "radar"}, {"role": "not_seen", "kind": "optical"}]
+    assert "optical alert" not in ndvi_row(run(rec=same_season(0.51, 0.50), sources=seen_by_radar)[1])["text"]
+
+
+def test_ndvi_not_fallen_on_green_ground_warns_structures_and_earthworks_only():
+    for ctype in ("structure", "earthworks"):
+        text = ndvi_row(run(ctype, same_season(0.7, 0.7))[1])["text"]
+        assert text.endswith("so the radar signal may come from a crop or field cycle.")
+        assert "crop" not in ndvi_row(run(ctype, same_season(0.3, 0.3))[1])["text"]  # the ground was not green before
+    assert "crop" not in ndvi_row(run("clearing", same_season(0.7, 0.7))[1])["text"]
+
+
+def test_ndvi_only_dates_from_the_same_time_of_year_count():
+    # before: July and January; after: July and August. The January date has no neighbour month after, so it is dropped
+    rec = series([("2025-07-05", 0.80), ("2025-07-20", 0.80), ("2026-01-10", 0.10)], [("2026-07-05", 0.60), ("2026-08-05", 0.60)])
+    cmp_ = ndvi_compare(rec["ndvi"])
+    assert cmp_["state"] == "ok" and cmp_["before"] == 0.80 and cmp_["n_before"] == 2 and cmp_["n_after"] == 2
+    # the rule works from the dates: a stored before / after is ignored
+    assert ndvi_compare({**rec["ndvi"], "before": 0.1, "after": 0.9})["before"] == 0.80
+
+
+def test_ndvi_months_match_across_the_new_year():
+    # December and January are neighbours; March is not near them
+    rec = series([("2025-12-05", 0.8), ("2025-12-20", 0.8), ("2025-03-05", 0.1)],
+                 [("2026-01-05", 0.6), ("2026-01-20", 0.6), ("2026-09-05", 0.1)], first="2026-01-01", last="2026-01-01")
+    cmp_ = ndvi_compare(rec["ndvi"])
+    assert cmp_["state"] == "ok" and (cmp_["before"], cmp_["after"], cmp_["n_before"], cmp_["n_after"]) == (0.8, 0.6, 2, 2)
+    # two months apart is not near
+    apart = series([("2025-10-05", 0.8), ("2025-10-20", 0.8)], [("2026-12-05", 0.6), ("2026-12-20", 0.6)])
+    assert ndvi_compare(apart["ndvi"])["state"] == "few"
+
+
+def test_ndvi_too_few_comparable_dates_give_a_note_not_a_measurement():
+    one_after = series([("2025-06-10", 0.8), ("2025-07-10", 0.8)], [("2026-06-10", 0.4), ("2026-01-10", 0.4)])
+    row = ndvi_row(run(rec=one_after)[1])
+    assert row["code"] == "ndvi_few" and row["effect"] == "neutral"
+    assert row["text"] == "Not enough comparable clear photos to compare the vegetation index."
+    assert "→" not in row["text"]
+    radar = {**change(area=8, confidence="medium"), "sources": [{"role": "detected", "kind": "radar"}]}
+    assert ndvi_confidence(radar, one_after["ndvi"]) == ("medium", None)
+
+
+@pytest.mark.parametrize("rec", [
+    {}, {"ndvi": {**same_season(0.8, 0.4)["ndvi"], "checked": False}},
+    series([("2025-06-10", 0.8)], []), series([], [("2026-06-10", 0.4)]),  # a side with no date at all
+    series([("2023-06-10", 0.8), ("2023-07-10", 0.8)], [("2026-06-10", 0.4), ("2026-07-10", 0.4)]),  # before is over a year old
+    {"ndvi": ok(dates=None, values=None, first_date="2026-03-01", last_date="2026-03-01")},
+    {"ndvi": ok(first_date="2026-03-01", last_date="2026-03-01")},
+])
+def test_ndvi_without_data_adds_no_row(rec):
+    assert ndvi_row(run(rec=rec)[1]) is None
+
+
+def clearing(conf, *kinds):
+    return {**change(area=8, confidence=conf), "sources": [{"role": "detected", "kind": k} for k in kinds]}
+
+
+def test_ndvi_confidence_never_steps_up_low_to_medium_under_2_ha():
+    fell = same_season(0.8, 0.4)["ndvi"]
+    small, big = {**clearing("low", "radar"), "area_ha": 1.9}, {**clearing("low", "radar"), "area_ha": 2.0}
+    assert ndvi_confidence(small, fell) == ("low", None)  # the label rules saw "low" (row 9)
+    assert ndvi_confidence(big, fell)[0] == "medium"
+
+
+def test_ndvi_confidence_steps_only_for_radar_only_clearings():
+    fell, bare, flat, slight = (same_season(*p)["ndvi"] for p in ((0.8, 0.4), (0.1, 0.1), (0.5, 0.5), (0.5, 0.43)))
+    assert ndvi_confidence(clearing("medium", "radar"), fell)[0] == "high"  # fell, one radar sensor: up one
+    assert ndvi_confidence(clearing("high", "radar"), fell) == ("high", None)
+    assert ndvi_confidence(clearing("medium", "radar", "radar"), fell) == ("medium", None)  # two radars already got their step
+    for conf in ("low", "medium", "high"):  # bare ground moves nothing: the label rules saw this confidence
+        assert ndvi_confidence(clearing(conf, "radar"), bare) == (conf, None)
+        assert ndvi_confidence(clearing(conf, "radar", "radar"), bare) == (conf, None)
+    # an optical source that saw the change protects the confidence in every case
+    for opt in (("optical",), ("radar", "optical")):
+        for rec in (fell, bare, flat, slight):
+            assert ndvi_confidence(clearing("medium", *opt), rec) == ("medium", None)
+    # "did not fall" and "slightly" never move it (it is not evidence against a radar clearing)
+    for rec in (flat, slight):
+        assert ndvi_confidence(clearing("medium", "radar"), rec) == ("medium", None)
+    assert ndvi_confidence(clearing("medium", "radar"), {}) == ("medium", None)  # no data
+    for ctype in ("structure", "earthworks", "fire", "ground_motion", "other"):
+        other = {**clearing("medium", "radar"), "type": ctype}
+        assert all(ndvi_confidence(other, r) == ("medium", None) for r in (fell, bare, flat))
+
+
+def test_apply_file_adjusts_confidence_once_and_the_label_never_moves(tmp_path):
+    site = tmp_path / "site"
+    (site / "series").mkdir(parents=True)
+
+    def feature(i, conf):
+        return {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [0, 0]]]},
+                "properties": {"id": f"s-000{i}", "type": "clearing", "area_ha": 3.0, "first_date": "2026-03-01",
+                               "last_date": "2026-03-01", "explain": "Radar saw it.", "confidence": conf,
+                               "sources": [{"role": "detected", "kind": "radar"}]}}
+
+    feats = [feature(1, "low"), feature(2, "high"), feature(3, "medium")]
+    (site / "changes.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}))
+    for i, (b, a) in {1: (0.8, 0.4), 2: (0.1, 0.1), 3: (0.8, 0.4)}.items():
+        block = same_season(b, a)["ndvi"]
+        (site / "series" / f"s-000{i}.json").write_text(json.dumps({"ndvi": {"dates": block["dates"], "values": block["values"]}}))
+    (site / "records.json").write_text(json.dumps({"version": 1, "default": {}}))
+    base = json.loads((site / "changes.geojson").read_text())
+    apply_file(site / "changes.geojson")
+    once = (site / "changes.geojson").read_text()
+    out = {f["properties"]["id"]: f["properties"] for f in json.loads(once)["features"]}
+    assert out["s-0001"]["confidence"] == "medium" and out["s-0001"]["confidence_base"] == "low"
+    assert out["s-0002"]["confidence"] == "high" and "confidence_base" not in out["s-0002"]  # bare ground moves nothing
+    assert out["s-0003"]["confidence"] == "high"
+    assert out["s-0001"]["verdict"] == "review"
+    assert next(r for r in out["s-0001"]["reasons"] if r["code"].startswith("ndvi_"))["code"] == "ndvi_fell"
+    apply_file(site / "changes.geojson")  # a second run gives the same file (no second step)
+    assert (site / "changes.geojson").read_text() == once
+    labels = {k: v["verdict"] for k, v in out.items()}
+    for i in (1, 2, 3):
+        (site / "series" / f"s-000{i}.json").write_text(json.dumps({"series": []}))
+    apply_file(site / "changes.geojson")  # the data goes away: the steps are undone
+    back = {f["properties"]["id"]: f["properties"] for f in json.loads((site / "changes.geojson").read_text())["features"]}
+    assert {k: v["verdict"] for k, v in back.items()} == labels  # labels never moved (they ran on the exporter's confidence)
+    for i, f in enumerate(base["features"], 1):
+        assert back[f"s-000{i}"]["confidence"] == f["properties"]["confidence"]
+        assert "confidence_base" not in back[f"s-000{i}"] and "confidence_ndvi" not in back[f"s-000{i}"]
+
+
+def test_the_series_files_ndvi_block_becomes_a_record(tmp_path):
+    (tmp_path / "series").mkdir()
+    (tmp_path / "series" / "a-0001.json").write_text(json.dumps({"ndvi": {"sensor": "x", "dates": ["2026-04-01"], "values": [0.5], "before": 0.8, "after": 0.4}}))
+    (tmp_path / "series" / "a-0002.json").write_text(json.dumps({"series": []}))
+    props = {"id": "a-0001", "first_date": "2026-03-01", "last_date": "2026-03-02"}
+    rec = ndvi_record(tmp_path, props)
+    assert rec["checked"] is True and rec["dates"] == ["2026-04-01"] and rec["values"] == [0.5]
+    assert rec["first_date"] == "2026-03-01" and rec["last_date"] == "2026-03-02" and "HLS" in rec["source"] and rec["url"].startswith("https://")
+    assert ndvi_record(tmp_path, {**props, "id": "a-0002"}) is None and ndvi_record(tmp_path, {**props, "id": "missing"}) is None
