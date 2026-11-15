@@ -53,12 +53,13 @@ carries most of the score.
 ## 0. Must-dos before 16:00 (checked 15 Nov 11:00; tick when done)
 Deck route, so these replace the 30 s video items below. Owner in brackets. **Order matters: 16:00 is the local cut-off, the form stays editable until 23:59.**
 - [ ] **Deck ≤ 7 slides, public link, no login** (Andrea, #9). Slide 1 shows project name, tagline, **team name, all members' names and the challenge** (rule). Sell the idea: problem and user, the Muhos case, the live app, why radar, limits stated, what's next. 1–2 clips ≤ 10 s. English only. No NASA logos; AI images watermarked (none planned). Test the link in a private window (a navigator claims Drive may be refused, forum #2216: **Google Slides "anyone with the link" or a PDF in the repo/Release is safest**).
-- [ ] **Pages app works with the final data** (Tomi + Tian). The #140 merge decision is still open (draft, conflicting with `main` at 11:00). The form text below depends on it: if it merges, the Gemini sentence in §5 and the extra licences in §4 apply; if not, drop them.
+- [ ] **Pages app works with the final data** (Tomi + Tian). #140 merged 15 Nov 11:31, so the Gemini sentence in §5 and all licences in §4 apply.
 - [ ] **Team page** (any human): rename team "4" to **Parallax** and replace "We will win (team 4 is the best)" by the tagline; all members on the **Members** tab and confirmed for Barcelona (`official-rules.md` §2, §3).
 - [ ] **Form filled and "Submit for Judging" pressed** (one human, edit **Lock** on): name, summary (§2), demo link = the deck, final-project link = the Pages app, description, **SI field (§5)**, NASA data (§4), references **with a licence per item** (§4), screenshots, both tick boxes. Then check the banner. Aim: submitted by 15:00, edit afterwards.
-- [ ] **Licences named** for every non-NASA material (T&Cs, forum #2001; "no licence documentation = not accepted"): done in §4, copy into the references field.
+- [x] **Licences named** for every non-NASA material (T&Cs, forum #2001; "no licence documentation = not accepted"): verified per item in §4 (#160); copy that table into the references field. No EOX / non-commercial material is used.
 - [ ] **SI field matches reality** (forum #1849, #2123): says Claude wrote code and docs, and names Gemini if the report summary ships.
-- [ ] **NISAR maturity** stated in the description (provisional product, from 17 Jun 2026): added to §2 below.
+- [x] **NISAR maturity** stated in the description (provisional product, from 17 Jun 2026): added to §2 below.
+- [x] **SI text says the idea is the team's** (the rules forbid SI for the idea): §5 reworded (#160).
 - [ ] **Attribution "Contains modified Copernicus Sentinel data"** visible in the app (How it works or map credit).
 - [ ] **Confirm with the Local Lead**: pitch format and length at 16:30, 16:00 hard cut-off, screen / HDMI. Bring a PDF copy of the deck and the app offline fallback.
 - [ ] **Talk rehearsed twice, 2–3 min** (all). Script base: `demo-strategy.md` §4.
@@ -171,30 +172,43 @@ limits we state · next: Catalonia.
 | OPERA DIST-ALERT-HLS (vegetation-loss alerts, 30 m) | dating the clearing month by month; the block's outline | [LP DAAC](https://lpdaac.usgs.gov/products/opera_l3_dist-alert-hls_v1v001/) |
 | HLS (Harmonized Landsat Sentinel-2) | the "Satellite photo" frames of the time-lapse | [Earthdata](https://www.earthdata.nasa.gov/data/projects/hls) |
 
-**Space agency partners and others:**
-| Dataset | Used for | Licence |
+**Space agency partners and others** (paste into "Space Agency Partner Data and Other References"; the T&Cs require
+a licence for every non-NASA item, forum #2001; checked 15 Nov, #160). No EOX or ICGC imagery is used: the year
+photos are NASA HLS (`src/sarwatch/frames.py`).
+| Item | Used for | Licence |
 |---|---|---|
-| Copernicus Sentinel-1 (ESA; inside OPERA RTC-S1) | radar history | free and open; credit "contains modified Copernicus Sentinel data" |
-| Copernicus Sentinel-2 (ESA; inside HLS and DIST-ALERT) | optical alerts and photos | free and open; same credit |
-| Finnish sources: Lupa- ja valvontavirasto press release (6 Oct 2026), Helsingin Sanomat via Kaleva (28 Sep 2026), Yle News (29 Oct 2026) | the reported steps on the timeline and the hand-entered record | cited, linked, not redistributed |
-| Esri World Imagery, OpenStreetMap | modern basemap | Esri terms (attribution shown) · ODbL |
+| Copernicus Sentinel-1 / Sentinel-2 (ESA, European Commission; inside OPERA RTC-S1, HLS, DIST-ALERT) | radar history, optical alerts, photos | Copernicus free, full and open licence (Reg. (EU) 1159/2013); "Contains modified Copernicus Sentinel data [2016–2026]" |
+| Landsat 8 / 9 (USGS / NASA; inside HLS) | photos, alerts | public domain (USGS) |
+| Esri World Imagery tiles | satellite background | Esri terms of use (free, no key; not an open licence); credit shown in the map: "© Esri, Maxar, Earthstar Geographics and the GIS User Community" |
+| Esri World Light Gray Canvas tiles | grey background | Esri terms of use; credit shown in the map: "© Esri, HERE, Garmin, © OpenStreetMap contributors and the GIS User Community" |
+| OpenStreetMap data (inside the grey map) | background map | ODbL 1.0, "© OpenStreetMap contributors" |
+| Finnish sources: Lupa- ja valvontavirasto press release (6 Oct 2026), Helsingin Sanomat via Kaleva (28 Sep 2026), Yle News (29 Oct 2026) | reported steps and the hand-entered record | © each publisher; cited and linked, short facts only, not redistributed |
 | MapLibre GL JS 4.7.1 | map rendering | BSD-3-Clause |
-| Our code (Python package `sarwatch`, web app) | everything | MIT, in the public repo |
-| Fonts (Funnel, self-hosted) | app text | SIL OFL 1.1 (check the licence file ships with the fonts) |
-| **Only if #140 ships:** EOX Sentinel-2 cloudless base map | second base map | CC BY-NC-SA 4.0 for 2018 on, not OSI: either drop the years after 2017 or state "non-commercial, attribution, share-alike" openly |
-| **Only if #140 ships:** ICGC orthophotos, jsPDF / jsPDF-autotable, NDVI helpers, Cloudflare worker, Gemini API | photos, PDF report, optional AI summary | name each licence from the shipped files (ICGC: open data, CC BY 4.0 per ICGC terms, check; jsPDF: MIT) |
-| Catalonia (next step, built but not in the demo): PEIN + Natura 2000, MUC zoning, solar-plant register, Spanish cadastre WFS, EFFIS wildfires, ICGC orthophotos | live record checks | see `data-sources.md` §3 (licences unverified) |
+| Turf 7.2.0, shpjs 4.0.4, geotiff 2.1.3, jsPDF 2.5.1, jspdf-autotable 3.8.2 | area tools, uploads/downloads, PDF report | MIT |
+| @tmcw/togeojson 5.8.1 · @mapbox/shp-write 0.4.3 | KML upload · shapefile download | BSD-2-Clause · BSD-3-Clause |
+| Funnel Display / Funnel Sans fonts (self-hosted, `app/fonts/OFL.txt`) | app text | SIL OFL 1.1 |
+| Python: numpy, scipy, h5py, rasterio, shapely, asf_search, fsspec · pyproj, earthaccess, pytest · requests, aiohttp · pillow | processing pipeline | BSD-3-Clause · MIT · Apache-2.0 · MIT-CMU |
+| Gemini API (Google Generative Language API: `gemini-flash-lite-latest`, then `gemini-flash-latest` as second try), Cloudflare Workers, GitHub Pages | optional AI report summary, its proxy, hosting | service terms of each provider (used as services, nothing redistributed) |
+| EFFIS burnt areas (European Commission JRC / Copernicus EMS) | wildfire record check: queried for every Catalan change, no burnt area matched, so no EFFIS data is shown | CC BY 4.0, "Contains data from EFFIS © European Union" ([terms](https://forest-fire.emergency.copernicus.eu/about-effis/data-license)) |
+| PEIN / Natura 2000 (Generalitat de Catalunya, served by Diputació de Barcelona) | protected-area check | CC BY 4.0 per the INSPIRE record ([IDEE](https://www.idee.es/csw-codsi-idee/srv/api/records/inspire-pla-espais-interes-natural)); credit the Generalitat and the layer's update date |
+| MUC zoning (sig.gencat.cat) · solar-plant register (Socrata ggx8-jkp4) | zoning and solar checks | Generalitat's "Llicència oberta d'ús d'informació – Catalunya" ([terms](https://web.gencat.cat/ca/generalitat/dades-indicadors/dades-obertes/llicencies)): reuse and derived works allowed, cite "Generalitat de Catalunya, Departament de Territori" + update date, no logos |
+| Spanish Catastro INSPIRE buildings (Dirección General del Catastro) | Barcelona buildings layer | Catastro's own INSPIRE licence ([PDF](https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf)), **not CC BY**: only *transformed* data may be published, never the original records, and it must not be called "cartografía/información catastral". Our `buildings.geojson` (#152) is transformed: 7,090 footprints merged into 569 outlines with a summary label, no cadastral attributes; credit "derived from Dirección General del Catastro data" |
+| Our code and derived data (`sarwatch`, the web app) | everything | MIT, in the public repo |
+
+The web libraries are not bundled: the app loads the versions above at run time from public CDNs (unpkg, jsDelivr, cdnjs).
+Esri is the one non-open item; if a reviewer objects, NASA GIBS imagery is the drop-in swap (counts as NASA data).
 
 ## 5. AI-use disclosure (for the "Use of SI" field and the README)
-> The team chose the challenge, the idea, the Finnish case and the Catalan pilot. We used Claude (Anthropic's AI
-> models, through Claude Code) as a programming and writing assistant under our direction: it wrote most of the code
-> and documentation, researched candidate cases and data sources for us to choose from, checked cited sources and
-> reviewed its own pull requests with a second AI reviewer. Humans set the goals, decided every design question and
+> The idea is the team's own: we chose the challenge and the product (radar finds land changes, public records say
+> which need a regulator's look). We used Claude (Anthropic's AI models, through Claude Code) as a programming and
+> writing assistant under our direction: it wrote most of the code and documentation, searched for example sites and
+> data sources (the team picked Muhos and the Catalan pilot from them), checked cited sources and reviewed its own
+> pull requests with a second AI reviewer. Humans set the goals, decided every design question and
 > checked the results. Every file Claude wrote carries a "Written by Claude" note, and the git history shows who made
 > each change. The satellite results come from NASA and ESA data processed by our code, not from an AI model, and no
 > AI-generated images, video or audio are used.
 >
-> **Add only if #140 ships:** The optional report summary is written by Google's Gemini model through a small proxy; the app labels it "AI-written" and the rule-based summary is the default.
+> The optional report summary is written by Google's Gemini models (`gemini-flash-lite-latest`, falling back to `gemini-flash-latest`) through a small proxy; the app labels it "AI-written" and the rule-based summary is the default.
 
 Before submitting: confirm the last sentence still holds (an AI voice or generated pictures would need a watermark
 and a mention).
