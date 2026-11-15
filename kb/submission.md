@@ -54,7 +54,7 @@ carries most of the score.
 Deck route, so these replace the 30 s video items below. Owner in brackets. **Order matters: 16:00 is the local cut-off, the form stays editable until 23:59.**
 - [ ] **Deck ≤ 7 slides, public link, no login** (Andrea, #9). Slide 1 shows project name, tagline, **team name, all members' names and the challenge** (rule). Sell the idea: problem and user, the Muhos case, the live app, why radar, limits stated, what's next. 1–2 clips ≤ 10 s; a PDF copy won't play them, so put each clip in as a GIF or a public link too. The guide also asks the slides to (1) **show an image of the app**, (2) **describe the user's experience** (what the regulator sees and does), (3) **say how NASA and partner-agency (ESA) data make it possible**; readable font, few words per slide. English only. No NASA logos; AI images watermarked (none planned). Test the link in a private window (a navigator claims Drive may be refused, forum #2216: **Google Slides "anyone with the link" or a PDF in the repo/Release is safest**).
 - [ ] **Pages app works with the final data** (Tomi + Tian). #140 merged 15 Nov 11:31, so the Gemini sentence in §5 and all licences in §4 apply.
-- [ ] **Team page** (any human): rename team "4" to **Parallax** and replace "We will win (team 4 is the best)" by the tagline; all members on the **Members** tab and confirmed for Barcelona (`official-rules.md` §2, §3).
+- [ ] **Team page** (any human): the team name stays **"4"** (Tian and Tomi, 15 Nov; Parallax is the product name); all members on the **Members** tab and confirmed for Barcelona (`official-rules.md` §2, §3).
 - [ ] **Form filled and "Submit for Judging" pressed** (one human, edit **Lock** on): name, summary (§2), demo link = the deck, final-project link = the Pages app, description, **SI field (§5)**, NASA data (§4), references **with a licence per item** (§4), screenshots, both tick boxes. Then check the banner. Aim: submitted by 15:00, edit afterwards.
 - [x] **Licences named** for every non-NASA material (T&Cs, forum #2001; "no licence documentation = not accepted"): verified per item in §4 (#160); copy that table into the references field. No EOX / non-commercial material is used.
 - [ ] **SI field matches reality** (forum #1849, #2123): says Claude wrote code and docs, and names Gemini if the report summary ships.
@@ -70,6 +70,8 @@ Deck route, so these replace the 30 s video items below. Owner in brackets. **Or
 1. **SARwatch (old working title)**: "Radar finds where the land changed. Public records say which changes need a second look."
 2. **Second Look**: "Every change on the ground, sorted by how much it deserves a regulator's attention."
 3. **Through the Clouds**: "Satellite radar keeps watch over forests in any weather, and explains what it saw."
+
+**The texts below are the earlier Finland-only draft. The current, paste-ready text for every form field is in [`submission-form.md`](submission-form.md) (15 Nov).**
 
 **High-level summary (≤150 words):**
 > We built a web app that turns what satellites see into a short, explained list of land changes a regulator should
@@ -208,7 +210,7 @@ Esri is the one non-open item; if a reviewer objects, NASA GIBS imagery is the d
 > each change. The satellite results come from NASA and ESA data processed by our code, not from an AI model, and no
 > AI-generated images, video or audio are used.
 >
-> The optional report summary is written by Google's Gemini models (`gemini-flash-lite-latest`, falling back to `gemini-flash-latest`) through a small proxy; the app labels it "AI-written" and the rule-based summary is the default.
+> The optional report summary is written by Google's Gemini models (`gemini-flash-lite-latest`, falling back to `gemini-flash-latest`) through a small proxy; the report labels it "AI-written summary (Google Gemini)", and if the service does not answer a rule-based summary is used. (Current full text: `submission-form.md` section 6.)
 
 Before submitting: confirm the last sentence still holds (an AI voice or generated pictures would need a watermark
 and a mention).
