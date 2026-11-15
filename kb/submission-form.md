@@ -1,6 +1,6 @@
 # Submission form: paste-ready texts
 
-The final text for each field of the Space Apps project form, for the product as it is on `main` (Parallax, a tool with two example sites). Last updated 2026-11-15, 13:30. **Not submitted yet: Tian and Tomi review first.** Rules and the checklist: [`submission.md`](submission.md) · the official guide: [`../docs/rules/project-submission-guide-2026-11-13.pdf`](../docs/rules/project-submission-guide-2026-11-13.pdf). Numbers were recomputed from `app/data` on 15 Nov; wording follows [`evidence-check.md`](evidence-check.md).
+The final text for each field of the Space Apps project form, for the product as it is on `main` (Parallax, a tool with two example sites). Last updated 2026-11-15, 15:20. **Not submitted yet: Tian and Tomi review first.** Rules and the checklist: [`submission.md`](submission.md) · the official guide: [`../docs/rules/project-submission-guide-2026-11-13.pdf`](../docs/rules/project-submission-guide-2026-11-13.pdf). Numbers were recomputed from `app/data` on 15 Nov; wording follows [`evidence-check.md`](evidence-check.md).
 
 Where: profile icon → My Team → **Project** tab → Edit → turn the **Lock** on (one editor at a time; "Save Progress" is visible to the team only). All text in English. The form can be edited and resubmitted until 23:59; the last save counts.
 
@@ -84,11 +84,32 @@ The satellite results come from NASA and ESA data processed by our code, and the
 - Access: NASA Earthdata Login, Alaska Satellite Facility (ASF) DAAC, LP DAAC.
 
 ## 8. Space Agency Partner Data and Other References
-Paste the table of [`submission.md` section 4](submission.md#4-data-used) ("Space agency partners and others": every item with its use and its licence), then these references:
+*Paste everything below this line into the field.*
 
-- Challenge: https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/
-- ESA / European Commission: Copernicus Sentinel-1 and Sentinel-2 (inside OPERA RTC-S1, HLS and DIST-ALERT). Contains modified Copernicus Sentinel data (2016–2026).
+Space agency partner data
+- Copernicus Sentinel-1 / Sentinel-2 (ESA, European Commission; inside OPERA RTC-S1, HLS, DIST-ALERT): radar history, optical alerts, photos. Licence: Copernicus free, full and open licence (Reg. (EU) 1159/2013); "Contains modified Copernicus Sentinel data [2016–2026]"
+- Landsat 8 / 9 (USGS / NASA; inside HLS): photos, alerts. Licence: public domain (USGS)
 - ISRO: NISAR is a joint NASA–ISRO mission.
+
+Other data, tools and services, each with its licence
+- Esri World Imagery tiles: satellite background. Licence: Esri terms of use (free, no key; not an open licence); credit shown in the map: "© Esri, Maxar, Earthstar Geographics and the GIS User Community"
+- Esri World Light Gray Canvas tiles: grey background. Licence: Esri terms of use; credit shown in the map: "© Esri, HERE, Garmin, © OpenStreetMap contributors and the GIS User Community"
+- OpenStreetMap data (inside the grey map): background map. Licence: ODbL 1.0, "© OpenStreetMap contributors"
+- Finnish sources: Lupa- ja valvontavirasto press release (6 Oct 2026), Helsingin Sanomat via Kaleva (28 Sep 2026), Yle News (29 Oct 2026): reported steps and the hand-entered record. Licence: © each publisher; cited and linked, short facts only, not redistributed
+- MapLibre GL JS 4.7.1: map rendering. Licence: BSD-3-Clause
+- Turf 7.2.0, shpjs 4.0.4, geotiff 2.1.3, jsPDF 2.5.1, jspdf-autotable 3.8.2: area tools, uploads/downloads, PDF report. Licence: MIT
+- @tmcw/togeojson 5.8.1 · @mapbox/shp-write 0.4.3: KML upload · shapefile download. Licence: BSD-2-Clause · BSD-3-Clause
+- Funnel Display / Funnel Sans fonts (self-hosted, app/fonts/OFL.txt): app text. Licence: SIL OFL 1.1
+- Python: numpy, scipy, h5py, rasterio, shapely, asf_search, fsspec · pyproj, earthaccess, pytest · requests, aiohttp · pillow: processing pipeline. Licence: BSD-3-Clause · MIT · Apache-2.0 · MIT-CMU
+- Gemini API (Google Generative Language API: gemini-flash-lite-latest, then gemini-flash-latest as second try), Cloudflare Workers, GitHub Pages: optional AI report summary, its proxy, hosting. Licence: service terms of each provider (used as services, nothing redistributed)
+- EFFIS burnt areas (European Commission JRC / Copernicus EMS): wildfire record check: queried for every Catalan change, no burnt area matched, so no EFFIS data is shown. Licence: CC BY 4.0, "Contains data from EFFIS © European Union" (terms: https://forest-fire.emergency.copernicus.eu/about-effis/data-license)
+- PEIN / Natura 2000 (Generalitat de Catalunya, served by Diputació de Barcelona): protected-area check. Licence: CC BY 4.0 per the INSPIRE record (IDEE: https://www.idee.es/csw-codsi-idee/srv/api/records/inspire-pla-espais-interes-natural); credit the Generalitat and the layer's update date
+- MUC zoning (sig.gencat.cat) · solar-plant register (Socrata ggx8-jkp4): zoning and solar checks. Licence: Generalitat's "Llicència oberta d'ús d'informació – Catalunya" (terms: https://web.gencat.cat/ca/generalitat/dades-indicadors/dades-obertes/llicencies): reuse and derived works allowed, cite "Generalitat de Catalunya, Departament de Territori" + update date, no logos
+- Spanish Catastro INSPIRE buildings (Dirección General del Catastro): Barcelona buildings layer. Licence: Catastro's own INSPIRE licence (PDF: https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf), not CC BY: only transformed data may be published, never the original records, and it must not be called "cartografía/información catastral". Our buildings.geojson (#152) is transformed: 7,090 footprints merged into 569 outlines with a summary label, no cadastral attributes; credit "derived from Dirección General del Catastro data"
+- Our code and derived data (sarwatch, the web app): everything. Licence: MIT, in the public repo
+
+References
+- Challenge: https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/
 - Finland, reported facts: Lupa- ja valvontavirasto press release, 6 Oct 2026 (https://www.sttinfo.fi/tiedote/72390663/lupa-ja-valvontavirasto-kehottaa-tuike-finland-oyta-keskeyttamaan-muhoksen-ja-kajaanin-datakeskushankkeiden-valmistelutoimet) · Helsingin Sanomat via Kaleva, 28 Sep 2026 (https://www.kaleva.fi/hs-google-yritti-saada-poikkeusluvan-muhoksen-hakk/13686840) · Yle News, 29 Oct 2026 (https://yle.fi/a/74-20254086).
 - NISAR documentation: https://nisar-docs.asf.alaska.edu/
 - Our code and derived data: MIT licence, https://github.com/Space0code/dancing-with-the-sars
