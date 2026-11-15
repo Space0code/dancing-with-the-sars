@@ -131,19 +131,16 @@ export function createAoi(mount, { map, getSite, hideDrawer, showDrawer, room })
   const fileBtn = h("button", { type: "button", class: "tool-btn" }, "Upload file");
   const applyBtn = h("button", { type: "submit", class: "tool-btn primary" }, "Apply");
   const bboxForm = h("form", { class: "bbox-form", hidden: true }, bboxInput, applyBtn);
-  const status = h("span", { class: "area-status-text" });
-  const clearBtn = h("button", { type: "button", class: "link-btn" }, "Clear");
-  const statusLine = h("p", { class: "area-status", hidden: true }, status, clearBtn);
   const message = h("p", { class: "tool-msg", role: "status", hidden: true });
   mount.append(
     h("div", { class: "tool-row" },
       h("span", { class: "tool-label" }, "Area"),
       h("div", { class: "tool-buttons" }, drawBtn, typeBtn, fileBtn)),
     h("p", { class: "tool-hint" }, "Stays on your computer"),
-    bboxForm, statusLine, message, fileInput
+    bboxForm, message, fileInput
   );
 
-  let label = null; // what the status line says; null = no area chosen through this block
+  let label = null; // text of the chosen area (null = none)
   let fromFile = false; // the area is an uploaded file (or its box, after a reload)
   let drawing = null;
 
@@ -165,18 +162,12 @@ export function createAoi(mount, { map, getSite, hideDrawer, showDrawer, room })
     maplibre.fitBounds([[box[0], box[1]], [box[2], box[3]]], { padding: { top: 60, bottom: 60, left: 60, right: 60 + (room?.() ?? 0) }, maxZoom: 15, essential: true });
   }
 
-  function showStatus() {
-    statusLine.hidden = !getSelection().area || !label;
-    status.textContent = label ?? "";
-  }
-
   /** Select `geometry` and say `text` in the status line. */
   function choose(geometry, text, { zoom = true, note = null, file = false } = {}) {
     label = text;
     fromFile = file;
     if (file) bboxInput.value = ""; // an uploaded shape is not a typed box: no stale numbers in the field
     setArea(geometry);
-    showStatus();
     const box = geometryBox(geometry);
     if (box) bboxInput.value = box.map((n) => Number(n.toFixed(5))).join(", "); // the open form shows the area now chosen
     const outside = outsideNote(box);
@@ -296,17 +287,19 @@ export function createAoi(mount, { map, getSite, hideDrawer, showDrawer, room })
   });
 
   // --- Clear, and following the selection from outside (the "Filtered … Clear" line, a new site, a link) ---
-  clearBtn.addEventListener("click", () => setArea(null));
   onSelectionChange(({ area }) => {
     if (!area) {
       label = null;
       fromFile = false;
       say(null);
     }
-    showStatus();
   });
 
   return {
+    /** "file" or "box" for the area now selected, else null (the Filter row's short summary). */
+    kind() {
+      return !getSelection().area ? null : fromFile ? "file" : "box";
+    },
     /** The open site changed (or the intro is shown): forget notes about the old one. */
     setSite() {
       stopDrawing(false);
@@ -329,7 +322,7 @@ export function createAoi(mount, { map, getSite, hideDrawer, showDrawer, room })
         const b = parseBbox(raw);
         if (params.get("area") === "file") choose(boxPolygon(b), "Box of the uploaded file", { zoom, file: true });
         else setBox(b, { zoom });
-      } catch {} // a bad value is ignored
+      } catch { setArea(null); } // a bad value selects no area (not the previous one)
     },
   };
 }

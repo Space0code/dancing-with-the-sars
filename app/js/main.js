@@ -9,7 +9,7 @@ import { createInbox, kindName } from "./inbox.js";
 import { createPicture } from "./picture.js";
 import { createTour } from "./tour.js";
 import { createRecords } from "./records.js";
-import { filterChanges, getSelection, isActive, clearSelection, setArea, onSelectionChange, describeSelection } from "./selection.js";
+import { filterChanges, getSelection, isActive, clearSelection, setArea, onSelectionChange } from "./selection.js";
 import { createTimeFrame } from "./timeframe.js";
 import { createAoi } from "./aoi.js";
 import { createExport } from "./export.js";
@@ -109,13 +109,17 @@ async function main() {
     writeHash();
     map.select(feature);
     inbox.setSelected(selectedId);
+    showCardNote();
     if (!feature) return;
     showCard(feature, current);
     drawer.setTitle(changeLabel(feature.properties.type));
     drawer.show("card");
   }
   const drawer = createDrawer({
-    onShow: (view) => view === "inbox" && inbox.refresh(),
+    onShow: (view) => {
+      $("filter").hidden = view === "card"; // the Filter row belongs to the lists, never above a change's card
+      if (view === "inbox") inbox.refresh();
+    },
     onClose: () => select(null),
     onBack: () => {
       select(null);
@@ -180,10 +184,33 @@ async function main() {
     getContext: () => current && { site: current.site, changes: inbox.rows(), selection: getSelection(), snapshot: map.snapshot, kindName },
   });
 
+  const SHORT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const shortDay = (iso) => SHORT.format(new Date(iso));
+  /** The Filter row: collapsed by default; the summary says what is filtered, Clear removes it. */
+  function setFilterOpen(open) {
+    $("tools-filter").hidden = !open;
+    $("filter-toggle").setAttribute("aria-expanded", String(open));
+  }
+  function showFilterSummary() {
+    const { from, to } = getSelection();
+    const parts = [];
+    if (from && to) parts.push(`${shortDay(from)} \u2192 ${shortDay(to)}`);
+    else if (from) parts.push(`${shortDay(from)} \u2192`);
+    else if (to) parts.push(`\u2192 ${shortDay(to)}`);
+    if (aoi.kind()) parts.push(aoi.kind());
+    $("filter-summary").textContent = parts.join(" \u00B7 ");
+    $("filter-clear").hidden = !isActive();
+    showCardNote();
+  }
+  /** A card opened from a link can be outside the filter: say so (the list does not show it). */
+  function showCardNote() {
+    const f = selectedId && current?.changes.features.find((x) => x.properties.id === selectedId);
+    $("card-note").hidden = !f || filterChanges([f]).length > 0;
+  }
+
   /** Show the selection (selection.js) everywhere changes are shown or counted: map, total, overview, list. */
   function applySelection() {
-    $("filter-line").hidden = !isActive();
-    $("filter-text").textContent = `Filtered: ${describeSelection()}`;
+    showFilterSummary();
     if (!current || loading) return;
     const features = filterChanges(current.changes.features);
     renderOverview(current.site, features);
@@ -196,6 +223,8 @@ async function main() {
   onSelectionChange(applySelection);
   onSelectionChange(() => writeHash()); // the link carries the time frame and the box
   $("filter-clear").addEventListener("click", clearSelection);
+  $("card-note-clear").addEventListener("click", clearSelection);
+  $("filter-toggle").addEventListener("click", () => setFilterOpen($("tools-filter").hidden));
   const timeline = createTimeline({
     describe: (iso) => picture.position(iso),
     onDate(iso) {

@@ -473,8 +473,17 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .export-open { height: 28px; padding: 0 var(--s-3); border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--raised); font-size: var(--t-label); font-weight: 500; }
 
 /* ---------- selection line and Export dialog ---------- */
-.filter-line { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); margin: 0 var(--s-4) var(--s-2); padding: var(--s-1) var(--s-3); border-radius: var(--r-sm); background: var(--surface); font-size: var(--t-small); }
-.filter-line button { border: 0; background: none; padding: 0; color: var(--action); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.filter { flex: none; margin: 0 var(--s-4) var(--s-2); }
+.filter[hidden] { display: none; }
+.filter-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); min-height: 32px; }
+.filter-toggle { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: var(--s-2); padding: 0; border: 0; background: none; color: var(--ink); font-size: var(--t-small); text-align: left; }
+.filter-toggle::after { content: "\25BE"; margin-left: auto; color: var(--muted); }
+.filter-toggle[aria-expanded="true"]::after { content: "\25B4"; }
+.filter-name { font-weight: 600; }
+.filter-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.filter-summary:not(:empty)::before { content: "\00B7\00A0"; }
+.card-note { margin: 0 var(--s-4) var(--s-2); padding: var(--s-1) var(--s-3); border-radius: var(--r-sm); background: var(--surface); font-size: var(--t-small); color: var(--muted); }
+.card-note[hidden] { display: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .export-dialog { width: min(420px, calc(100vw - 32px)); padding: var(--s-5); border: 0; border-radius: var(--r-lg); background: var(--raised); color: var(--ink); box-shadow: var(--shadow-2); }
 .export-dialog::backdrop { background: rgb(10 10 10 / .35); }
@@ -492,8 +501,8 @@ button.big { width: 100%; height: 48px; font-size: var(--t-body); }
 .export-actions button.primary { background: var(--action); border-color: var(--action); color: var(--action-ink); }
 
 /* ---------- Filter block: time frame and area (js/timeframe.js, js/aoi.js) ---------- */
-#tools-filter { flex: none; display: grid; gap: var(--s-2); margin: 0 var(--s-4) var(--s-3); padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); }
-#tools-filter:empty { display: none; }
+#tools-filter { display: grid; gap: var(--s-2); margin: var(--s-1) 0 0; padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); }
+#tools-filter[hidden] { display: none; }
 .tool-row { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
 .tool-label { flex: none; width: 48px; color: var(--muted); font-size: var(--t-small); font-weight: 500; }
 .date-field { flex: 1; min-width: 0; white-space: nowrap; display: flex; align-items: center; gap: var(--s-2); color: var(--muted); font-size: var(--t-label); }
