@@ -1,13 +1,13 @@
 // Written by Claude. The big picture on the map: the Radar / Satellite switch, the radar frame
 // or colour photo of the slider date (frames.json, latest at or before the date), and the before/after swipe.
-// Satellite shows the sharp, undated background imagery (no frame) unless "Dated photos" is on: then the 30 m photo of the date.
+// Satellite shows the sharp, undated Imagery base map (no frame) unless "Dated photos" is on: then the 30 m photo of the date.
 // Frames are drawn on one canvas that the map shows over the site; neighbouring frames are preloaded so play doesn't flicker.
 import { formatDate } from "./format.js";
 import { createSwipe } from "./swipe.js";
 
 const PRELOAD_AHEAD = 5;
 const NO_LABEL = { radar: "No radar picture", photo: "No photo" };
-const IMAGERY_LABEL = "Background imagery · undated";
+const IMAGERY_LABEL = "Imagery · undated";
 
 /** `map`: from map.js. `mapWrap`: the element around the map (the swipe line goes there). `onView`: the view or Dated photos changed. */
 export function createPicture(map, mapWrap, { onView } = {}) {

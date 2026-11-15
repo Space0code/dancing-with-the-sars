@@ -1,9 +1,9 @@
-// Written by Claude. Base map switch (Satellite | Light) in the legend box. The tiles and the swap itself live in map.js (setBase);
+// Written by Claude. Base map switch (Imagery | Light) in the legend box. The tiles and the swap itself live in map.js (setBase);
 // this file draws the two buttons and keeps the choice. The choice goes in the link as `base=light` (satellite is the default).
 // The Satellite view without dated photos *is* the imagery, so it fixes the base to it (lock); the user's choice comes back after.
 import { h } from "./format.js";
 
-const BASES = [["satellite", "Satellite"], ["light", "Light"]];
+const BASES = [["satellite", "Imagery"], ["light", "Light"]];
 
 /** `map` = the change map (map.js); `box` = the element the switch goes in; `onChange` is called after a user's choice. */
 export function createBasemap(map, box, { onChange } = {}) {
@@ -11,8 +11,8 @@ export function createBasemap(map, box, { onChange } = {}) {
   let locked = false;
   const buttons = BASES.map(([id, label]) =>
     h("button", { type: "button", role: "radio", "aria-checked": "false", onclick: () => choose(id, true) }, label));
-  const hint = h("span", { class: "basemap-hint", hidden: true }, "Fixed to imagery in Satellite view");
-  box.replaceChildren(h("span", { class: "basemap-label" }, "Base map"), h("div", { class: "switch", role: "radiogroup", "aria-label": "Base map" }, ...buttons), hint);
+  const hint = h("span", { class: "basemap-hint", hidden: true }, "Set by the Satellite view");
+  box.replaceChildren(h("span", { class: "group-label" }, "Base map"), h("div", { class: "switch", role: "radiogroup", "aria-label": "Base map" }, ...buttons), hint);
 
   function show() {
     const shown = locked ? "satellite" : current;

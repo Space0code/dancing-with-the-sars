@@ -193,11 +193,11 @@ const hasPhotos = () => !isRadar() && $("photos-btn")?.getAttribute("aria-presse
 
 /** What the map shows now, read from the page: the picture's own satellite and date (the label under the view switch)
  *  and the slider date, which is the date up to which changes are shown. The Satellite view without dated photos shows
- *  the background imagery, which has no date. */
+ *  the Imagery base map, which has no date. */
 function viewText() {
   const date = $("date-label")?.textContent.split("·")[0].trim(); // "26 Oct 2026 · image 68 of 68" -> the date
   const upTo = date ? ` · changes shown up to ${date}` : "";
-  if (!isRadar() && !hasPhotos()) return `Background imagery (undated)${upTo}`;
+  if (!isRadar() && !hasPhotos()) return `Imagery (undated)${upTo}`;
   const kind = isRadar() ? "Radar" : "Satellite photo";
   const frame = $("frame-label")?.textContent.replace(/\s*·\s*/g, ", ").trim(); // "Landsat · 3 Sept 2026" -> "Landsat, 3 Sept 2026"
   const picture = !frame || /^No /i.test(frame) ? `${kind}, no picture for this date` : `${kind}, ${frame}`;
