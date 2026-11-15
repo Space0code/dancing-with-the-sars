@@ -255,7 +255,12 @@ async function main() {
   const tour = createTour(tourData.steps ?? [], {
     onEnd() {
       clearTourFocus();
-      if (phone() && current) { leftPanel.set(false); writeHash(); } // on a phone the map gets its room back
+      if (phone() && current) { // on a phone the map gets its room back: legend and Filter folded (step 5 unfolded it), and
+        setFilterOpen(false); // view() resets MapLibre's kept padding (the tour's bottom room), so tapping a change flies to it again
+        leftPanel.set(false);
+        map.view(current.site);
+        writeHash();
+      }
     },
     async runStep(step) {
       clearTourFocus();
