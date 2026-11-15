@@ -22,6 +22,15 @@ skimmed by a sub-agent and the load-bearing ones re-read. To discuss at the Sund
 - Our `plan.md` has "freeze Sun 16:00 · submit Sun 22:00": the plan needs a submitted page, demo link and a pitch
   ready before 16:00, and the freeze earlier.
 - The mentors are on site Sat and Sun; the campus stays open after 20:00.
+- **Local Lead email of Sun 15 Nov (supersedes the open questions in §7):** (1) **16:00 = deadline to email the deck or
+  video to `dev42bcn@gmail.com`**, project name in the subject, all teams, no exceptions; (2) **23:59 = Project
+  Submission on the NASA site**, required to be eligible to win; (3) **15:00** = pitch prep and tech tests at the
+  Auditorium (not a deadline); (4) **16:15** group photo and jury introduction, a first version of the team/project page
+  must be filled by then; (5) pitches from 16:30 in **alphabetical order by project name** (one team first), either a
+  30 s video + 3 min questions or **7 slides in 3 min (strict) + 1 min questions**; (6) 18:50 first local winner
+  (People's Choice); 2 or 3 more local winners picked the following week, only among teams with a complete Project
+  Submission; all local winners go to the global phase. Team decision: Tomi emails the deck, Tian uploads to the
+  platform, both before 16:00.
 
 ## 2. Eligibility traps (any one of these = no Global Judging)
 - **Every member confirmed for Barcelona**, not waitlisted: the Local Lead's individual confirmation form counted,
@@ -82,8 +91,8 @@ From the challenge page (statement + "Potential Considerations"):
   project. Website problems on the submission page → web@spaceappschallenge.org (forum #2100).
 
 ## 7. Questions for 09:00
-1. Move submit-for-judging to ~15:00 (page complete, demo link live), freeze earlier; then polish until 23:59?
-2. Who asks the Local Lead at 09:00: pitch length and format at 16:30, is 16:00 the hard local cutoff, screen/HDMI?
+1. ~~Move submit-for-judging to ~15:00?~~ Decided 15 Nov: submit before 16:00, then polish until 23:59 (§1).
+2. ~~Pitch format, hard cut-off~~ Answered by the 15 Nov email (§1): 7 slides in 3 min + 1 min questions; 16:00 is the email deadline. Still open: screen/HDMI (ask at the Auditorium from 15:00).
 3. Who prepares and gives the live pitch (`demo-strategy.md` §4 assumes 3 minutes, unverified)?
 4. Rename the team page ("4") and rewrite its description; all three of us confirmed and on Members?
 5. Add the guide's 0:00 intro (names, team) and "why this challenge" to the video?
